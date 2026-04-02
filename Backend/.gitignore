@@ -1,0 +1,93 @@
+# ==============================
+# GENERAL
+# ==============================
+.DS_Store
+Thumbs.db
+*.log
+*.tmp
+*.swp
+
+# ==============================
+# ENV FILES (IMPORTANT)
+# ==============================
+.env
+.env.*
+!.env.example
+
+# ==============================
+# NODE / FRONTEND (Next.js)
+# ==============================
+node_modules/
+.next/
+out/
+build/
+dist/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Vercel
+.vercel/
+
+# TypeScript
+*.tsbuildinfo
+
+# ==============================
+# PYTHON / BACKEND (FastAPI)
+# ==============================
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv/
+
+# Python build
+build/
+dist/
+*.egg-info/
+
+# FastAPI / Uvicorn
+*.log
+
+# ==============================
+# DATABASE / LOCAL STORAGE
+# ==============================
+*.sqlite3
+*.db
+
+# MongoDB dumps (if any)
+dump/
+
+# ==============================
+# IDE / EDITOR
+# ==============================
+.vscode/
+.idea/
+*.iml
+
+# ==============================
+# TEST / COVERAGE
+# ==============================
+.coverage
+htmlcov/
+.pytest_cache/
+
+# ==============================
+# FILE UPLOADS (if using local storage)
+# ==============================
+media/
+uploads/
+
+# ==============================
+# DOCKER (optional)
+# ==============================
+*.pid
+*.seed
+*.pid.lock
