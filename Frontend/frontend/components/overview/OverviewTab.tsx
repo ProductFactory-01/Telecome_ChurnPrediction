@@ -19,25 +19,22 @@ export default function OverviewTab() {
   const k = data.kpis;
   return (
     <div className="dashboard-content">
-      <SectionTitle title="System Overview" description="AI-Powered Churn Prevention Pipeline" color="blue" />
+      <PipelineFlow steps={data.pipeline} />
 
-      <div className="panel-grid panel-grid--4 mb-6">
-        <KpiCard label="Subscribers Unified" value={k.subscribers_unified.toLocaleString()} color="blue" />
-        <KpiCard label="Current Churn Rate" value={`${k.current_churn_rate}%`} sub={`Target: ${k.target_churn_rate}%`} color="red" />
-        <KpiCard label="High-Risk Flagged" value={k.high_risk_flagged.toLocaleString()} color="amber" />
-        <KpiCard label="Model ROC-AUC" value={`${k.model_roc_auc}%`} color="green" />
+      <div className="panel-grid panel-grid--6 mb-6 mt-4">
+        <KpiCard label="Subscribers Unified" value={k.subscribers_unified.toLocaleString()} sub="Customer360 Intelligence layer" color="blue" />
+        <KpiCard label="Current Churn Rate" value={`${k.current_churn_rate}%`} sub={`Target: ${k.target_churn_rate}% with AI agents`} color="red" />
+        <KpiCard label="High-Risk Flagged" value={k.high_risk_flagged.toLocaleString()} sub="Scored daily by Agent 2" color="amber" />
+        <KpiCard label="Retention Offers Sent" value={k.retention_offers_sent.toLocaleString()} sub="Via Agent 3 + Agent 4" color="green" />
+        <KpiCard label="Subscribers Saved" value={k.subscribers_saved.toLocaleString()} sub="Through AI intervention" color="purple" />
+        <KpiCard label="Model ROC-AUC" value={`${k.model_roc_auc}%`} sub="Gradient Boosting — validated" color="cyan" />
       </div>
 
       <div className="mb-6">
-        <PipelineFlow steps={data.pipeline} />
+        <AgentLog entries={[]} />
       </div>
 
       <OverviewCharts churnTrend={data.churn_trend} agentActivity={data.agent_activity} />
-
-      <div className="mt-6">
-        <SectionTitle title="Agent Activity Log" color="cyan" />
-        <AgentLog entries={[]} />
-      </div>
     </div>
   );
 }

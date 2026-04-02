@@ -8,21 +8,30 @@ try:
 except ImportError:
     h3 = None
 
+from app.llm import GROQ_API_KEY, try_groq_json
 from .schemas import CustomerInput
-
 
 # Resolve model path relative to this file
 _BACKEND_ROOT = os.path.join(os.path.dirname(__file__), "..", "..", "..")
 _MODEL_PATH = os.path.join(_BACKEND_ROOT, "model", "churn_model_v1.pkl")
 
-model = None
-try:
-    model_data = joblib.load(_MODEL_PATH)
-    model = model_data["model"]
-    print(f"✓ Prediction model loaded from {_MODEL_PATH}")
-except Exception as e:
-    print(f"⚠ Could not load prediction model: {e}")
-    model = None
+_model = None
+
+def get_model():
+    global _model
+    if _model is not None:
+        return _model
+        
+    try:
+        import joblib
+        model_data = joblib.load(_MODEL_PATH)
+        _model = model_data["model"]
+        print(f"✓ Prediction model loaded from {_MODEL_PATH}")
+    except Exception as e:
+        print(f"⚠ Could not load prediction model: {e}")
+        _model = None
+        
+    return _model
 
 
 def latlng_to_numeric_cell(latitude: float, longitude: float, resolution: int = 5) -> int:
@@ -33,6 +42,7 @@ def latlng_to_numeric_cell(latitude: float, longitude: float, resolution: int = 
 
 
 def get_fallback_reason(prob: float, data: CustomerInput):
+    # Deterministic fallback rules for stability
     if prob < 0.4:
         return None
     if data.MonthlyCharges > 80 and data.TenureMonths < 12:
@@ -44,7 +54,48 @@ def get_fallback_reason(prob: float, data: CustomerInput):
     return {"main_category": "Customer Experience", "sub_category": "General Issue", "reason": "General dissatisfaction with service terms"}
 
 
+def get_llm_churn_reason(prob, data: CustomerInput):
+    # Use LLM (Groq) for high-fidelity reasoning
+    if not GROQ_API_KEY or prob < 0.4:
+        return get_fallback_reason(prob, data)
+    
+    prompt = {
+        "churn_probability": prob,
+        "risk_level": "High" if prob > 0.7 else "Medium",
+        "customer_profile": {
+            "gender": data.Gender,
+            "senior_citizen": data.SeniorCitizen,
+            "tenure_months": data.TenureMonths,
+            "contract": data.Contract,
+            "monthly_charges": data.MonthlyCharges,
+            "total_charges": data.TotalCharges,
+            "internet_service": data.InternetService,
+            "phone_service": data.PhoneService,
+            "tech_support": data.TechSupport,
+            "online_security": data.OnlineSecurity,
+            "paperless_billing": data.PaperlessBilling,
+        },
+        "task": (
+            "Analyze why this subscriber is at risk based on the data. "
+            "Return only valid JSON in the shape: "
+            "{\"main_category\": \"...\", \"sub_category\": \"...\", \"reason\": \"...\"}. "
+            "Categories should match: Service Quality, Pricing, Competitor, or Experience. "
+            "Reason must be a concise, one-sentence data-driven insight."
+        )
+    }
+
+    parsed = try_groq_json(
+        "You are a churn analysis assistant. Return only valid JSON for reasoning.",
+        prompt
+    )
+    
+    if parsed and isinstance(parsed, dict) and "reason" in parsed:
+        return parsed
+    return get_fallback_reason(prob, data)
+
+
 def predict_churn(customer: CustomerInput) -> dict:
+    model = get_model()
     if model is None:
         raise RuntimeError("Prediction model not loaded")
 
@@ -83,5 +134,5 @@ def predict_churn(customer: CustomerInput) -> dict:
         "churn_probability": round(churn_prob, 4),
         "churn_prediction": 1 if churn_prob > 0.5 else 0,
         "risk_level": "High" if churn_prob > 0.7 else "Medium" if churn_prob > 0.4 else "Low",
-        "churn_reason": get_fallback_reason(churn_prob, customer),
+        "churn_reason": get_llm_churn_reason(churn_prob, customer),
     }

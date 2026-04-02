@@ -1,16 +1,16 @@
 "use client";
 
 const TABS = [
-  { key: "overview",       icon: "📊", label: "Overview" },
-  { key: "data-agent",     icon: "🗄️", label: "Data Agent" },
-  { key: "churn-scoring",  icon: "🎯", label: "Churn Scoring" },
-  { key: "offer-engine",   icon: "🎁", label: "Offer Engine" },
-  { key: "outreach",       icon: "📡", label: "Outreach" },
-  { key: "live-impact",    icon: "📈", label: "Live Impact" },
-  { key: "data-explorer",  icon: "🔍", label: "Data Explorer" },
-  { key: "ml-models",      icon: "🤖", label: "ML Models" },
-  { key: "role-views",     icon: "👥", label: "Role Views" },
-  { key: "milestones",     icon: "🏁", label: "Milestones" },
+  { key: "overview",       label: "Overview",       badge: null },
+  { key: "data-agent",     label: "Data Agent",     badge: "1" },
+  { key: "churn-scoring",  label: "Churn Scoring",  badge: "2" },
+  { key: "offer-engine",   label: "Offer Engine",   badge: "3" },
+  { key: "outreach",       label: "Outreach",       badge: "4" },
+  { key: "live-impact",    label: "Live Impact",    badge: null },
+  { key: "data-explorer",  label: "Data Explorer",  badge: null },
+  { key: "ml-models",      label: "ML Models",      badge: null },
+  { key: "role-views",     label: "Role Views",     badge: null },
+  { key: "milestones",     label: "Milestones",     badge: null },
 ];
 
 interface Props {
@@ -28,7 +28,9 @@ export default function TabNavigation({ activeTab, onTabChange }: Props) {
           className={`tab-nav__btn ${activeTab === t.key ? "tab-nav__btn--active" : ""}`}
           onClick={() => onTabChange(t.key)}
         >
-          <span>{t.icon}</span>
+          {t.badge && (
+            <span className={`tab-nav__badge tab-nav__badge--${t.badge}`}>{t.badge}</span>
+          )}
           {t.label}
         </button>
       ))}

@@ -19,20 +19,20 @@ ChartJS.register(
 );
 
 export const COLORS = {
-  blue: "#3b82f6",
-  cyan: "#22d3ee",
-  green: "#10b981",
+  blue: "#1565c0",
+  cyan: "#0891b2",
+  green: "#16a34a",
   amber: "#f59e0b",
   red: "#ef4444",
-  purple: "#a855f7",
-  blueAlpha: "rgba(59,130,246,0.6)",
-  cyanAlpha: "rgba(34,211,238,0.6)",
-  greenAlpha: "rgba(16,185,129,0.6)",
-  amberAlpha: "rgba(245,158,11,0.6)",
-  redAlpha: "rgba(239,68,68,0.6)",
-  purpleAlpha: "rgba(168,85,247,0.6)",
-  gridColor: "rgba(26,48,80,0.3)",
-  textColor: "#8899aa",
+  purple: "#7c3aed",
+  blueAlpha: "rgba(21,101,192,0.65)",
+  cyanAlpha: "rgba(8,145,178,0.65)",
+  greenAlpha: "rgba(22,163,74,0.65)",
+  amberAlpha: "rgba(245,158,11,0.65)",
+  redAlpha: "rgba(239,68,68,0.65)",
+  purpleAlpha: "rgba(124,58,237,0.65)",
+  gridColor: "rgba(226,232,240,0.6)",
+  textColor: "#64748b",
 };
 
 export const defaultOptions = {
@@ -41,11 +41,11 @@ export const defaultOptions = {
   plugins: {
     legend: { labels: { color: COLORS.textColor, font: { size: 11 } } },
     tooltip: {
-      backgroundColor: "#132036",
-      borderColor: "#1a3050",
+      backgroundColor: "#ffffff",
+      borderColor: "#e2e8f0",
       borderWidth: 1,
-      titleColor: "#e8edf5",
-      bodyColor: "#8899aa",
+      titleColor: "#1e293b",
+      bodyColor: "#64748b",
       cornerRadius: 8,
       padding: 10,
     },

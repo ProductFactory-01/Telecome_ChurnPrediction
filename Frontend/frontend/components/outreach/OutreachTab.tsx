@@ -33,7 +33,14 @@ export default function OutreachTab() {
 
   return (
     <div className="dashboard-content">
-      <AgentHeader icon="📡" title="Agent 4 — Outreach Automation" subtitle="Multi-channel campaign orchestration with smart scheduling" color="purple" />
+      <AgentHeader
+        number="4"
+        title="Outreach Automation Agent"
+        subtitle="Multi-channel campaign orchestration with smart scheduling"
+        color="purple"
+        statusLabel="Ready"
+        statusType="active"
+      />
 
       <div className="panel-grid panel-grid--4 mb-6">
         <KpiCard label="Campaigns Triggered" value={k.campaigns_triggered} color="purple" />
@@ -42,8 +49,7 @@ export default function OutreachTab() {
         <KpiCard label="Total Contact Cost" value={`$${k.total_contact_cost}`} color="cyan" />
       </div>
 
-      <SectionTitle title="Channel Selection" description="Choose outreach channels" color="purple" />
-
+      <SectionTitle title="Channel Selection" color="purple" />
       <div className="panel-grid panel-grid--5 mb-6">
         {channels.map((c) => (
           <div key={c.key} className={`channel-card ${c.selected ? "channel-card--selected" : ""}`} onClick={() => toggleChannel(c.key)}>
@@ -57,11 +63,7 @@ export default function OutreachTab() {
 
       <SectionTitle title="Message Template" color="cyan" />
       <div className="msg-template mb-6">
-        <textarea
-          className="msg-template__textarea"
-          value={msgTemplate}
-          onChange={(e) => setMsgTemplate(e.target.value)}
-        />
+        <textarea className="msg-template__textarea" value={msgTemplate} onChange={(e) => setMsgTemplate(e.target.value)} />
       </div>
 
       <div style={{ display: "flex", gap: 12, marginBottom: 24 }}>
@@ -82,7 +84,7 @@ export default function OutreachTab() {
         <ChartCard title="Message Timeline" icon="📈">
           <Line data={{
             labels: data.charts.timeline.labels,
-            datasets: [{ label: "Messages Sent", data: data.charts.timeline.messages_sent, borderColor: COLORS.purple, backgroundColor: "rgba(168,85,247,0.1)", tension: 0.3, fill: true }],
+            datasets: [{ label: "Messages Sent", data: data.charts.timeline.messages_sent, borderColor: COLORS.purple, backgroundColor: "rgba(124,58,237,0.1)", tension: 0.3, fill: true }],
           }} options={{ ...defaultOptions, plugins: { ...defaultOptions.plugins, legend: { display: false } } }} />
         </ChartCard>
       </div>
