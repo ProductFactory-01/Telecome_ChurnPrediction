@@ -61,16 +61,6 @@ export default function OutreachTab() {
         ))}
       </div>
 
-      <SectionTitle title="Message Template" color="cyan" />
-      <div className="msg-template mb-6">
-        <textarea className="msg-template__textarea" value={msgTemplate} onChange={(e) => setMsgTemplate(e.target.value)} />
-      </div>
-
-      <div style={{ display: "flex", gap: 12, marginBottom: 24 }}>
-        <button className="btn btn--primary">🚀 Trigger Campaign</button>
-        <button className="btn btn--outline">👁️ Preview</button>
-      </div>
-
       <div className="panel-grid panel-grid--2">
         <ChartCard title="Channel Performance" icon="📊">
           <Bar data={{
