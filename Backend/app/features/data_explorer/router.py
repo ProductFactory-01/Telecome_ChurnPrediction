@@ -148,6 +148,23 @@ def get_eda_data():
             (senior_churn.loc["No", "Yes"] / senior_churn.loc["No"].sum() * 100) if "No" in senior_churn.index else 0,
             (senior_churn.loc["Yes", "Yes"] / senior_churn.loc["Yes"].sum() * 100) if "Yes" in senior_churn.index else 0
         ]
+
+        # Gender and Senior combined churn rates
+        gender_senior_labels = []
+        gender_senior_senior = []
+        gender_senior_non_senior = []
+        valid_gender_df = df[df["Gender"].notna()]
+        for gender in valid_gender_df["Gender"].value_counts().index.tolist():
+            gender_senior_labels.append(gender)
+
+            non_senior_group = valid_gender_df[(valid_gender_df["Gender"] == gender) & (valid_gender_df["Senior Citizen"] == "No")]
+            senior_group = valid_gender_df[(valid_gender_df["Gender"] == gender) & (valid_gender_df["Senior Citizen"] == "Yes")]
+
+            non_senior_rate = 0 if len(non_senior_group) == 0 else (len(non_senior_group[non_senior_group["Churn Label"] == "Yes"]) / len(non_senior_group)) * 100
+            senior_rate = 0 if len(senior_group) == 0 else (len(senior_group[senior_group["Churn Label"] == "Yes"]) / len(senior_group)) * 100
+
+            gender_senior_non_senior.append(round(non_senior_rate, 1))
+            gender_senior_senior.append(round(senior_rate, 1))
         
         # Internet Type Distribution
         int_type_dist = df["Internet Type"].value_counts().fillna("None")
@@ -229,6 +246,11 @@ def get_eda_data():
                 },
                 "satisfaction_distribution": {"scores": scores, "stayed": stayed_sat, "churned": churned_sat},
                 "senior_impact": {"labels": senior_labels, "values": senior_values},
+                "gender_senior_impact": {
+                    "labels": gender_senior_labels,
+                    "non_senior": gender_senior_non_senior,
+                    "senior": gender_senior_senior,
+                },
                 "internet_type_dist": {"labels": int_type_dist.index.tolist(), "values": int_type_dist.tolist()},
             },
             "usage_services": {
@@ -257,13 +279,24 @@ def get_eda_data():
 
         # Convert numpy int/float types to native python for JSON response
         import json
+        import math
+        
         def default_encoder(o):
             if isinstance(o, np.integer): return int(o)
             if isinstance(o, np.floating): return float(o)
             if isinstance(o, np.ndarray): return o.tolist()
             raise TypeError
             
-        return json.loads(json.dumps(result, default=default_encoder))
+        def remove_nan(obj):
+            if isinstance(obj, dict):
+                return {k: remove_nan(v) for k, v in obj.items()}
+            elif isinstance(obj, list):
+                return [remove_nan(v) for v in obj]
+            elif isinstance(obj, float) and math.isnan(obj):
+                return None
+            return obj
+            
+        return remove_nan(json.loads(json.dumps(result, default=default_encoder)))
 
     except Exception as e:
         import traceback

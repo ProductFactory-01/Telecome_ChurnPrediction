@@ -20,15 +20,17 @@ export default function MappingEditor({ csvColumns, initialMapping, targetColumn
   };
 
   return (
-    <div className="mapping-editor mt-4">
-      <div className="text-sm font-bold text-gray-700 mb-2">Review AI Column Mapping</div>
-      <div className="mapping-table-container max-h-80 overflow-y-auto border border-gray-200 rounded-lg">
-        <table className="mapping-table w-full text-left text-sm">
-          <thead className="bg-gray-50 sticky top-0">
+    <div className="mapping-editor">
+      <div className="mapping-editor-title">🎯 Review AI Column Mapping</div>
+      
+      <div className="mapping-table-container">
+        <table className="mapping-table">
+          <thead>
             <tr>
-              <th className="p-3 border-b">CSV Column</th>
-              <th className="p-3 border-b">→</th>
-              <th className="p-3 border-b">Application Field</th>
+              <th>CSV Column</th>
+              <th style={{ width: "40px", textAlign: "center" }}>→</th>
+              <th>Application Field</th>
+              <th style={{ width: "100px", textAlign: "center" }}>Status</th>
             </tr>
           </thead>
           <tbody>
@@ -37,14 +39,12 @@ export default function MappingEditor({ csvColumns, initialMapping, targetColumn
               const isMapped = !!mapped;
 
               return (
-                <tr key={col} className={`hover:bg-gray-50 ${!isMapped ? "bg-red-50/30" : ""}`}>
-                  <td className="p-3 font-medium text-gray-600">{col}</td>
-                  <td className="p-3 text-gray-400">→</td>
-                  <td className="p-3">
+                <tr key={col} className={isMapped ? "" : "unmapped-row"}>
+                  <td style={{ fontWeight: 600 }}>{col}</td>
+                  <td style={{ textAlign: "center", color: "var(--text-muted)", fontSize: "13px" }}>→</td>
+                  <td>
                     <select
-                      className={`mapping-select w-full p-2 border rounded-md text-sm ${
-                        isMapped ? "border-blue-200 bg-white" : "border-red-300 bg-red-50"
-                      }`}
+                      className={`mapping-select ${isMapped ? "" : "mapping-select.unmapped"}`}
                       value={mapped || ""}
                       onChange={(e) => handleSelect(col, e.target.value)}
                     >
@@ -55,10 +55,16 @@ export default function MappingEditor({ csvColumns, initialMapping, targetColumn
                         </option>
                       ))}
                     </select>
-                    {!isMapped && col.toLowerCase().includes("id") && (
-                      <div className="text-[10px] text-red-500 font-semibold mt-1">
-                        ⚠ Recommended to map ID columns
-                      </div>
+                  </td>
+                  <td style={{ textAlign: "center" }}>
+                    {isMapped ? (
+                      <span style={{ display: "inline-block", padding: "4px 10px", background: "rgba(5, 150, 105, 0.1)", color: "var(--accent-green)", borderRadius: "4px", fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.3px" }}>
+                        ✓ Mapped
+                      </span>
+                    ) : (
+                      <span style={{ display: "inline-block", padding: "4px 10px", background: "rgba(220, 38, 38, 0.1)", color: "var(--accent-red)", borderRadius: "4px", fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.3px" }}>
+                        ⚠ Unmapped
+                      </span>
                     )}
                   </td>
                 </tr>
@@ -67,16 +73,30 @@ export default function MappingEditor({ csvColumns, initialMapping, targetColumn
           </tbody>
         </table>
       </div>
-      <div className="mt-3 flex items-center gap-4 text-xs text-gray-500 bg-blue-50 p-3 rounded-md">
-        <div className="flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-blue-500"></span>
-            <span>Mapped</span>
+      
+      <div style={{
+        marginTop: "16px",
+        display: "flex",
+        alignItems: "center",
+        gap: "20px",
+        padding: "12px 14px",
+        background: "var(--accent-blue-light)",
+        borderRadius: "var(--radius-md)",
+        fontSize: "12px",
+        fontWeight: 500,
+        color: "var(--text-secondary)"
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+          <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "var(--accent-green)" }}></span>
+          <span>Mapped</span>
         </div>
-        <div className="flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-red-400"></span>
-            <span>Unmapped/Ignored</span>
+        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+          <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "var(--accent-red)" }}></span>
+          <span>Unmapped/Ignored</span>
         </div>
-        <div className="ml-auto italic">AI mapped {Object.values(mapping).filter(v => !!v).length} of {csvColumns.length} columns</div>
+        <div style={{ marginLeft: "auto", fontStyle: "italic" }}>
+          AI mapped <span style={{ fontWeight: 700, color: "var(--text-primary)" }}>{Object.values(mapping).filter(v => !!v).length}</span> of <span style={{ fontWeight: 700, color: "var(--text-primary)" }}>{csvColumns.length}</span> columns
+        </div>
       </div>
     </div>
   );

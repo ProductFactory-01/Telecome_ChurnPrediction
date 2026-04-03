@@ -99,23 +99,30 @@ export default function UploadWizard() {
 
   return (
     <div className="upload-wizard space-y-6">
-      {/* Wizard Steps indicator */}
-      <div className="flex items-center justify-center gap-4 mb-4">
-        {[0, 1, 2, 3].map((s) => (
-          <div 
-            key={s} 
-            className={`w-3 h-3 rounded-full transition-all ${
-              ["idle", "mapping", "processing", "success"].indexOf(step) >= s 
-                ? "bg-blue-600 scale-125" 
-                : "bg-gray-300"
-            }`}
-          ></div>
-        ))}
+      {/* Wizard Steps Indicator */}
+      <div className="wizard-steps-container">
+        {[0, 1, 2, 3].map((s, idx) => {
+          const isActive = ["idle", "mapping", "processing", "success"].indexOf(step) >= s;
+          const stepLabels = ["Upload", "Mapping", "Processing", "Complete"];
+          return (
+            <div key={s} className="wizard-step-item">
+              <div className={`wizard-step-dot ${isActive ? "active" : ""}`}>
+                {isActive && ["idle", "mapping", "processing", "success"].indexOf(step) > s ? (
+                  <span className="check-icon">✓</span>
+                ) : (
+                  <span>{idx + 1}</span>
+                )}
+              </div>
+              <span className="wizard-step-label">{stepLabels[idx]}</span>
+              {idx < 3 && <div className={`wizard-step-connector ${isActive ? "active" : ""}`} />}
+            </div>
+          );
+        })}
       </div>
 
       {step === "idle" && (
         <div 
-          className={`file-upload ${file ? "border-blue-500 bg-blue-50" : ""}`}
+          className="upload-file-container"
           onDragOver={handleDragOver}
           onDrop={handleDrop}
           onClick={() => fileInputRef.current?.click()}
@@ -127,23 +134,43 @@ export default function UploadWizard() {
             accept=".csv" 
             onChange={handleFileChange} 
           />
-          <div className="file-upload__icon">{file ? "📄" : "📁"}</div>
-          <div className="file-upload__text">
+          <div className="upload-animation">
+            <span className="file-upload-icon">{file ? "📄" : "📁"}</span>
+          </div>
+          
+          <div className="upload-content">
             {file ? (
-              <span><b>{file.name}</b> selected</span>
+              <>
+                <h3 className="upload-title">Ready to Process</h3>
+                <p className="upload-hint">
+                  File: <span className="file-name">{file.name}</span>
+                </p>
+              </>
             ) : (
-              <span><b>Drag & drop CSV files</b> or click to upload additional data sources</span>
+              <>
+                <h3 className="upload-title">Select or Drop CSV File</h3>
+                <p className="upload-hint">
+                  <span className="click-here">Click here</span> or drag & drop your CSV file
+                </p>
+                <p className="upload-hint" style={{ marginTop: "8px", fontSize: "11px" }}>
+                  Supports CRM exports, billing dumps, network logs, and NPS data
+                </p>
+              </>
             )}
           </div>
-          <div className="file-upload__hint">Supports CRM exports, billing dumps, network logs, and NPS data</div>
           
           {file && (
             <button 
-              className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-md text-sm font-bold shadow-lg hover:bg-blue-700 transition"
+              className="button button-primary mt-6"
               onClick={(e) => { e.stopPropagation(); uploadFile(); }}
               disabled={isUploading}
+              style={{
+                padding: "10px 24px",
+                fontSize: "13px",
+                fontWeight: 700,
+              }}
             >
-              {isUploading ? "AI Processing..." : "Process with Agent"}
+              {isUploading ? "⚙️ AI Processing..." : "✨ Process with Agent"}
             </button>
           )}
         </div>
@@ -151,35 +178,49 @@ export default function UploadWizard() {
 
       {step === "mapping" && uploadData && (
         <div className="mapping-view card">
-          <SectionTitle title={`Mapping & Review — ${uploadData.filename}`} color="blue" />
+          <div className="mapping-header">
+            <div className="mapping-title-section">
+              <span className="mapping-icon">🔗</span>
+              <div>
+                <h2 className="mapping-title">Mapping & Review</h2>
+                <p className="mapping-subtitle">{uploadData.filename}</p>
+              </div>
+            </div>
+            <div className="mapping-status">
+              <span className="status-badge">Step 2/3</span>
+            </div>
+          </div>
           
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-4">
             {/* Left: CSV Preview */}
             <div className="preview-container">
-                <div className="text-sm font-bold text-gray-700 mb-2">CSV Preview (First 5 records)</div>
-                <div className="overflow-x-auto border rounded-md max-h-[400px]">
-                    <table className="w-full text-xs text-left border-collapse min-w-[800px]">
-                        <thead className="sticky top-0 bg-gray-50 z-10 border-b">
+                <div className="preview-header">
+                  <span className="preview-title">📊 CSV Preview (First 5 records)</span>
+                  <span className="preview-badge">Read-Only</span>
+                </div>
+                <div className="preview-table-wrapper">
+                    <table>
+                        <thead>
                             <tr>
                                 {uploadData.columns.map((col: string) => (
-                                    <th key={col} className="p-2 truncate font-semibold border-r bg-gray-50">{col}</th>
+                                    <th key={col}>{col}</th>
                                 ))}
                             </tr>
                         </thead>
                         <tbody>
                             {uploadData.preview.map((row: any, i: number) => (
                                 <React.Fragment key={i}>
-                                    <tr className={`border-b ${!row.is_valid ? 'bg-red-50' : row.is_duplicate ? "bg-amber-50" : ""}`}>
+                                    <tr className={!row.is_valid ? 'invalid-row' : row.is_duplicate ? "duplicate-row" : ""}>
                                         {uploadData.columns.map((col: string, j: number) => (
-                                            <td key={j} className="p-2 border-r whitespace-nowrap">
-                                                {j === 0 && !row.is_valid && <span className="text-red-500 mr-1">⚠</span>}
-                                                {row.row_data[col] || <span className="text-gray-300 italic">null</span>}
+                                            <td key={j}>
+                                                {j === 0 && !row.is_valid && <span style={{ color: "var(--accent-red)", marginRight: "4px", fontWeight: 700 }}>⚠</span>}
+                                                {row.row_data[col] || <span style={{ color: "var(--text-muted)", fontStyle: "italic" }}>null</span>}
                                             </td>
                                         ))}
                                     </tr>
                                     {!row.is_valid && (
-                                        <tr className="bg-red-100/50">
-                                            <td colSpan={uploadData.columns.length} className="p-2 text-red-700 text-[10px] font-medium italic border-b">
+                                        <tr style={{ background: "rgba(220, 38, 38, 0.05)" }}>
+                                            <td colSpan={uploadData.columns.length} style={{ padding: "8px 12px", color: "var(--accent-red)", fontSize: "11px", fontWeight: 600, fontStyle: "italic" }}>
                                                 Unable to store: {row.rejection_reason}
                                             </td>
                                         </tr>
@@ -189,16 +230,20 @@ export default function UploadWizard() {
                         </tbody>
                     </table>
                 </div>
-                {uploadData.preview.some((r: any) => !r.is_valid) && (
-                    <div className="mt-2 p-2 rounded text-xs bg-red-100 text-red-800">
-                        ⚠ Some rows are missing mandatory fields for churn prediction and will be <b>rejected</b> during ingestion.
+                <div className="validation-messages">
+                  {uploadData.preview.some((r: any) => !r.is_valid) && (
+                    <div className="alert alert--warning">
+                      <span className="alert-icon">⚠</span>
+                      <div className="alert-text">Some rows are missing mandatory fields for churn prediction and will be <strong>rejected</strong> during ingestion.</div>
                     </div>
-                )}
-                {uploadData.validation_logs.map((log: any, i: number) => (
-                    <div key={i} className={`mt-2 p-2 rounded text-xs ${log.tag === 'warn' ? 'bg-amber-100 text-amber-800' : 'bg-green-100 text-green-800'}`}>
-                        {log.tag === 'warn' ? '⚠ ' : '✓ '} {log.message}
+                  )}
+                  {uploadData.validation_logs.map((log: any, i: number) => (
+                    <div key={i} className={`alert ${log.tag === 'warn' ? 'alert--warning' : 'alert--success'}`}>
+                      <span className="alert-icon">{log.tag === 'warn' ? '⚠' : '✓'}</span>
+                      <div className="alert-text">{log.message}</div>
                     </div>
-                ))}
+                  ))}
+                </div>
             </div>
 
             {/* Right: Mapping Editor */}
@@ -210,46 +255,72 @@ export default function UploadWizard() {
             />
           </div>
 
-          <div className="flex justify-end gap-3 mt-6 pt-4 border-t">
-            <button className="px-4 py-2 text-sm text-gray-500 hover:bg-gray-100 rounded-md" onClick={reset}>Cancel</button>
-            <button className="px-6 py-2 text-sm bg-blue-600 text-white rounded-md font-bold shadow-lg" onClick={ingestData}>Confirm & Ingest</button>
+          <div className="mapping-actions">
+            <button className="button button-secondary" onClick={reset}>Cancel</button>
+            <button className="button button-primary" onClick={ingestData}>✨ Confirm & Ingest</button>
           </div>
         </div>
       )}
 
       {step === "processing" && (
-        <div className="processing-view card text-center py-12">
-            <div className="w-12 h-12 border-4 border-blue-600/20 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
-            <div className="text-lg font-bold text-gray-800">Agent Ingestion Protocol Initialized</div>
-            <div className="text-sm text-gray-500 mt-2">Updating demographics, services, and running churn predictions...</div>
-            <div className="max-w-xl mx-auto mt-8">
-                <AgentLog entries={[{time: "SYS", tag: "info", message: "Synchronizing database shards..."}, {time: "SYS", tag: "info", message: "Initializing LLM reasoning engine..."}]} />
+        <div className="card" style={{ background: "linear-gradient(135deg, rgba(0, 102, 204, 0.02), rgba(5, 150, 105, 0.02))" }}>
+          <div className="processing-view">
+            <div className="processing-content">
+              <div className="processing-spinner">
+                <div className="spinner-circle"></div>
+              </div>
+              <h2 className="processing-title">⚙️ Processing Data</h2>
+              <p className="processing-subtitle">Agent Ingestion Protocol Initialized</p>
+              <p style={{ fontSize: "12px", color: "var(--text-secondary)", marginBottom: "24px" }}>
+                Updating demographics, services, and running churn predictions...
+              </p>
+              
+              <div className="processing-log" style={{ maxWidth: "600px" }}>
+                <AgentLog entries={[
+                  {time: "SYS", tag: "info", message: "Synchronizing database shards..."}, 
+                  {time: "SYS", tag: "info", message: "Initializing LLM reasoning engine..."},
+                  {time: "SYS", tag: "info", message: "Mapping customer demographics..."}
+                ]} />
+              </div>
             </div>
+          </div>
         </div>
       )}
 
       {step === "success" && ingestResult && (
-        <div className="success-view card bg-white">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-12 h-12 bg-green-100 text-green-600 rounded-full flex items-center justify-center text-2xl font-bold">✓</div>
-            <div>
-                <div className="text-xl font-bold text-gray-800">Data Agent Protocol Complete</div>
-                <div className="text-sm text-gray-500">Successfully integrated {ingestResult.summary.inserted} subscribers into intelligence view</div>
+        <div className="card" style={{ background: "linear-gradient(135deg, rgba(5, 150, 105, 0.03), rgba(16, 185, 129, 0.03))" }}>
+          <div className="success-header">
+            <div className="success-icon-container">
+              <div className="success-icon">✓</div>
+            </div>
+            <div className="success-text">
+              <h2 className="success-title">Data Agent Protocol Complete</h2>
+              <p className="success-subtitle">Successfully integrated {ingestResult.summary.inserted} subscribers into intelligence view</p>
             </div>
           </div>
 
-          <div className="panel-grid panel-grid--4 mb-6">
+          <div className="panel-grid panel-grid--4 mb-6" style={{ marginTop: "28px" }}>
             <KpiCard label="Records Unified" value={ingestResult.summary.inserted} color="blue" />
             <KpiCard label="High Risk Flagged" value={ingestResult.summary.risk_breakdown.high} color="red" />
             <KpiCard label="Rejected (Incomplete)" value={ingestResult.summary.rejected} color="amber" />
             <KpiCard label="Low Risk/Stable" value={ingestResult.summary.risk_breakdown.low} color="green" />
           </div>
 
-          <AgentLog entries={ingestResult.agent_logs} />
+          <div className="success-logs">
+            <AgentLog entries={ingestResult.agent_logs} />
+          </div>
 
-          <div className="flex justify-center mt-8">
-            <button className="px-8 py-3 bg-gray-800 text-white rounded-lg font-bold hover:bg-gray-900 transition shadow-xl" onClick={reset}>
-               Process Another Dataset
+          <div className="success-actions">
+            <button 
+              className="button button-primary"
+              onClick={reset}
+              style={{
+                padding: "12px 28px",
+                fontSize: "13px",
+                fontWeight: 700,
+              }}
+            >
+              🔄 Process Another Dataset
             </button>
           </div>
         </div>

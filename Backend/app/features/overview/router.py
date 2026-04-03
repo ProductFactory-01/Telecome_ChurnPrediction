@@ -4,8 +4,26 @@ import json
 import numpy as np
 from app.database import get_db_engine
 from .data import PIPELINE_STEPS
+from app.db.mongodb import db as mongo_db
 
 router = APIRouter()
+
+def get_retention_offers_sent():
+    """Calculate total customer_count from MongoDB where notify_user is True."""
+    if mongo_db is None:
+        return 0
+    try:
+        coll = mongo_db["offer_campaigns"]
+        # Sum of customer_count field where notify_user is True
+        pipeline = [
+            {"$match": {"notify_user": True}},
+            {"$group": {"_id": None, "total": {"$sum": "$customer_count"}}}
+        ]
+        result = list(coll.aggregate(pipeline))
+        return result[0]["total"] if result else 0
+    except Exception as e:
+        print(f"MongoDB Error in get_retention_offers_sent: {e}")
+        return 0
 
 @router.get("/overview")
 def get_overview():
@@ -75,8 +93,8 @@ def get_overview():
             "current_churn_rate": churn_rate,
             "target_churn_rate": 19.9,
             "high_risk_flagged": high_risk_flagged,
-            "retention_offers_sent": 0,
-            "subscribers_saved": 0,
+            "retention_offers_sent": get_retention_offers_sent(),
+            "subscribers_saved": int(get_retention_offers_sent() * 0.4), # Placeholder: 40% conversion
             "avg_cltv": avg_cltv,
         }
 
