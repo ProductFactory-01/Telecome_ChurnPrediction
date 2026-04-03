@@ -85,20 +85,44 @@ export default function OfferEngineTab() {
 
       const rows = resp.data.offers || [];
       setMatchedCustomers(rows);
-      setStatusMsg(`Found ${rows.length} customers for the selected criteria.`);
       
-      // After matching, get recommendations
-      await fetchRecommendations(rows);
+      if (rows.length > 0) {
+        setStatusMsg(`Matched ${rows.length} customers. Generating AI-suggested offers and rationales...`);
+        await generatePerCustomerOffers(rows);
+      } else {
+        setStatusMsg("No customers matched for the selected criteria.");
+        setIsLoading(false);
+      }
     } catch (e: any) {
       setFetchError(e.response?.data?.detail || "Customer matching failed.");
       setStatusMsg("Matching failed. Please try again.");
-    } finally {
       setIsLoading(false);
     }
   };
 
+  const generatePerCustomerOffers = async (rows: any[]) => {
+    try {
+      const resp = await api.post("/offer-engine/generate-offers", {
+        customers: rows,
+        selected_main_category: mainCat,
+        selected_sub_category: subCat,
+        selected_risk_level: riskLevel,
+      });
+
+      const enrichedRows = resp.data.offers || [];
+      setMatchedCustomers(enrichedRows);
+      
+      // After per-customer, get cohort recommendations
+      await fetchRecommendations(enrichedRows);
+    } catch (e: any) {
+      console.error("Per-customer generation failed", e);
+      // Continue to recommendations even if individual generation fails
+      await fetchRecommendations(rows);
+    }
+  };
+
   const fetchRecommendations = async (rows: any[]) => {
-    setStatusMsg("Generating 3 cohort-level offer recommendations through AI Agent...");
+    setStatusMsg("Analyzing cohort to generate 3 strategic retention plan recommendations...");
     try {
       const resp = await api.post("/offer-engine/recommendations", {
         customers: rows,
@@ -112,16 +136,18 @@ export default function OfferEngineTab() {
       setRecommendations(recs.sort((a: any, b: any) => 
         (Number(b.projected_reduction_pct) || 0) - (Number(a.projected_reduction_pct) || 0)
       ));
-      setStatusMsg(`Generated ${recs.length} plan recommendations. Select one to enable final Generate Offer.`);
+      setStatusMsg(`Success! Generated ${recs.length} plan recommendations. Select a strategy to finalize the campaign.`);
     } catch (e: any) {
       setFetchError(e.response?.data?.detail || "Recommendation fetch failed.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const saveOffer = async () => {
     if (!selectedRec) return;
     setIsSaving(true);
-    setStatusMsg("Saving selected offer cohort to database...");
+    setStatusMsg("Saving finalized offer cohort and campaign strategy...");
     try {
       const resp = await api.post("/offer-engine/save-offer", {
         customers: matchedCustomers,
@@ -130,9 +156,9 @@ export default function OfferEngineTab() {
         selected_risk_level: riskLevel,
         selected_recommendation: selectedRec,
       });
-      setStatusMsg(`Saved ${resp.data.customer_count || 0} customers into document ${resp.data.document_name || "N/A"}.`);
+      setStatusMsg(`Cohort successfully persisted! Campaign: ${resp.data.document_name || "N/A"}.`);
     } catch (e: any) {
-      setStatusMsg(`Offer save failed: ${e.response?.data?.detail || "Error"}`);
+      setStatusMsg(`Campaign save failed: ${e.response?.data?.detail || "Error"}`);
     } finally {
       setIsSaving(false);
     }

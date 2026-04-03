@@ -22,6 +22,9 @@ interface Customer {
   main_category: string;
   sub_category: string;
   churn_reason: string;
+  planned_offer?: string;
+  rationale?: string;
+  [key: string]: any;
 }
 
 interface OfferCohortTableProps {
@@ -75,13 +78,15 @@ export default function OfferCohortTable({ customers }: OfferCohortTableProps) {
               <th>Main Category</th>
               <th>Sub Category</th>
               <th>Churn Reason</th>
+              <th>Planned Offer</th>
+              <th>Rationale</th>
             </tr>
           </thead>
           <tbody>
             {pageRows.length === 0 ? (
               <tr>
                 <td
-                  colSpan={20}
+                  colSpan={22}
                   style={{ textAlign: "center", padding: "40px", color: "#64748b" }}
                 >
                   No customers matched for the current selection.
@@ -90,26 +95,28 @@ export default function OfferCohortTable({ customers }: OfferCohortTableProps) {
             ) : (
               pageRows.map((c, i) => (
                 <tr key={`${c.customer_id}-${i}`}>
-                  <td>{c.customer_id}</td>
-                  <td>{c.country}</td>
-                  <td>{c.state}</td>
-                  <td>{c.city}</td>
-                  <td>{c.zip_code}</td>
-                  <td>{c.gender}</td>
-                  <td>{c.senior_citizen}</td>
-                  <td>{c.partner}</td>
-                  <td>{c.dependents}</td>
-                  <td>{c.tenure_months}</td>
-                  <td>{c.internet_service}</td>
-                  <td>{c.contract}</td>
-                  <td>{c.payment_method}</td>
-                  <td>{c.monthly_charges}</td>
-                  <td>{c.total_charges}</td>
-                  <td>{c.churn_label}</td>
-                  <td>{c.churn_score}</td>
-                  <td>{c.main_category}</td>
-                  <td>{c.sub_category}</td>
-                  <td>{c.churn_reason}</td>
+                  <td>{c.customer_id || c["Customer ID"] || "—"}</td>
+                  <td>{c.country || c["Country"] || "—"}</td>
+                  <td>{c.state || c["State"] || "—"}</td>
+                  <td>{c.city || c["City"] || "—"}</td>
+                  <td>{c.zip_code || c["Zip Code"] || "—"}</td>
+                  <td>{c.gender || c["Gender"] || "—"}</td>
+                  <td>{c.senior_citizen || c["Senior Citizen"] || "—"}</td>
+                  <td>{c.partner || c["Partner"] || "—"}</td>
+                  <td>{c.dependents || c["Dependents"] || "—"}</td>
+                  <td>{c.tenure_months || c["Tenure Months"] || "—"}</td>
+                  <td>{c.internet_service || c["Internet Service"] || "—"}</td>
+                  <td>{c.contract || c["Contract"] || "—"}</td>
+                  <td>{c.payment_method || c["Payment Method"] || "—"}</td>
+                  <td>{c.monthly_charges || c["Monthly Charges"] || "—"}</td>
+                  <td>{c.total_charges || c["Total Charges"] || "—"}</td>
+                  <td>{c.churn_label || c["Churn Label"] || "—"}</td>
+                  <td>{c.churn_score || c["Churn Score"] || "—"}</td>
+                  <td>{c.main_category || c["Main Category"] || "—"}</td>
+                  <td>{c.sub_category || c["Sub Category"] || "—"}</td>
+                  <td>{c.churn_reason || c["Churn Reason"] || "—"}</td>
+                  <td style={{ fontWeight: "600", color: "#10b981" }}>{c.planned_offer || "—"}</td>
+                  <td style={{ minWidth: "200px", fontSize: "12px", color: "#6366f1" }}>{c.rationale || "—"}</td>
                 </tr>
               ))
             )}
