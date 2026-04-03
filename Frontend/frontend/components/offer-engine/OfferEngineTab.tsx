@@ -257,7 +257,7 @@ export default function OfferEngineTab() {
             onClick={saveOffer}
             disabled={isSaving}
           >
-            {isSaving ? "Saving..." : "Save Offer Cohort"}
+            {isSaving ? "Saving..." : "Save Offer For Customers"}
           </button>
         </div>
       )}
