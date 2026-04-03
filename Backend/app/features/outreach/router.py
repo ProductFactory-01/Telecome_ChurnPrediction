@@ -6,9 +6,9 @@ from datetime import datetime, timezone
 router = APIRouter()
 
 OUTREACH_CHANNELS = [
-    {"key": "sms", "icon": "💬", "title": "SMS", "accept_rate": 18, "cost_per_contact": 0.80, "selected": True},
+    {"key": "sms", "icon": "💬", "title": "SMS", "accept_rate": 18, "cost_per_contact": 0.80, "selected": False},
     {"key": "email", "icon": "📧", "title": "Email", "accept_rate": 9, "cost_per_contact": 0.25, "selected": False},
-    {"key": "push", "icon": "📱", "title": "App Push", "accept_rate": 28, "cost_per_contact": 0.05, "selected": True},
+    {"key": "push", "icon": "📱", "title": "App Push", "accept_rate": 28, "cost_per_contact": 0.05, "selected": False},
     {"key": "agent", "icon": "🧑‍💼", "title": "Live Agent", "accept_rate": 25, "cost_per_contact": 18.00, "selected": False},
     {"key": "inapp", "icon": "📲", "title": "In-App Banner", "accept_rate": 15, "cost_per_contact": 0.02, "selected": False},
 ]
