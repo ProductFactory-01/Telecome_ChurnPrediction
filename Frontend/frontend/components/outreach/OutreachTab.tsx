@@ -58,6 +58,13 @@ export default function OutreachTab() {
       return;
     }
 
+    // Check for non-email channels
+    const nonEmailChannels = selectedKeys.filter(k => k !== 'email');
+    if (nonEmailChannels.length > 0) {
+      alert("Multichannel support (SMS, WhatsApp, Telegram, Live Agent) is coming soon! Currently, only Email is available for execution.");
+      return;
+    }
+
     setIsTriggering(true);
 
     // Make Webhook Call for actual execution
@@ -128,7 +135,7 @@ export default function OutreachTab() {
         statusType="active"
       />
 
-      <div className="panel-grid panel-grid--4 mb-6">
+      <div className="panel-grid panel-grid--3 mb-6">
         <KpiCard label="Campaigns Triggered" value={k.campaigns_triggered} color="purple" />
         <KpiCard label="Messages Sent" value={k.messages_sent} color="blue" />
         <KpiCard label="Total Contact Cost" value={`$${k.total_contact_cost}`} color="cyan" />
@@ -252,7 +259,6 @@ export default function OutreachTab() {
           <div key={c.key} className={`channel-card ${c.selected ? "channel-card--selected" : ""}`} onClick={() => toggleChannel(c.key)}>
             <div className="channel-card__icon">{c.icon}</div>
             <div className="channel-card__title">{c.title}</div>
-            <div className="channel-card__rate">{c.accept_rate}% conversion</div>
             <div className="channel-card__cost">${c.cost_per_contact.toFixed(2)}/contact</div>
           </div>
         ))}
@@ -273,16 +279,67 @@ export default function OutreachTab() {
           <Bar data={{
             labels: data.charts.channel_performance.labels,
             datasets: [
-              { label: "Accept Rate %", data: data.charts.channel_performance.accept_rate, backgroundColor: COLORS.greenAlpha, borderColor: COLORS.green, borderWidth: 1, borderRadius: 4 },
-              { label: "Cost Efficiency", data: data.charts.channel_performance.cost_efficiency, backgroundColor: COLORS.blueAlpha, borderColor: COLORS.blue, borderWidth: 1, borderRadius: 4 },
+              { 
+                label: "Customer Count", 
+                data: data.charts.channel_performance.counts, 
+                backgroundColor: [
+                  "rgba(59, 130, 246, 0.7)",  // SMS (Blue)
+                  "rgba(16, 185, 129, 0.7)",  // Email (Green)
+                  "rgba(245, 158, 11, 0.7)",  // Whatsapp (Orange)
+                  "rgba(6, 182, 212, 0.7)",   // Live Agent (Cyan)
+                  "rgba(124, 58, 237, 0.7)"   // Telegram (Purple)
+                ], 
+                borderColor: [
+                  "#3b82f6", 
+                  "#10b981", 
+                  "#f59e0b", 
+                  "#06b6d4", 
+                  "#7c3aed"
+                ], 
+                borderWidth: 1, 
+                borderRadius: 4 
+              },
             ],
-          }} options={defaultOptions} />
+          }} options={{
+            ...defaultOptions,
+            plugins: {
+              ...defaultOptions.plugins,
+              legend: {
+                display: false
+              }
+            },
+            scales: {
+              ...defaultOptions.scales,
+              y: {
+                ...defaultOptions.scales?.y,
+                ticks: {
+                  stepSize: 1,
+                  callback: (value) => value
+                },
+                beginAtZero: true
+              }
+            }
+          }} />
         </ChartCard>
-        <ChartCard title="Message Timeline" icon="📈">
+        <ChartCard title="Daily Outreach Timeline" icon="📉">
           <Line data={{
             labels: data.charts.timeline.labels,
-            datasets: [{ label: "Messages Sent", data: data.charts.timeline.messages_sent, borderColor: COLORS.purple, backgroundColor: "rgba(124,58,237,0.1)", tension: 0.3, fill: true }],
-          }} options={{ ...defaultOptions, plugins: { ...defaultOptions.plugins, legend: { display: false } } }} />
+            datasets: [{ label: "Customers Notified", data: data.charts.timeline.messages_sent, borderColor: COLORS.purple, backgroundColor: "rgba(124,58,237,0.1)", tension: 0.3, fill: true }],
+          }} options={{ 
+            ...defaultOptions, 
+            plugins: { ...defaultOptions.plugins, legend: { display: false } },
+            scales: {
+              ...defaultOptions.scales,
+              y: {
+                ...defaultOptions.scales?.y,
+                ticks: {
+                  stepSize: 1,
+                  callback: (value) => value
+                },
+                beginAtZero: true
+              }
+            }
+          }} />
         </ChartCard>
       </div>
     </div>
