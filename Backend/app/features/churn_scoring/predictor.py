@@ -1,15 +1,18 @@
-"""Churn prediction model loader and predictor logic."""
 import os
+import json
 import numpy as np
 import joblib
+from langchain_core.prompts import ChatPromptTemplate
 
 try:
     import h3
 except ImportError:
     h3 = None
 
-from service.llm import get_groq_llm
+from service.llm import get_groq_llm, try_groq_json
 from .schemas import CustomerInput
+
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
 # Resolve model path relative to this file
 _BACKEND_ROOT = os.path.join(os.path.dirname(__file__), "..", "..", "..")
@@ -90,23 +93,40 @@ def get_llm_churn_reason(prob, data: CustomerInput):
         },
         "mapping_rules": mapping_table,
         "task": (
-            "Analyze the churn risk using the exact customer profile parameters provided. "
-            "You MUST assign a 'main_category' and 'sub_category' STRICTLY from the mapping table. "
             "For 'reason', you MUST generate a highly specific, unique 1-sentence explanation that directly cites the worst-performing factors in the profile (e.g., mention their exact tenure, high monthly charge, lack of tech support, or specific contract type). Do NOT use generic templates. "
-            "Return JSON only: {\"main_category\": \"...\", \"sub_category\": \"...\", \"reason\": \"...\"}."
+            "Return JSON only: {{\"main_category\": \"...\", \"sub_category\": \"...\", \"reason\": \"...\"}}."
         )
     }
 
-    parsed = try_groq_json(
-        "You are an expert Telecom Data Scientist AI. You must provide distinct, hyper-specific reasoning based on the variables provided. Output strictly valid JSON.",
-        prompt
-    )
-    
-    if parsed and isinstance(parsed, dict) and "main_category" in parsed:
-        print(f"✓ AI reasoning successfully generated: {parsed['main_category']}")
-        return parsed
+    try:
+        llm = get_groq_llm()
+        system_prompt = "You are an expert Telecom Data Scientist AI. You must provide distinct, hyper-specific reasoning based on the variables provided. Output strictly valid JSON."
         
-    print("⚠ Groq API failed or returned invalid JSON. Falling back to static mapping.")
+        prompt_template = ChatPromptTemplate.from_messages([
+            ("system", system_prompt),
+            ("user", "{user_data}")
+        ])
+        
+        chain = prompt_template | llm
+        response = chain.invoke({"user_data": json.dumps(prompt)})
+        content = response.content.strip()
+        
+        # Extract JSON from markdown
+        if "```json" in content:
+            content = content.split("```json")[1].split("```")[0].strip()
+        elif "```" in content:
+            content = content.split("```")[1].strip()
+            
+        parsed = json.loads(content)
+        
+        if parsed and isinstance(parsed, dict) and "main_category" in parsed:
+            print(f"✓ AI reasoning successfully generated: {parsed['main_category']}")
+            return parsed
+            
+    except Exception as e:
+        print(f"⚠ AI reasoning generation failed: {e}")
+        
+    print("⚠ Falling back to static mapping logic.")
     return get_fallback_reason(prob, data)
 
 
@@ -146,9 +166,15 @@ def predict_churn(customer: CustomerInput) -> dict:
     ]
 
     churn_prob = float(model.predict_proba(np.array(features).reshape(1, -1))[0][1])
+    is_churn = 1 if churn_prob > 0.5 else 0
+    
+    churn_reason_data = {"main_category": None, "sub_category": None, "reason": None}
+    if is_churn:
+        churn_reason_data = get_llm_churn_reason(churn_prob, customer)
+
     return {
         "churn_probability": round(churn_prob, 4),
-        "churn_prediction": 1 if churn_prob > 0.5 else 0,
+        "churn_prediction": is_churn,
         "risk_level": "High" if churn_prob > 0.7 else "Medium" if churn_prob > 0.4 else "Low",
-        "churn_reason": get_llm_churn_reason(churn_prob, customer),
+        "churn_reason": churn_reason_data,
     }

@@ -216,8 +216,7 @@ async def ingest_csv(payload: IngestRequest):
             # We'll need to fetch the risk levels for the newly predicted ones
             results_df = pd.read_sql(f"SELECT \"Churn Score\" FROM status WHERE \"Customer ID\" IN ({', '.join([f'\'{cid}\'' for cid in new_ids])})", engine)
             for score in results_df["Churn Score"].fillna(0):
-                if score > 70: prediction_summary["high"] += 1
-                elif score > 40: prediction_summary["medium"] += 1
+                if score >= 50: prediction_summary["high"] += 1
                 else: prediction_summary["low"] += 1
                 
             agent_logs.append({"time": datetime.datetime.now().strftime("%H:%M:%S"), "tag": "ok", "message": f"Churn scoring complete — {len(new_ids)} subscriber(s) processed."})

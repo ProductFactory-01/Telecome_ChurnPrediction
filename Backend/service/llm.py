@@ -1,6 +1,8 @@
 import os
+import json
 from dotenv import load_dotenv
 from langchain_groq import ChatGroq
+from langchain_core.prompts import ChatPromptTemplate
 
 
 # -------------------------------------------------
@@ -24,5 +26,32 @@ def get_groq_llm():
         temperature=0.2,
     )
     return llm
+
+
+def try_groq_json(system_prompt: str, user_data: dict):
+    """
+    Attempts to get a JSON response from Groq.
+    """
+    try:
+        llm = get_groq_llm()
+        prompt = ChatPromptTemplate.from_messages([
+            ("system", system_prompt),
+            ("user", json.dumps(user_data))
+        ])
+        
+        chain = prompt | llm
+        response = chain.invoke({})
+        content = response.content.strip()
+        
+        # Extract JSON from markdown if necessary
+        if "```json" in content:
+            content = content.split("```json")[1].split("```")[0].strip()
+        elif "```" in content:
+            content = content.split("```")[1].strip()
+            
+        return json.loads(content)
+    except Exception as e:
+        print(f"Error in Groq JSON generation: {e}")
+        return None
 
 
