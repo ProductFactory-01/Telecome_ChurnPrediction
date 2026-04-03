@@ -1,15 +1,20 @@
 "use client";
-import { Bar } from "react-chartjs-2";
+import { Bar, Line } from "react-chartjs-2";
 import { COLORS, defaultOptions } from "../../lib/chartSetup";
 import styles from "./OfferEngine.module.css";
 
-export default function OfferCharts() {
+interface ChartData {
+  effectiveness: { label: string; value: number }[];
+  timeline: { date: string; count: number }[];
+}
+
+export default function OfferCharts({ data }: { data?: ChartData }) {
   const effectivenessData = {
-    labels: ["Discount", "Upgrade", "Loyalty Pts", "Gamification", "Bundle"],
+    labels: data?.effectiveness?.map(item => item.label) || ["Discount", "Upgrade", "Loyalty Pts", "Gamification", "Bundle"],
     datasets: [
       {
-        label: "Acceptance %",
-        data: [18, 14, 16, 22, 12],
+        label: "Offer Count",
+        data: data?.effectiveness?.map(item => item.value) || [18, 14, 16, 22, 12],
         backgroundColor: [
           COLORS.green,
           COLORS.blue,
@@ -22,20 +27,17 @@ export default function OfferCharts() {
     ],
   };
 
-  const riskAcceptanceData = {
-    labels: ["Level 5", "Level 4", "Level 3", "Level 2", "Level 1"],
+  const timelineData = {
+    labels: data?.timeline?.map(item => item.date) || ["Day 1", "Day 2", "Day 3", "Day 4", "Day 5"],
     datasets: [
       {
-        label: "Generic",
-        data: [5, 7, 9, 11, 13],
-        backgroundColor: "rgba(239, 68, 68, 0.46)", // COLORS.redAlpha-ish
-        borderRadius: 4,
-      },
-      {
-        label: "AI Personalised",
-        data: [10, 14, 19, 24, 29],
-        backgroundColor: COLORS.green,
-        borderRadius: 4,
+        label: "Customers Reached",
+        data: data?.timeline?.map(item => item.count) || [10, 14, 19, 24, 29],
+        backgroundColor: COLORS.greenAlpha || "rgba(75, 192, 192, 0.2)",
+        borderColor: COLORS.green,
+        borderWidth: 2,
+        fill: true,
+        tension: 0.4,
       },
     ],
   };
@@ -58,7 +60,7 @@ export default function OfferCharts() {
                 y: {
                   ...defaultOptions.scales?.y,
                   beginAtZero: true,
-                  title: { display: true, text: "Acceptance Rate %" },
+                  title: { display: true, text: "Count of Offers" },
                 },
               },
             }}
@@ -67,10 +69,10 @@ export default function OfferCharts() {
       </div>
 
       <div className={styles.chartCard}>
-        <h3>Acceptance Rate by Churn Risk Level</h3>
+        <h3>Offer Generation Timeline</h3>
         <div className={styles.chartWrap}>
-          <Bar
-            data={riskAcceptanceData}
+          <Line
+            data={timelineData}
             options={{
               ...defaultOptions,
               plugins: {
@@ -82,7 +84,7 @@ export default function OfferCharts() {
                 y: {
                   ...defaultOptions.scales?.y,
                   beginAtZero: true,
-                  title: { display: true, text: "Acceptance Rate %" },
+                  title: { display: true, text: "Customers Bound" },
                 },
               },
             }}

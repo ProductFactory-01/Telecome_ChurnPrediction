@@ -173,14 +173,72 @@ def save_offer_cohort_document(payload: SaveOfferPlanRequest):
 
 @router.get("/offer-engine")
 def get_offer_engine_data():
-    return {
-        "taxonomy": TAXONOMY,
-        "risk_levels": RISK_LEVELS,
-        "charts": {
-            "effectiveness": OFFER_EFFECTIVENESS,
-            "acceptance_by_risk": ACCEPTANCE_BY_RISK,
-        },
-    }
+    if mongo_db is None:
+        return {
+            "kpis": {"offers_generated": 0, "total_customers": 0},
+            "charts": {"effectiveness": [], "timeline": []},
+            "taxonomy": TAXONOMY,
+            "risk_levels": RISK_LEVELS
+        }
+    
+    try:
+        coll = mongo_db["offer_campaigns"]
+        all_campaigns = list(coll.find({}, {"recommendation": 1, "customer_count": 1, "created_at": 1}))
+        
+        # Calculate KPIs
+        offers_generated = len(all_campaigns)
+        total_customers = sum(c.get("customer_count", 0) for c in all_campaigns)
+        
+        # Process Offer Type Effectiveness (Title counts)
+        # Ensure all required labels are present even with 0 counts
+        required_labels = ["Discount", "Custom Bundle", "Loyalty Points", "Gamification", "Plan Upgrade"]
+        effectiveness_map = {label: 0 for label in required_labels}
+        
+        for c in all_campaigns:
+            title = c.get("recommendation", {}).get("title", "Unknown")
+            if title in effectiveness_map:
+                effectiveness_map[title] += 1
+            else:
+                # Still track unknown titles if any exist in DB
+                effectiveness_map[title] = effectiveness_map.get(title, 0) + 1
+        
+        effectiveness_data = [
+            {"label": k, "value": v} for k, v in effectiveness_map.items()
+        ]
+        
+        # Process Timeline (By Date)
+        timeline_map = {}
+        for c in all_campaigns:
+            dt = c.get("created_at")
+            if dt:
+                # Format to YYYY-MM-DD
+                date_key = dt.strftime("%Y-%m-%d")
+                timeline_map[date_key] = timeline_map.get(date_key, 0) + c.get("customer_count", 0)
+        
+        timeline_data = sorted([
+            {"date": k, "count": v} for k, v in timeline_map.items()
+        ], key=lambda x: x["date"])
+
+        return {
+            "taxonomy": TAXONOMY,
+            "risk_levels": RISK_LEVELS,
+            "kpis": {
+                "offers_generated": offers_generated,
+                "total_customers": total_customers
+            },
+            "charts": {
+                "effectiveness": effectiveness_data,
+                "timeline": timeline_data
+            },
+        }
+    except Exception as e:
+        print(f"Error fetching offer engine summary: {e}")
+        return {
+            "taxonomy": TAXONOMY,
+            "risk_levels": RISK_LEVELS,
+            "kpis": {"offers_generated": 0, "total_customers": 0},
+            "charts": {"effectiveness": [], "timeline": []},
+        }
 
 @router.get("/offer-engine/customers")
 async def get_offer_engine_customers(limit: int = Query(default=500, ge=1, le=5000)):

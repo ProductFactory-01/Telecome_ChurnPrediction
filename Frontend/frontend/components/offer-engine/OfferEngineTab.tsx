@@ -14,6 +14,7 @@ export default function OfferEngineTab() {
   const [allCustomers, setAllCustomers] = useState<any[]>([]);
   const [matchedCustomers, setMatchedCustomers] = useState<any[]>([]);
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
+  const [summaryData, setSummaryData] = useState<any>(null);
   
   const [mainCat, setMainCat] = useState(TAXONOMY[0].main_category);
   const [subCat, setSubCat] = useState(TAXONOMY[0].sub_drivers[0]);
@@ -54,12 +55,15 @@ export default function OfferEngineTab() {
 
   const loadInitialData = useCallback(async () => {
     try {
-      const resp = await api.get("/offer-engine/customers");
-      setAllCustomers(resp.data || []);
-      // If we have customers, we could trigger a match automatically
+      const [custResp, summaryResp] = await Promise.all([
+        api.get("/offer-engine/customers"),
+        api.get("/offer-engine")
+      ]);
+      setAllCustomers(custResp.data || []);
+      setSummaryData(summaryResp.data || null);
     } catch (e) {
-      console.error("Failed to load initial customers", e);
-      setFetchError("Customer data fetch failed. Check backend connection.");
+      console.error("Failed to load initial data", e);
+      setFetchError("Data fetch failed. Check backend connection.");
     }
   }, []);
 
@@ -172,6 +176,11 @@ export default function OfferEngineTab() {
         selected_recommendation: selectedRec,
       });
       setStatusMsg(`Cohort successfully persisted! Campaign: ${resp.data.document_name || "N/A"}.`);
+      
+      // REFRESH SUMMARY DATA
+      const summaryResp = await api.get("/offer-engine");
+      setSummaryData(summaryResp.data);
+
     } catch (e: any) {
       setStatusMsg(`Campaign save failed: ${e.response?.data?.detail || "Error"}`);
     } finally {
@@ -272,13 +281,13 @@ export default function OfferEngineTab() {
 
       <div className="mt-8">
         <OfferKPIs
-          generatedCount={matchedCustomers.length}
-          avgAcceptance={avgAcceptance}
+          generatedCount={summaryData?.kpis?.offers_generated || 0}
+          totalCustomers={summaryData?.kpis?.total_customers || 0}
           gamificationActive={gamificationActive}
           revenueProtected={revenueProtected}
         />
 
-        <OfferCharts />
+        <OfferCharts data={summaryData?.charts} />
       </div>
     </div>
   );
