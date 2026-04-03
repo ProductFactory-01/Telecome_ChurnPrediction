@@ -1,28 +1,40 @@
-"""Churn prediction model loader and predictor logic."""
 import os
+import json
 import numpy as np
 import joblib
+from langchain_core.prompts import ChatPromptTemplate
 
 try:
     import h3
 except ImportError:
     h3 = None
 
+from service.llm import get_groq_llm, try_groq_json
 from .schemas import CustomerInput
 
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
 # Resolve model path relative to this file
 _BACKEND_ROOT = os.path.join(os.path.dirname(__file__), "..", "..", "..")
 _MODEL_PATH = os.path.join(_BACKEND_ROOT, "model", "churn_model_v1.pkl")
 
-model = None
-try:
-    model_data = joblib.load(_MODEL_PATH)
-    model = model_data["model"]
-    print(f"✓ Prediction model loaded from {_MODEL_PATH}")
-except Exception as e:
-    print(f"⚠ Could not load prediction model: {e}")
-    model = None
+_model = None
+
+def get_model():
+    global _model
+    if _model is not None:
+        return _model
+        
+    try:
+        import joblib
+        model_data = joblib.load(_MODEL_PATH)
+        _model = model_data["model"]
+        print(f"✓ Prediction model loaded from {_MODEL_PATH}")
+    except Exception as e:
+        print(f"⚠ Could not load prediction model: {e}")
+        _model = None
+        
+    return _model
 
 
 def latlng_to_numeric_cell(latitude: float, longitude: float, resolution: int = 5) -> int:
@@ -33,18 +45,93 @@ def latlng_to_numeric_cell(latitude: float, longitude: float, resolution: int = 
 
 
 def get_fallback_reason(prob: float, data: CustomerInput):
+    # Mapping based on user provided table
     if prob < 0.4:
-        return None
+        return {"main_category": "Stable", "sub_category": "Loyal", "reason": f"No immediate risk detected given stable {data.TenureMonths}-month tenure."}
+    
     if data.MonthlyCharges > 80 and data.TenureMonths < 12:
-        return {"main_category": "Price-Sensitive", "sub_category": "Price Issue", "reason": "High Cost Pressure for High-Value Subscriber"}
+        return {"main_category": "Price-Sensitive", "sub_category": "Price Issue", "reason": f"High pricing of ${data.MonthlyCharges} combined with early tenure ({data.TenureMonths}mo) creates flight risk."}
     elif not data.TechSupport and data.InternetService == "Fiber optic":
-        return {"main_category": "Service Quality", "sub_category": "Technical Issue", "reason": "Lack of Tech Support on Fiber Connection"}
-    elif data.Contract == "Month-to-month" and data.TenureMonths < 6:
-        return {"main_category": "Competitor", "sub_category": "Better Offer", "reason": "Early-tenure Risk / Competitor pricing attractiveness"}
-    return {"main_category": "Customer Experience", "sub_category": "General Issue", "reason": "General dissatisfaction with service terms"}
+        return {"main_category": "Customer Experience Issues", "sub_category": "Support Issue", "reason": f"Premium Fiber users paying ${data.MonthlyCharges} without tech support report lower network satisfaction."}
+    elif data.Contract == "Month-to-month":
+        return {"main_category": "Plan & Product Mismatch", "sub_category": "Competitor", "reason": "Unsecured month-to-month contract provides zero barrier to competitor switching."}
+    return {"main_category": "Low Engagement", "sub_category": "Other", "reason": f"High probability risk detected based on combination of ${data.MonthlyCharges}/mo pricing and {data.TenureMonths}-month history."}
+
+
+def get_llm_churn_reason(prob, data: CustomerInput):
+    # Mapping Table Context for AI
+    mapping_table = """
+    Main Category                | Sub Category
+    -----------------------------|---------------
+    Price-Sensitive              | Price Issue
+    Low Engagement               | Other
+    Plan & Product Mismatch      | Competitor
+    Customer Experience Issues   | Service Issue, Support Issue
+    High-Value Customer Risk     | Other, Personal Reason
+    Demographics                 | Personal Reason
+    Geography                    | Service Issue
+    Behavior                     | Other
+    Billing                      | Price Issue
+    Product Adoption Gap         | Competitor, Other
+    """
+
+    if not GROQ_API_KEY:
+        print("⚠ No GROQ_API_KEY found, using fallback reasons.")
+        return get_fallback_reason(prob, data)
+    
+    prompt = {
+        "churn_probability": prob,
+        "risk_level": "High" if prob > 0.7 else "Medium" if prob > 0.4 else "Low",
+        "customer_profile": {
+            "tenure": data.TenureMonths,
+            "contract": data.Contract,
+            "monthly_charges": data.MonthlyCharges,
+            "internet": data.InternetService,
+            "tech_support": data.TechSupport,
+            "payment": data.PaymentMethod,
+            "location": {"lat": data.Latitude, "lng": data.Longitude}
+        },
+        "mapping_rules": mapping_table,
+        "task": (
+            "For 'reason', you MUST generate a highly specific, unique 1-sentence explanation that directly cites the worst-performing factors in the profile (e.g., mention their exact tenure, high monthly charge, lack of tech support, or specific contract type). Do NOT use generic templates. "
+            "Return JSON only: {{\"main_category\": \"...\", \"sub_category\": \"...\", \"reason\": \"...\"}}."
+        )
+    }
+
+    try:
+        llm = get_groq_llm()
+        system_prompt = "You are an expert Telecom Data Scientist AI. You must provide distinct, hyper-specific reasoning based on the variables provided. Output strictly valid JSON."
+        
+        prompt_template = ChatPromptTemplate.from_messages([
+            ("system", system_prompt),
+            ("user", "{user_data}")
+        ])
+        
+        chain = prompt_template | llm
+        response = chain.invoke({"user_data": json.dumps(prompt)})
+        content = response.content.strip()
+        
+        # Extract JSON from markdown
+        if "```json" in content:
+            content = content.split("```json")[1].split("```")[0].strip()
+        elif "```" in content:
+            content = content.split("```")[1].strip()
+            
+        parsed = json.loads(content)
+        
+        if parsed and isinstance(parsed, dict) and "main_category" in parsed:
+            print(f"✓ AI reasoning successfully generated: {parsed['main_category']}")
+            return parsed
+            
+    except Exception as e:
+        print(f"⚠ AI reasoning generation failed: {e}")
+        
+    print("⚠ Falling back to static mapping logic.")
+    return get_fallback_reason(prob, data)
 
 
 def predict_churn(customer: CustomerInput) -> dict:
+    model = get_model()
     if model is None:
         raise RuntimeError("Prediction model not loaded")
 
@@ -79,9 +166,15 @@ def predict_churn(customer: CustomerInput) -> dict:
     ]
 
     churn_prob = float(model.predict_proba(np.array(features).reshape(1, -1))[0][1])
+    is_churn = 1 if churn_prob > 0.5 else 0
+    
+    churn_reason_data = {"main_category": None, "sub_category": None, "reason": None}
+    if is_churn:
+        churn_reason_data = get_llm_churn_reason(churn_prob, customer)
+
     return {
         "churn_probability": round(churn_prob, 4),
-        "churn_prediction": 1 if churn_prob > 0.5 else 0,
+        "churn_prediction": is_churn,
         "risk_level": "High" if churn_prob > 0.7 else "Medium" if churn_prob > 0.4 else "Low",
-        "churn_reason": get_fallback_reason(churn_prob, customer),
+        "churn_reason": churn_reason_data,
     }

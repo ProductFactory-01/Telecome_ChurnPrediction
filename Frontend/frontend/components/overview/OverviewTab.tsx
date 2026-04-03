@@ -7,6 +7,8 @@ import AgentLog from "../shared/AgentLog";
 import PipelineFlow from "./PipelineFlow";
 import OverviewCharts from "./OverviewCharts";
 
+import Loading from "../shared/Loading";
+
 export default function OverviewTab() {
   const [data, setData] = useState<any>(null);
 
@@ -14,30 +16,31 @@ export default function OverviewTab() {
     api.get("/overview").then((r) => setData(r.data)).catch(console.error);
   }, []);
 
-  if (!data) return <div className="dashboard-content text-muted">Loading overview…</div>;
+  if (!data) return (
+    <div className="dashboard-content min-h-[400px] flex items-center justify-center">
+      <Loading message="Assembling Holistic Dashboard Intelligence..." />
+    </div>
+  );
 
   const k = data.kpis;
   return (
     <div className="dashboard-content">
-      <SectionTitle title="System Overview" description="AI-Powered Churn Prevention Pipeline" color="blue" />
+      <PipelineFlow steps={data.pipeline} />
 
-      <div className="panel-grid panel-grid--4 mb-6">
-        <KpiCard label="Subscribers Unified" value={k.subscribers_unified.toLocaleString()} color="blue" />
-        <KpiCard label="Current Churn Rate" value={`${k.current_churn_rate}%`} sub={`Target: ${k.target_churn_rate}%`} color="red" />
-        <KpiCard label="High-Risk Flagged" value={k.high_risk_flagged.toLocaleString()} color="amber" />
-        <KpiCard label="Model ROC-AUC" value={`${k.model_roc_auc}%`} color="green" />
+      <div className="panel-grid panel-grid--5 mb-6 mt-4">
+        <KpiCard label="Subscribers Unified" value={k.subscribers_unified.toLocaleString()} sub="Joined Customer360 Base" color="blue" />
+        <KpiCard label="Current Churn Rate" value={`${k.current_churn_rate}%`} sub={`Target: ${k.target_churn_rate}% with AI agents`} color="red" />
+        <KpiCard label="High-Risk Flagged" value={k.high_risk_flagged.toLocaleString()} sub="Scored > 70 by Model" color="amber" />
+        <KpiCard label="Retention Offers Sent" value={k.retention_offers_sent.toLocaleString()} sub="Via Agent 3 + Agent 4" color="green" />
+        {/* <KpiCard label="Subscribers Saved" value={k.subscribers_saved.toLocaleString()} sub="Through AI intervention" color="purple" /> */}
+        <KpiCard label="Average CLTV" value={`$${k.avg_cltv.toLocaleString()}`} sub="Customer Lifetime Value" color="cyan" />
       </div>
 
       <div className="mb-6">
-        <PipelineFlow steps={data.pipeline} />
-      </div>
-
-      <OverviewCharts churnTrend={data.churn_trend} agentActivity={data.agent_activity} />
-
-      <div className="mt-6">
-        <SectionTitle title="Agent Activity Log" color="cyan" />
         <AgentLog entries={[]} />
       </div>
+
+      <OverviewCharts churnTrend={data.churn_trend} riskDistribution={data.risk_distribution} />
     </div>
   );
 }

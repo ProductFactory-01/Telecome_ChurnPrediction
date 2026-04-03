@@ -9,9 +9,12 @@ interface Props {
 
 export default function KpiCard({ label, value, sub, color = "blue" }: Props) {
   return (
-    <div className={`kpi-card kpi-card--${color}`} id={`kpi-${label.toLowerCase().replace(/\s+/g, "-")}`}>
+    <div 
+      className={`kpi-card kpi-card--${color} group cursor-default`} 
+      id={`kpi-${label.toLowerCase().replace(/\s+/g, "-")}`}
+    >
       <div className="kpi-card__label">{label}</div>
-      <div className="kpi-card__value">{value}</div>
+      <div className="kpi-card__value group-hover:scale-105 transition-transform duration-300">{value}</div>
       {sub && <div className="kpi-card__sub">{sub}</div>}
     </div>
   );

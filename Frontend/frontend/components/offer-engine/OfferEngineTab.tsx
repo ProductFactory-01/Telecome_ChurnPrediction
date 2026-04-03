@@ -1,121 +1,298 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import api from "../../lib/api";
 import AgentHeader from "../shared/AgentHeader";
-import SectionTitle from "../shared/SectionTitle";
-import KpiCard from "../shared/KpiCard";
-import ChartCard from "../shared/ChartCard";
-import { Bar } from "react-chartjs-2";
-import "../../lib/chartSetup";
-import { COLORS, defaultOptions } from "../../lib/chartSetup";
+import OfferKPIs from "./OfferKPIs";
+import OfferCharts from "./OfferCharts";
+import OfferTaxonomy, { TAXONOMY, RISK_LEVELS } from "./OfferTaxonomy";
+import OfferRecommendations, { Recommendation } from "./OfferRecommendations";
+import OfferCohortTable from "./OfferCohortTable";
+import styles from "./OfferEngine.module.css";
+import Loading from "../shared/Loading";
 
 export default function OfferEngineTab() {
-  const [data, setData] = useState<any>(null);
-  const [mainCat, setMainCat] = useState("");
-  const [subCat, setSubCat] = useState("");
-  const [riskLevel, setRiskLevel] = useState("");
-  const [recommendations, setRecommendations] = useState<any[]>([]);
-  const [selectedRec, setSelectedRec] = useState<number | null>(null);
+  // --- State ---
+  const [allCustomers, setAllCustomers] = useState<any[]>([]);
+  const [matchedCustomers, setMatchedCustomers] = useState<any[]>([]);
+  const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
+  const [summaryData, setSummaryData] = useState<any>(null);
+  
+  const [mainCat, setMainCat] = useState(TAXONOMY[0].main_category);
+  const [subCat, setSubCat] = useState(TAXONOMY[0].sub_drivers[0]);
+  const [riskLevel, setRiskLevel] = useState(RISK_LEVELS[0]);
+  const [selectedRecId, setSelectedRecId] = useState("");
+  
+  const [statusMsg, setStatusMsg] = useState("Select a main category, one sub category, and a risk level to view the matching customer cohort.");
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [canGenerateAI, setCanGenerateAI] = useState(false);
+  const [fetchError, setFetchError] = useState("");
 
-  useEffect(() => {
-    api.get("/offer-engine").then((r) => {
-      setData(r.data);
-      if (r.data.taxonomy?.length) {
-        setMainCat(r.data.taxonomy[0].main_category);
-        setSubCat(r.data.taxonomy[0].sub_drivers?.[0] || "");
-      }
-      if (r.data.risk_levels?.length) setRiskLevel(r.data.risk_levels[0]);
-    }).catch(console.error);
-  }, []);
-
-  const fetchRecommendations = async () => {
-    try {
-      const r = await api.post("/offer-engine/recommendations", {
-        selected_main_category: mainCat, selected_sub_category: subCat,
-        selected_risk_level: riskLevel, customers: [], taxonomy: [],
-      });
-      setRecommendations(r.data.recommendations);
-      setSelectedRec(null);
-    } catch (e) { console.error(e); }
+  // --- KPI Derived State ---
+  const getRiskWeight = (level: string) => {
+    const normalized = (level || "").toLowerCase();
+    const weights: Record<string, number> = {
+      "level 1": 0.28,
+      "level 2": 0.23,
+      "level 3": 0.18,
+      "level 4": 0.12,
+      "level 5": 0.07,
+    };
+    return weights[normalized] || 0.12;
   };
 
-  if (!data) return <div className="dashboard-content text-muted">Loading…</div>;
+  const avgAcceptance = matchedCustomers.length > 0 
+    ? (matchedCustomers.reduce((sum, c) => sum + getRiskWeight(c.risk_level || riskLevel), 0) / matchedCustomers.length) * 100
+    : 0;
+    
+  const revenueProtected = Math.round(
+    matchedCustomers.reduce((sum, c) => sum + (getRiskWeight(c.risk_level || riskLevel) * 650), 0)
+  );
 
-  const currentTax = data.taxonomy?.find((t: any) => t.main_category === mainCat);
+  const selectedRec = recommendations.find(r => r.plan_id === selectedRecId);
+  const gamificationActive = (selectedRec?.offer_type || "").toLowerCase() === "gamification";
+
+  // --- API Actions ---
+
+  const loadInitialData = useCallback(async () => {
+    try {
+      const [custResp, summaryResp] = await Promise.all([
+        api.get("/offer-engine/customers"),
+        api.get("/offer-engine")
+      ]);
+      setAllCustomers(custResp.data || []);
+      setSummaryData(summaryResp.data || null);
+    } catch (e) {
+      console.error("Failed to load initial data", e);
+      setFetchError("Data fetch failed. Check backend connection.");
+    }
+  }, []);
+
+  useEffect(() => {
+    loadInitialData();
+  }, [loadInitialData]);
+
+  if (!summaryData && !fetchError) return (
+    <div className="dashboard-content min-h-[400px] flex items-center justify-center">
+      <Loading message="Initializing Personalized Offer Strategies..." />
+    </div>
+  );
+
+  const handleViewCustomers = async () => {
+    setIsLoading(true);
+    setStatusMsg("Matching customers to selected criteria...");
+    setFetchError("");
+    setMatchedCustomers([]);
+    setRecommendations([]);
+    setSelectedRecId("");
+    setCanGenerateAI(false);
+
+    try {
+      const resp = await api.post("/offer-engine/match-customers", {
+        customers: allCustomers,
+        taxonomy: TAXONOMY,
+        selected_main_category: mainCat,
+        selected_sub_category: subCat,
+        selected_risk_level: riskLevel,
+      });
+
+      const rows = resp.data.offers || [];
+      setMatchedCustomers(rows);
+      
+      if (rows.length > 0) {
+        setStatusMsg(`Matched ${rows.length} customers. You can now click "Generate Offer" to run AI strategy analysis.`);
+        setCanGenerateAI(true);
+      } else {
+        setStatusMsg("No customers matched for the selected criteria.");
+      }
+    } catch (e: any) {
+      setFetchError(e.response?.data?.detail || "Customer matching failed.");
+      setStatusMsg("Matching failed. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleGenerateAI = async () => {
+    if (matchedCustomers.length === 0) return;
+    setIsLoading(true);
+    setStatusMsg("Generating AI-suggested offers and rationales for the cohort...");
+    
+    try {
+      await generatePerCustomerOffers(matchedCustomers);
+    } catch (e: any) {
+      setFetchError(e.response?.data?.detail || "AI generation failed.");
+      setIsLoading(false);
+    }
+  };
+
+  const generatePerCustomerOffers = async (rows: any[]) => {
+    try {
+      const resp = await api.post("/offer-engine/generate-offers", {
+        customers: rows,
+        selected_main_category: mainCat,
+        selected_sub_category: subCat,
+        selected_risk_level: riskLevel,
+      });
+
+      const enrichedRows = resp.data.offers || [];
+      setMatchedCustomers(enrichedRows);
+      
+      // After per-customer, get cohort recommendations
+      await fetchRecommendations(enrichedRows);
+    } catch (e: any) {
+      console.error("Per-customer generation failed", e);
+      // Continue to recommendations even if individual generation fails
+      await fetchRecommendations(rows);
+    }
+  };
+
+  const fetchRecommendations = async (rows: any[]) => {
+    setStatusMsg("Analyzing cohort to generate 3 strategic retention plan recommendations...");
+    try {
+      const resp = await api.post("/offer-engine/recommendations", {
+        customers: rows,
+        taxonomy: TAXONOMY,
+        selected_main_category: mainCat,
+        selected_sub_category: subCat,
+        selected_risk_level: riskLevel,
+      });
+
+      const recs = resp.data.recommendations || [];
+      setRecommendations(recs.sort((a: any, b: any) => 
+        (Number(b.projected_reduction_pct) || 0) - (Number(a.projected_reduction_pct) || 0)
+      ));
+      setStatusMsg(`Success! Generated ${recs.length} plan recommendations. Select a strategy to finalize the campaign.`);
+    } catch (e: any) {
+      setFetchError(e.response?.data?.detail || "Recommendation fetch failed.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const saveOffer = async () => {
+    if (!selectedRec) return;
+    setIsSaving(true);
+    setStatusMsg("Saving finalized offer cohort and campaign strategy...");
+    try {
+      const resp = await api.post("/offer-engine/save-offer", {
+        customers: matchedCustomers,
+        selected_main_category: mainCat,
+        selected_sub_category: subCat,
+        selected_risk_level: riskLevel,
+        selected_recommendation: selectedRec,
+      });
+      setStatusMsg(`Cohort successfully persisted! Campaign: ${resp.data.document_name || "N/A"}.`);
+      
+      // REFRESH SUMMARY DATA
+      const summaryResp = await api.get("/offer-engine");
+      setSummaryData(summaryResp.data);
+
+    } catch (e: any) {
+      setStatusMsg(`Campaign save failed: ${e.response?.data?.detail || "Error"}`);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // --- UI Handlers ---
+  const handleMainChange = (val: string) => {
+    setMainCat(val);
+    const firstSub = TAXONOMY.find(t => t.main_category === val)?.sub_drivers[0] || "";
+    setSubCat(firstSub);
+    setMatchedCustomers([]);
+    setRecommendations([]);
+    setSelectedRecId("");
+    setCanGenerateAI(false);
+    setStatusMsg("Criteria changed. Please click 'View Customers' to refresh the cohort.");
+  };
+
+  const handleSubChange = (val: string) => {
+    setSubCat(val);
+    setMatchedCustomers([]);
+    setRecommendations([]);
+    setSelectedRecId("");
+    setCanGenerateAI(false);
+    setStatusMsg("Criteria changed. Please click 'View Customers' to refresh the cohort.");
+  };
+
+  const handleRiskChange = (val: string) => {
+    setRiskLevel(val);
+    setMatchedCustomers([]);
+    setRecommendations([]);
+    setSelectedRecId("");
+    setCanGenerateAI(false);
+    setStatusMsg("Criteria changed. Please click 'View Customers' to refresh the cohort.");
+  };
+
+  const handleRecSelect = (id: string) => {
+    setSelectedRecId(id);
+    const rec = recommendations.find(r => r.plan_id === id);
+    setStatusMsg(`Selected "${rec?.offer_type || rec?.title}". You can now generate and save the offer cohort document.`);
+  };
 
   return (
     <div className="dashboard-content">
-      <AgentHeader icon="🎁" title="Agent 3 — AI Offer Engine" subtitle="Personalised retention offers based on churn risk taxonomy" color="green" />
+      <AgentHeader
+        number="3"
+        title="Personalised Offer Generation Agent"
+        subtitle="Craft tailored retention offers through discounts, upgrades, loyalty rewards, gamification, and bundles"
+        color="green"
+      />
 
-      <SectionTitle title="Cohort Selection" description="Select target segment" color="green" />
+      <div className={styles.offerBuilder}>
+        <OfferTaxonomy
+          selectedMain={mainCat}
+          selectedSub={subCat}
+          selectedRisk={riskLevel}
+          onMainChange={handleMainChange}
+          onSubChange={handleSubChange}
+          onRiskChange={handleRiskChange}
+          onViewCustomers={handleViewCustomers}
+          onGenerateAI={handleGenerateAI}
+          status={statusMsg}
+          isLoading={isLoading}
+          canGenerateAI={canGenerateAI}
+          canViewCustomers={allCustomers.length > 0}
+        />
 
-      <div className="taxonomy-row mb-6">
-        <div className="taxonomy-field">
-          <div className="taxonomy-field__label">Main Category</div>
-          <select className="taxonomy-field__select" value={mainCat} onChange={(e) => {
-            setMainCat(e.target.value);
-            const tax = data.taxonomy?.find((t: any) => t.main_category === e.target.value);
-            setSubCat(tax?.sub_drivers?.[0] || "");
-          }}>
-            {data.taxonomy?.map((t: any) => <option key={t.main_category} value={t.main_category}>{t.main_category}</option>)}
-          </select>
-        </div>
-        <div className="taxonomy-field">
-          <div className="taxonomy-field__label">Sub Category</div>
-          <select className="taxonomy-field__select" value={subCat} onChange={(e) => setSubCat(e.target.value)}>
-            {currentTax?.sub_drivers?.map((s: string) => <option key={s} value={s}>{s}</option>)}
-          </select>
-        </div>
-        <div className="taxonomy-field">
-          <div className="taxonomy-field__label">Risk Level</div>
-          <select className="taxonomy-field__select" value={riskLevel} onChange={(e) => setRiskLevel(e.target.value)}>
-            {data.risk_levels?.map((l: string) => <option key={l} value={l}>{l}</option>)}
-          </select>
-        </div>
-        <button className="btn btn--primary" onClick={fetchRecommendations}>🤖 Generate Offers</button>
+        <OfferRecommendations
+          recommendations={recommendations}
+          selectedId={selectedRecId}
+          onSelect={handleRecSelect}
+          isLoading={isLoading}
+        />
       </div>
 
-      {recommendations.length > 0 && (
-        <>
-          <SectionTitle title="AI Recommendations" color="purple" />
-          <div className="panel-grid panel-grid--3 mb-6">
-            {recommendations.map((rec, i) => (
-              <div key={i} className={`rec-card ${selectedRec === i ? "rec-card--selected" : ""}`} onClick={() => setSelectedRec(i)}>
-                <div className="rec-card__title">
-                  {rec.offer_type === "Discount" ? "💰" : rec.offer_type === "Custom Bundle" ? "📦" : "⬆️"}
-                  {rec.title}
-                </div>
-                <div className="rec-card__summary">{rec.offer_summary}</div>
-                <div className="rec-card__impact">-{rec.projected_reduction_pct}%</div>
-                <div className="rec-card__target">Target: {rec.projected_target_level}</div>
-                <div className="rec-card__reason">{rec.why_it_fits}</div>
-              </div>
-            ))}
-          </div>
-        </>
+      {selectedRecId && (
+        <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 18 }}>
+          <button 
+            className="btn btn--primary" 
+            onClick={saveOffer}
+            disabled={isSaving}
+          >
+            {isSaving ? "Saving..." : "Save Offer For Customers"}
+          </button>
+        </div>
       )}
 
-      <div className="panel-grid panel-grid--2 mt-6">
-        <ChartCard title="Offer Effectiveness (%)" icon="📊">
-          <Bar data={{
-            labels: data.charts.effectiveness.labels,
-            datasets: [{
-              label: "Acceptance Rate", data: data.charts.effectiveness.values,
-              backgroundColor: [COLORS.blueAlpha, COLORS.cyanAlpha, COLORS.greenAlpha, COLORS.purpleAlpha, COLORS.amberAlpha],
-              borderColor: [COLORS.blue, COLORS.cyan, COLORS.green, COLORS.purple, COLORS.amber],
-              borderWidth: 1, borderRadius: 6,
-            }],
-          }} options={{ ...defaultOptions, plugins: { ...defaultOptions.plugins, legend: { display: false } } }} />
-        </ChartCard>
-        <ChartCard title="Acceptance by Risk Level" icon="📈">
-          <Bar data={{
-            labels: data.charts.acceptance_by_risk.labels,
-            datasets: [
-              { label: "Generic", data: data.charts.acceptance_by_risk.generic, backgroundColor: COLORS.redAlpha, borderColor: COLORS.red, borderWidth: 1, borderRadius: 4 },
-              { label: "AI Personalised", data: data.charts.acceptance_by_risk.ai_personalised, backgroundColor: COLORS.greenAlpha, borderColor: COLORS.green, borderWidth: 1, borderRadius: 4 },
-            ],
-          }} options={defaultOptions} />
-        </ChartCard>
+      {fetchError && (
+        <div className="alert alert--error mb-4">
+          {fetchError}
+        </div>
+      )}
+
+      <OfferCohortTable customers={matchedCustomers} />
+
+      <div className="mt-8">
+        <OfferKPIs
+          generatedCount={summaryData?.kpis?.offers_generated || 0}
+          totalCustomers={summaryData?.kpis?.total_customers || 0}
+          gamificationActive={gamificationActive}
+          revenueProtected={revenueProtected}
+        />
+
+        <OfferCharts data={summaryData?.charts} />
       </div>
     </div>
   );

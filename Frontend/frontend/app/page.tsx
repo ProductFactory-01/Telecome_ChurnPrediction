@@ -1,5 +1,6 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import Header from "../components/layout/Header";
 import TabNavigation from "../components/layout/TabNavigation";
 import OverviewTab from "../components/overview/OverviewTab";
@@ -12,36 +13,43 @@ import DataExplorerTab from "../components/data-explorer/DataExplorerTab";
 import MlModelsTab from "../components/ml-models/MlModelsTab";
 import RoleViewsTab from "../components/role-views/RoleViewsTab";
 import MilestonesTab from "../components/milestones/MilestonesTab";
-import CustomerDetailView from "../components/customer-details/CustomerDetailView";
 
-export default function Dashboard() {
+function DashboardContent() {
   const [activeTab, setActiveTab] = useState("overview");
-  const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
+  const searchParams = useSearchParams();
 
-  const handleViewCustomer = (id: string) => setSelectedCustomerId(id);
-  const closeCustomerDetail = () => setSelectedCustomerId(null);
+  useEffect(() => {
+    const tab = searchParams.get("tab");
+    if (tab) setActiveTab(tab);
+  }, [searchParams]);
 
   return (
-    <>
+    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100">
       <Header />
       <TabNavigation activeTab={activeTab} onTabChange={setActiveTab} />
 
-      <main>
-        {activeTab === "overview" && <OverviewTab />}
-        {activeTab === "data-agent" && <DataAgentTab />}
-        {activeTab === "churn-scoring" && <ChurnScoringTab onViewCustomer={handleViewCustomer} />}
-        {activeTab === "offer-engine" && <OfferEngineTab />}
-        {activeTab === "outreach" && <OutreachTab />}
-        {activeTab === "live-impact" && <LiveImpactTab />}
-        {activeTab === "data-explorer" && <DataExplorerTab />}
-        {activeTab === "ml-models" && <MlModelsTab />}
-        {activeTab === "role-views" && <RoleViewsTab />}
-        {activeTab === "milestones" && <MilestonesTab />}
+      <main className="max-w-[1440px] mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-2 min-h-[calc(100vh-160px)]">
+        <div className="animate-in fade-in-20 duration-500">
+          {activeTab === "overview" && <OverviewTab />}
+          {activeTab === "data-agent" && <DataAgentTab />}
+          {activeTab === "churn-scoring" && <ChurnScoringTab />}
+          {activeTab === "offer-engine" && <OfferEngineTab />}
+          {activeTab === "outreach" && <OutreachTab />}
+          {activeTab === "live-impact" && <LiveImpactTab />}
+          {activeTab === "data-explorer" && <DataExplorerTab />}
+          {activeTab === "ml-models" && <MlModelsTab />}
+          {activeTab === "role-views" && <RoleViewsTab />}
+          {activeTab === "milestones" && <MilestonesTab />}
+        </div>
       </main>
+    </div>
+  );
+}
 
-      {selectedCustomerId && (
-        <CustomerDetailView customerId={selectedCustomerId} onClose={closeCustomerDetail} />
-      )}
-    </>
+export default function Dashboard() {
+  return (
+    <Suspense fallback={<div className="p-20 text-center font-black uppercase text-gray-400">Initializing Intelligence Engine...</div>}>
+      <DashboardContent />
+    </Suspense>
   );
 }
