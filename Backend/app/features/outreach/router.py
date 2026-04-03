@@ -5,38 +5,106 @@ from datetime import datetime, timezone
 
 router = APIRouter()
 
-OUTREACH_CHANNELS = [
-    {"key": "sms", "icon": "💬", "title": "SMS", "accept_rate": 18, "cost_per_contact": 0.80, "selected": False},
-    {"key": "email", "icon": "📧", "title": "Email", "accept_rate": 9, "cost_per_contact": 0.25, "selected": False},
-    {"key": "push", "icon": "📱", "title": "Whatsapp", "accept_rate": 28, "cost_per_contact": 0.05, "selected": False},
-    {"key": "agent", "icon": "🧑‍💼", "title": "Live Agent", "accept_rate": 25, "cost_per_contact": 18.00, "selected": False},
-    {"key": "inapp", "icon": "📲", "title": "Telegram", "accept_rate": 15, "cost_per_contact": 0.02, "selected": False},
-]
+# Channel Metadata (Icons and Titles) - mapped from notification_medium keys
+CHANNEL_METADATA = {
+    "sms": {"icon": "💬", "title": "SMS", "cost": 0.80},
+    "email": {"icon": "📧", "title": "Email", "cost": 0.25},
+    "whatsapp": {"icon": "📱", "title": "Whatsapp", "cost": 0.05},
+    "push": {"icon": "📱", "title": "Whatsapp", "cost": 0.05}, # Alias
+    "agent": {"icon": "🧑‍💼", "title": "Live Agent", "cost": 18.00},
+    "live agent": {"icon": "🧑‍💼", "title": "Live Agent", "cost": 18.00}, # Alias
+    "telegram": {"icon": "📲", "title": "Telegram", "cost": 0.02},
+    "inapp": {"icon": "📲", "title": "Telegram", "cost": 0.02}, # Alias
+}
 
+def get_channels_from_db():
+    """
+    Derives the list of available channels based on unique notification_medium 
+    values found in the offer_campaigns collection, falling back to all metadata keys.
+    """
+    if mongo_db is None:
+        return []
+    
+    # Get unique mediums that have actually been used/configured
+    used_mediums = mongo_db["offer_campaigns"].distinct("notification_medium")
+    
+    # We always want to return the full set of supported channels for the UI to show options,
+    # but we'll mark them based on what's defined in the system.
+    # For now, we'll return a standard list derived from our metadata.
+    channels = []
+    seen = set()
+    for key, meta in CHANNEL_METADATA.items():
+        # Avoid duplicates from aliases
+        title = meta["title"]
+        if title in seen:
+            continue
+        seen.add(title)
+        
+        channels.append({
+            "key": key,
+            "icon": meta["icon"],
+            "title": title,
+            "cost_per_contact": meta["cost"],
+            "selected": False
+        })
+    return channels
 
 @router.get("/outreach")
 def get_outreach_data():
+    channels = get_channels_from_db()
+    
     if mongo_db is None:
         return {
-            "channels": OUTREACH_CHANNELS,
+            "channels": channels,
             "kpis": {"campaigns_triggered": 0, "messages_sent": 0, "avg_response_time": "--", "total_contact_cost": 0},
             "charts": {
-                "channel_performance": {"labels": ["SMS", "Email", "App Push", "Live Agent", "In-App"], "accept_rate": [18, 9, 28, 25, 15], "cost_efficiency": [22, 25, 30, 8, 28]},
+                "channel_performance": {"labels": [c["title"] for c in channels], "counts": [0]*len(channels)},
                 "timeline": {"labels": ["09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00"], "messages_sent": [0]*9},
             },
         }
 
-    # Aggregate active campaigns
-    campaign_coll = mongo_db["campaign_executions"]
-    count = campaign_coll.count_documents({})
+    # Aggregate data from offer_campaigns (the source of truth for notifications)
+    offer_coll = mongo_db["offer_campaigns"]
+    campaign_executions_coll = mongo_db["campaign_executions"]
+    
+    # KPIs from campaign_executions (for actual execution tracking)
+    count = campaign_executions_coll.count_documents({})
     total_messages = 0
     total_cost = 0.0
-    for c in campaign_coll.find():
-        total_messages += c.get("messages_sent", 0)
-        total_cost += c.get("total_cost", 0.0)
+    for exec_doc in campaign_executions_coll.find():
+        total_messages += exec_doc.get("messages_sent", 0)
+        total_cost += exec_doc.get("total_cost", 0.0)
+
+    # Channel Performance and Timeline from offer_campaigns
+    # Initialize trackers
+    channel_volume = {c["key"]: 0 for c in channels}
+    timeline_data = {f"{h:02d}:00": 0 for h in range(9, 18)}
+    
+    # Query offer_campaigns where notification was sent
+    for offer in offer_coll.find({"notified_at": {"$exists": True}}):
+        medium = offer.get("notification_medium", "").lower()
+        cust_count = offer.get("customer_count", 0)
+        notified_at = offer.get("notified_at")
+        
+        # Track volume per channel (mapping aliases if needed)
+        found_key = None
+        for key, meta in CHANNEL_METADATA.items():
+            if key == medium or meta["title"].lower() == medium:
+                # Map to the primary key used in the channels list
+                found_key = next((c["key"] for c in channels if c["title"] == meta["title"]), None)
+                break
+        
+        if found_key and found_key in channel_volume:
+            channel_volume[found_key] += cust_count
+            
+        # Track timeline (by hour)
+        if isinstance(notified_at, datetime):
+            hour_str = notified_at.strftime("%H:00")
+            if hour_str in timeline_data:
+                timeline_data[hour_str] += cust_count
 
     return {
-        "channels": OUTREACH_CHANNELS,
+        "channels": channels,
         "kpis": {
             "campaigns_triggered": count,
             "messages_sent": total_messages,
@@ -45,13 +113,12 @@ def get_outreach_data():
         },
         "charts": {
             "channel_performance": {
-                "labels": ["SMS", "Email", "App Push", "Live Agent", "In-App"],
-                "accept_rate": [18, 9, 28, 25, 15],
-                "cost_efficiency": [22, 25, 30, 8, 28],
+                "labels": [c["title"] for c in channels],
+                "counts": [channel_volume.get(c["key"], 0) for c in channels],
             },
             "timeline": {
-                "labels": ["09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00"],
-                "messages_sent": [0, 0, 0, 150, 420, 310, 890, 410, 100],
+                "labels": list(timeline_data.keys()),
+                "messages_sent": list(timeline_data.values()),
             },
         },
     }
@@ -72,9 +139,11 @@ def trigger_outreach(payload: dict = Body(...)):
         
     cust_count = campaign.get("customer_count", 0)
     
-    # Simple cost calculation
-    avg_cost = sum(c["cost_per_contact"] for c in OUTREACH_CHANNELS if c["key"] in selected_channels)
-    total_cost = avg_cost * cust_count
+    # Simple cost calculation using metadata
+    total_cost = 0.0
+    for ch_key in selected_channels:
+        cost = CHANNEL_METADATA.get(ch_key.lower(), {}).get("cost", 0.1) # low default
+        total_cost += cost * cust_count
     
     execution_doc = {
         "offer_campaign_id": ObjectId(campaign_id),

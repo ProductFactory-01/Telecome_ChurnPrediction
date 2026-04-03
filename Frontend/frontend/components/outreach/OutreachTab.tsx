@@ -279,8 +279,26 @@ export default function OutreachTab() {
           <Bar data={{
             labels: data.charts.channel_performance.labels,
             datasets: [
-              { label: "Accept Rate %", data: data.charts.channel_performance.accept_rate, backgroundColor: COLORS.greenAlpha, borderColor: COLORS.green, borderWidth: 1, borderRadius: 4 },
-              { label: "Cost Efficiency", data: data.charts.channel_performance.cost_efficiency, backgroundColor: COLORS.blueAlpha, borderColor: COLORS.blue, borderWidth: 1, borderRadius: 4 },
+              { 
+                label: "Customer Count", 
+                data: data.charts.channel_performance.counts, 
+                backgroundColor: [
+                  "rgba(124, 58, 237, 0.7)", // SMS
+                  "rgba(59, 130, 246, 0.7)",  // Email
+                  "rgba(16, 185, 129, 0.7)",  // Whatsapp
+                  "rgba(245, 158, 11, 0.7)",  // Live Agent
+                  "rgba(6, 182, 212, 0.7)"   // Telegram
+                ], 
+                borderColor: [
+                  "#7c3aed", 
+                  "#3b82f6", 
+                  "#10b981", 
+                  "#f59e0b", 
+                  "#06b6d4"
+                ], 
+                borderWidth: 1, 
+                borderRadius: 4 
+              },
             ],
           }} options={defaultOptions} />
         </ChartCard>
