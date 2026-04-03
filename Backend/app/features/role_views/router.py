@@ -119,6 +119,7 @@ def get_crm_metrics(engine):
 
 def get_strategy_metrics(engine):
     """Fetch Executive Strategy KPIs: ROI, Revenue at Risk, Overall Churn."""
+    labels = ["0-12m", "13-24m", "25-36m", "37-48m", "49-60m", "61m+"]
     try:
         # Use existing logic from overview and impact
         df = pd.read_sql('SELECT "CLTV", "Churn Label", "Churn Score", "Total Revenue", "Tenure Months" FROM merged', engine)
@@ -127,7 +128,6 @@ def get_strategy_metrics(engine):
         
         # Churn Trend (Real Logic)
         bins = [0, 12, 24, 36, 48, 60, 100]
-        labels = ["0-12m", "13-24m", "25-36m", "37-48m", "49-60m", "61m+"]
         df["TenureBucket"] = pd.cut(df["Tenure Months"], bins=bins, labels=labels, right=True)
         real_trend = df.groupby("TenureBucket", observed=False)["Churn Label"].apply(lambda x: (x == "Yes").mean() * 100).fillna(0).round(1).tolist()
         hist_baseline = [30.5, 29.8, 25.1, 23.4, 18.0, 15.2]
