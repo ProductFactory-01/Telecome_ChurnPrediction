@@ -35,21 +35,73 @@ export default function DataExplorerTab() {
           <KpiCard label="Avg Monthly Charges" value={`$${d.kpis.avg_monthly_charges}`} color="amber" />
           <KpiCard label="Avg CLTV" value={`$${d.kpis.avg_cltv.toLocaleString()}`} color="green" />
         </div>
+        
         <div className="panel-grid panel-grid--2 mb-6">
-          <ChartCard title="Churn Distribution" icon="📊" height={240}>
+          <ChartCard title="Churn Distribution" icon="📊" height={260}>
             <Doughnut data={{
               labels: d.churn_distribution.labels,
-              datasets: [{ data: d.churn_distribution.values, backgroundColor: [COLORS.greenAlpha, COLORS.redAlpha], borderColor: [COLORS.green, COLORS.red], borderWidth: 2 }],
+              datasets: [{ 
+                data: d.churn_distribution.values, 
+                backgroundColor: [COLORS.greenAlpha, COLORS.redAlpha], 
+                borderColor: [COLORS.green, COLORS.red], 
+                borderWidth: 2 
+              }],
             }} options={{ ...defaultOptions, scales: undefined }} />
           </ChartCard>
-          <ChartCard title="Churn by Contract" icon="📋">
+
+          <ChartCard title="Churn by Contract Type" icon="📋">
             <Bar data={{
               labels: d.churn_by_contract.labels,
-              datasets: [{ label: "Churn %", data: d.churn_by_contract.values, backgroundColor: [COLORS.redAlpha, COLORS.amberAlpha, COLORS.greenAlpha], borderColor: [COLORS.red, COLORS.amber, COLORS.green], borderWidth: 1, borderRadius: 6 }],
-            }} options={{ ...defaultOptions, plugins: { ...defaultOptions.plugins, legend: { display: false } } }} />
+              datasets: [
+                { 
+                  label: "Stayed", 
+                  data: d.churn_by_contract.stayed, 
+                  backgroundColor: COLORS.greenAlpha, 
+                  borderColor: COLORS.green, 
+                  borderWidth: 1, 
+                  borderRadius: 6 
+                },
+                { 
+                  label: "Churned", 
+                  data: d.churn_by_contract.churned, 
+                  backgroundColor: COLORS.redAlpha, 
+                  borderColor: COLORS.red, 
+                  borderWidth: 1, 
+                  borderRadius: 6 
+                }
+              ],
+            }} options={defaultOptions} />
           </ChartCard>
         </div>
-        <ChartCard title="Top Churn Reasons" icon="💡" height={300}>
+
+        <div className="panel-grid panel-grid--2 mb-6">
+          <ChartCard title="Monthly Charges by Churn" icon="💰">
+            <Bar data={{
+              labels: d.monthly_charges_by_churn.labels,
+              datasets: [{ 
+                label: "Avg Monthly Charge", 
+                data: d.monthly_charges_by_churn.values, 
+                backgroundColor: [COLORS.greenAlpha, COLORS.redAlpha], 
+                borderColor: [COLORS.green, COLORS.red], 
+                borderWidth: 1, 
+                borderRadius: 8 
+              }],
+            }} options={{ ...defaultOptions, plugins: { ...defaultOptions.plugins, legend: { display: false } } }} />
+          </ChartCard>
+
+          <ChartCard title="Churn Category Breakdown" icon="📂" height={260}>
+            <Doughnut data={{
+              labels: d.churn_categories.labels,
+              datasets: [{ 
+                data: d.churn_categories.values, 
+                backgroundColor: [COLORS.redAlpha, COLORS.amberAlpha, COLORS.blueAlpha, COLORS.purpleAlpha, COLORS.cyanAlpha], 
+                borderWidth: 1 
+              }],
+            }} options={{ ...defaultOptions, scales: undefined }} />
+          </ChartCard>
+        </div>
+
+        <ChartCard title="Top Churn Reasons (Details)" icon="💡" height={300}>
           <Bar data={{
             labels: d.top_churn_reasons.labels,
             datasets: [{ label: "Count", data: d.top_churn_reasons.values, backgroundColor: COLORS.blueAlpha, borderColor: COLORS.blue, borderWidth: 1, borderRadius: 4 }],

@@ -54,13 +54,22 @@ def get_eda_data():
         stayed_charge_counts = pd.cut(stayed_df["Monthly Charge"], bins=bins_charge, labels=labels_charge, right=False).value_counts().reindex(labels_charge).fillna(0).tolist()
         churned_charge_counts = pd.cut(churned_df["Monthly Charge"], bins=bins_charge, labels=labels_charge, right=False).value_counts().reindex(labels_charge).fillna(0).tolist()
         
-        # Churn by contract
-        contract_counts = df.groupby("Contract")["Churn Label"].apply(lambda x: (x == "Yes").mean() * 100).round(1)
-        contract_labels = contract_counts.index.tolist()
-        contract_values = contract_counts.tolist()
+        # Churn by contract (Count of churned vs stayed per contract)
+        contract_data = df.groupby(["Contract", "Churn Label"]).size().unstack(fill_value=0)
+        contract_labels = contract_data.index.tolist()
+        contract_stayed = contract_data["No"].tolist() if "No" in contract_data.columns else [0]*len(contract_data)
+        contract_churned = contract_data["Yes"].tolist() if "Yes" in contract_data.columns else [0]*len(contract_data)
         
         # Top Churn Reasons
         top_reasons = churned_df["Churn Reason"].value_counts().head(10)
+
+        # Churn Categories (Moving to CRM & Billing as requested)
+        churn_cat = churned_df["Churn Category"].value_counts().head(5)
+        
+        # Monthly Charges by Churn (Average)
+        monthly_charges_by_churn = df.groupby("Churn Label")["Monthly Charge"].mean().round(2)
+        mc_labels = ["Stayed", "Churned"]
+        mc_values = [monthly_charges_by_churn.get("No", 0), monthly_charges_by_churn.get("Yes", 0)]
         
         ###############################################
         # 2. Subscriber Intel
@@ -118,12 +127,16 @@ def get_eda_data():
             "crm_billing": {
                 "kpis": {"subscribers": total_subscribers, "churn_rate": churn_rate, "avg_monthly_charges": avg_monthly_charges, "avg_cltv": avg_cltv},
                 "churn_distribution": {"labels": ["No", "Yes"], "values": [len(stayed_df), churn_count]},
-                "monthly_charges_hist": {
-                    "bin_labels": labels_charge,
-                    "stayed": stayed_charge_counts,
-                    "churned": churned_charge_counts,
+                "monthly_charges_by_churn": {"labels": mc_labels, "values": mc_values},
+                "churn_by_contract": {
+                    "labels": contract_labels,
+                    "stayed": contract_stayed,
+                    "churned": contract_churned,
                 },
-                "churn_by_contract": {"labels": contract_labels, "values": contract_values},
+                "churn_categories": {
+                    "labels": churn_cat.index.tolist(),
+                    "values": churn_cat.tolist(),
+                },
                 "top_churn_reasons": {
                     "labels": top_reasons.index.tolist(),
                     "values": top_reasons.tolist(),
