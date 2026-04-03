@@ -3,6 +3,8 @@ import styles from "./OfferEngine.module.css";
 
 interface Customer {
   customer_id: string;
+  name?: string;
+  email?: string;
   country: string;
   state: string;
   city: string;
@@ -59,6 +61,8 @@ export default function OfferCohortTable({ customers }: OfferCohortTableProps) {
           <thead>
             <tr>
               <th>Customer ID</th>
+              <th>Name</th>
+              <th>Email</th>
               <th>Country</th>
               <th>State</th>
               <th>City</th>
@@ -84,7 +88,7 @@ export default function OfferCohortTable({ customers }: OfferCohortTableProps) {
             {pageRows.length === 0 ? (
               <tr>
                 <td
-                  colSpan={20}
+                  colSpan={22}
                   style={{ textAlign: "center", padding: "40px", color: "#64748b" }}
                 >
                   No customers matched for the current selection.
@@ -94,6 +98,8 @@ export default function OfferCohortTable({ customers }: OfferCohortTableProps) {
               pageRows.map((c, i) => (
                 <tr key={`${c.customer_id}-${i}`}>
                   <td>{c.customer_id || c["Customer ID"] || "—"}</td>
+                  <td>{c.name || c["Name"] || c["name"] || "—"}</td>
+                  <td>{c.email || c["Email"] || c["email"] || "—"}</td>
                   <td>{c.country || c["Country"] || "—"}</td>
                   <td>{c.state || c["State"] || "—"}</td>
                   <td>{c.city || c["City"] || "—"}</td>

@@ -14,6 +14,7 @@ import styles from "../offer-engine/OfferEngine.module.css";
 export default function OutreachTab() {
   const [data, setData] = useState<any>(null);
   const [channels, setChannels] = useState<any[]>([]);
+  const [msgTemplate, setMsgTemplate] = useState("");
 
   // Strategy Mapping State
   const [selectedMain, setSelectedMain] = useState(TAXONOMY[0].main_category);
@@ -39,6 +40,11 @@ export default function OutreachTab() {
     })
       .then((r) => {
         setActiveStrategy(r.data.active_strategy);
+        if (r.data.active_strategy?.recommendation) {
+          setMsgTemplate(`Hi {{name}}, we noticed you've been with us for {{tenure}} months! As a valued customer, we'd like to offer you a special ${r.data.active_strategy.recommendation.offer_type}. Reply YES to accept.`);
+        } else {
+          setMsgTemplate("");
+        }
       })
       .catch(console.error)
       .finally(() => setIsFetchingStrategy(false));
@@ -74,9 +80,9 @@ export default function OutreachTab() {
             offer_summary: activeStrategy.recommendation.offer_summary,
             channels: selectedKeys,
             target_customers: activeStrategy.customers.map((c: any) => ({
-              customer_id: c.customer_id,
-              name: `Customer ${c.customer_id}`,
-              email: `${c.customer_id.toLowerCase()}@client.com`,
+              customer_id: c.customer_id || c["Customer ID"],
+              name: c.name || `Customer ${c.customer_id}`,
+              email: c.email || `${(c.customer_id || "unknown").toLowerCase()}@client.com`,
               state: c.state,
               churn_reason: c.churn_reason,
               rationale: c.rationale
@@ -84,15 +90,22 @@ export default function OutreachTab() {
           })
         });
       }
-    } catch (e) {
-      console.error("Webhook trigger failed:", e);
-    }
 
-    // Success resolution for the UI flow
-    alert(`Campaign triggered successfully! External integrations notified.`);
-    api.get("/outreach")
-       .then(res => setData(res.data))
-       .finally(() => setIsTriggering(false));
+      // Record in system
+      await api.post("/outreach/trigger", {
+        campaign_id: activeStrategy._id,
+        channels: selectedKeys,
+        message_template: msgTemplate
+      });
+
+      alert(`Campaign triggered successfully! External integrations notified.`);
+      api.get("/outreach").then(res => setData(res.data));
+    } catch (e) {
+      console.error("Campaign trigger failed:", e);
+      alert("Failed to trigger campaign.");
+    } finally {
+      setIsTriggering(false);
+    }
   };
 
 

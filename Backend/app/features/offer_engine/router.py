@@ -9,6 +9,7 @@ from service.llm import get_groq_llm
 from app.database import get_db_engine
 from app.db.mongodb import db as mongo_db
 from .data import TAXONOMY, RISK_LEVELS, OFFER_EFFECTIVENESS, ACCEPTANCE_BY_RISK
+from sqlalchemy import text # Ensure text is available for queries
 
 router = APIRouter()
 
@@ -69,11 +70,11 @@ def derive_risk_level(churn_score) -> str:
 def get_risk_score_range(selected_risk_level: str) -> tuple[int, int]:
     normalized_level = normalize_level_label(selected_risk_level)
     ranges = {
-        "Level 1": (80, 100),
-        "Level 2": (60, 79),
-        "Level 3": (40, 59),
-        "Level 4": (20, 39),
-        "Level 5": (0, 19),
+        "Level 1": (65, 100), # Adjusted to capture scores >= 65
+        "Level 2": (45, 64),
+        "Level 3": (30, 44),
+        "Level 4": (15, 29),
+        "Level 5": (0, 14),
     }
     return ranges.get(normalized_level, (0, 100))
 
@@ -103,9 +104,41 @@ def fallback_offer_template(selected_sub_category: str, risk_level: str) -> str:
 
 
 def save_offer_cohort_document(payload: SaveOfferPlanRequest):
-    """Save a new finalized cohort and plan to MongoDB (History-aware)."""
+    """Save a new finalized cohort and plan to MongoDB, enriched with Name/Email from Postgres."""
     if mongo_db is None:
         raise HTTPException(status_code=500, detail="MongoDB not connected")
+    
+    engine = get_db_engine()
+    customer_data_map = {}
+    
+    # Enrichment step
+    if engine and payload.customers:
+        try:
+            # Get IDs and filter out empty ones
+            cids = [str(c.get("customer_id") or c.get("Customer ID", "")) for c in payload.customers]
+            cids = [id for id in cids if id.strip()]
+            
+            if cids:
+                # Query Postgres 'merged' table for Name and Email
+                query = text("SELECT \"Customer ID\", \"Name\", \"email\" FROM public.\"merged\" WHERE \"Customer ID\" IN :cids")
+                with engine.connect() as conn:
+                    result = conn.execute(query, {"cids": tuple(cids)})
+                    for row in result:
+                        m = row._mapping
+                        customer_data_map[str(m["Customer ID"])] = {"name": m["Name"], "email": m["email"]}
+        except Exception as e:
+            print(f"Postgres Enrichment Error: {e}")
+
+    # Enrich customer list
+    enriched_customers = []
+    for c in payload.customers:
+        cid = str(c.get("customer_id") or c.get("Customer ID", ""))
+        extra = customer_data_map.get(cid, {
+            "name": c.get("name") or f"Customer {cid}", 
+            "email": c.get("email") or f"{cid.lower()}@client.com"
+        })
+        enriched_customers.append({**c, **extra})
+
     try:
         coll = mongo_db["offer_campaigns"]
         timestamp = datetime.now(timezone.utc)
@@ -122,8 +155,8 @@ def save_offer_cohort_document(payload: SaveOfferPlanRequest):
             "sub_category": payload.selected_sub_category,
             "risk_level": payload.selected_risk_level,
             "recommendation": payload.selected_recommendation,
-            "customer_count": len(payload.customers),
-            "customers": payload.customers,
+            "customer_count": len(enriched_customers),
+            "customers": enriched_customers,
             "notify_user": False,
             "created_at": timestamp,
             "updated_at": timestamp
@@ -132,7 +165,7 @@ def save_offer_cohort_document(payload: SaveOfferPlanRequest):
         # Use insert_one instead of update_one to preserve history
         coll.insert_one(doc)
         
-        return {"document_name": doc_name, "customer_count": len(payload.customers)}
+        return {"document_name": doc_name, "customer_count": len(enriched_customers)}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Database save failed: {str(e)}")
 
@@ -158,31 +191,34 @@ async def get_offer_engine_customers(limit: int = Query(default=500, ge=1, le=50
     query = text(
         """
         SELECT
-            "CustomerID" AS customer_id,
-            "Country" AS country,
-            "State" AS state,
-            "City" AS city,
-            "Zip Code" AS zip_code,
-            "Gender" AS gender,
-            "Senior Citizen" AS senior_citizen,
-            "Partner" AS partner,
-            "Dependents" AS dependents,
-            "Tenure Months" AS tenure_months,
-            "Internet Service" AS internet_service,
-            "Contract" AS contract,
-            "Payment Method" AS payment_method,
-            "Monthly Charges" AS monthly_charges,
-            "Total Charges" AS total_charges,
-            "Churn Label" AS churn_label,
-            "Churn Value" AS churn_value,
-            "Churn Score" AS churn_score,
-            "CLTV" AS cltv,
-            "Reason" AS churn_reason,
-            "Main Category" AS main_category,
-            "Sub Category" AS sub_category
-        FROM public."Churn_New"
-        WHERE "Churn Value" = 1
-        ORDER BY "CustomerID"
+            c."CustomerID" AS customer_id,
+            m."Name" as name,
+            m."email" as email,
+            c."Country" AS country,
+            c."State" AS state,
+            c."City" AS city,
+            c."Zip Code" AS zip_code,
+            c."Gender" AS gender,
+            c."Senior Citizen" AS senior_citizen,
+            c."Partner" AS partner,
+            c."Dependents" AS dependents,
+            c."Tenure Months" AS tenure_months,
+            c."Internet Service" AS internet_service,
+            c."Contract" AS contract,
+            c."Payment Method" AS payment_method,
+            c."Monthly Charges" AS monthly_charges,
+            c."Total Charges" AS total_charges,
+            c."Churn Label" AS churn_label,
+            c."Churn Value" AS churn_value,
+            c."Churn Score" AS churn_score,
+            c."CLTV" AS cltv,
+            c."Reason" AS churn_reason,
+            c."Main Category" AS main_category,
+            c."Sub Category" AS sub_category
+        FROM public."Churn_New" c
+        LEFT JOIN public."merged" m ON c."CustomerID" = m."Customer ID"
+        WHERE c."Churn Value" = 1
+        ORDER BY c."CustomerID"
         LIMIT :limit;
         """
     )
@@ -204,35 +240,38 @@ async def match_offer_customers(payload: OfferGenerationRequest):
     query = text(
         """
         SELECT
-            "CustomerID" AS customer_id,
-            "Country" AS country,
-            "State" AS state,
-            "City" AS city,
-            "Zip Code" AS zip_code,
-            "Gender" AS gender,
-            "Senior Citizen" AS senior_citizen,
-            "Partner" AS partner,
-            "Dependents" AS dependents,
-            "Tenure Months" AS tenure_months,
-            "Internet Service" AS internet_service,
-            "Contract" AS contract,
-            "Payment Method" AS payment_method,
-            "Monthly Charges" AS monthly_charges,
-            "Total Charges" AS total_charges,
-            "Churn Label" AS churn_label,
-            "Churn Value" AS churn_value,
-            "Churn Score" AS churn_score,
-            "CLTV" AS cltv,
-            "Reason" AS churn_reason,
-            "Main Category" AS main_category,
-            "Sub Category" AS sub_category
-        FROM public."Churn_New"
-        WHERE "Churn Value" = 1
-          AND "Main Category" = :main_category
-          AND "Sub Category" = :sub_category
-          AND "Churn Score" >= :min_score
-          AND "Churn Score" <= :max_score
-        ORDER BY "Churn Score" DESC, "CustomerID"
+            c."CustomerID" AS customer_id,
+            m."Name" as name,
+            m."email" as email,
+            c."Country" AS country,
+            c."State" AS state,
+            c."City" AS city,
+            c."Zip Code" AS zip_code,
+            c."Gender" AS gender,
+            c."Senior Citizen" AS senior_citizen,
+            c."Partner" AS partner,
+            c."Dependents" AS dependents,
+            c."Tenure Months" AS tenure_months,
+            c."Internet Service" AS internet_service,
+            c."Contract" AS contract,
+            c."Payment Method" AS payment_method,
+            c."Monthly Charges" AS monthly_charges,
+            c."Total Charges" AS total_charges,
+            c."Churn Label" AS churn_label,
+            c."Churn Value" AS churn_value,
+            c."Churn Score" AS churn_score,
+            c."CLTV" AS cltv,
+            c."Reason" AS churn_reason,
+            c."Main Category" AS main_category,
+            c."Sub Category" AS sub_category
+        FROM public."Churn_New" c
+        LEFT JOIN public."merged" m ON c."CustomerID" = m."Customer ID"
+        WHERE c."Churn Value" = 1
+          AND c."Main Category" = :main_category
+          AND c."Sub Category" = :sub_category
+          AND c."Churn Score" >= :min_score
+          AND c."Churn Score" <= :max_score
+        ORDER BY c."Churn Score" DESC, c."CustomerID"
         LIMIT 5000;
         """
     )
@@ -243,8 +282,8 @@ async def match_offer_customers(payload: OfferGenerationRequest):
                 {
                     "main_category": payload.selected_main_category,
                     "sub_category": payload.selected_sub_category,
-                    "min_score": min_score,
-                    "max_score": max_score,
+                    "min_score": int(min_score),
+                    "max_score": int(max_score),
                 },
             )
             rows = []
