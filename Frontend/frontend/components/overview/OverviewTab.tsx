@@ -22,19 +22,19 @@ export default function OverviewTab() {
       <PipelineFlow steps={data.pipeline} />
 
       <div className="panel-grid panel-grid--6 mb-6 mt-4">
-        <KpiCard label="Subscribers Unified" value={k.subscribers_unified.toLocaleString()} sub="Customer360 Intelligence layer" color="blue" />
+        <KpiCard label="Subscribers Unified" value={k.subscribers_unified.toLocaleString()} sub="Joined Customer360 Base" color="blue" />
         <KpiCard label="Current Churn Rate" value={`${k.current_churn_rate}%`} sub={`Target: ${k.target_churn_rate}% with AI agents`} color="red" />
-        <KpiCard label="High-Risk Flagged" value={k.high_risk_flagged.toLocaleString()} sub="Scored daily by Agent 2" color="amber" />
+        <KpiCard label="High-Risk Flagged" value={k.high_risk_flagged.toLocaleString()} sub="Scored > 70 by Model" color="amber" />
         <KpiCard label="Retention Offers Sent" value={k.retention_offers_sent.toLocaleString()} sub="Via Agent 3 + Agent 4" color="green" />
         <KpiCard label="Subscribers Saved" value={k.subscribers_saved.toLocaleString()} sub="Through AI intervention" color="purple" />
-        <KpiCard label="Model ROC-AUC" value={`${k.model_roc_auc}%`} sub="Gradient Boosting — validated" color="cyan" />
+        <KpiCard label="Average CLTV" value={`$${k.avg_cltv.toLocaleString()}`} sub="Customer Lifetime Value" color="cyan" />
       </div>
 
       <div className="mb-6">
         <AgentLog entries={[]} />
       </div>
 
-      <OverviewCharts churnTrend={data.churn_trend} agentActivity={data.agent_activity} />
+      <OverviewCharts churnTrend={data.churn_trend} riskDistribution={data.risk_distribution} />
     </div>
   );
 }

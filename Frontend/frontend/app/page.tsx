@@ -1,5 +1,6 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import Header from "../components/layout/Header";
 import TabNavigation from "../components/layout/TabNavigation";
 import OverviewTab from "../components/overview/OverviewTab";
@@ -12,14 +13,15 @@ import DataExplorerTab from "../components/data-explorer/DataExplorerTab";
 import MlModelsTab from "../components/ml-models/MlModelsTab";
 import RoleViewsTab from "../components/role-views/RoleViewsTab";
 import MilestonesTab from "../components/milestones/MilestonesTab";
-import CustomerDetailView from "../components/customer-details/CustomerDetailView";
 
-export default function Dashboard() {
+function DashboardContent() {
   const [activeTab, setActiveTab] = useState("overview");
-  const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
+  const searchParams = useSearchParams();
 
-  const handleViewCustomer = (id: string) => setSelectedCustomerId(id);
-  const closeCustomerDetail = () => setSelectedCustomerId(null);
+  useEffect(() => {
+    const tab = searchParams.get("tab");
+    if (tab) setActiveTab(tab);
+  }, [searchParams]);
 
   return (
     <>
@@ -29,7 +31,7 @@ export default function Dashboard() {
       <main>
         {activeTab === "overview" && <OverviewTab />}
         {activeTab === "data-agent" && <DataAgentTab />}
-        {activeTab === "churn-scoring" && <ChurnScoringTab onViewCustomer={handleViewCustomer} />}
+        {activeTab === "churn-scoring" && <ChurnScoringTab />}
         {activeTab === "offer-engine" && <OfferEngineTab />}
         {activeTab === "outreach" && <OutreachTab />}
         {activeTab === "live-impact" && <LiveImpactTab />}
@@ -38,10 +40,14 @@ export default function Dashboard() {
         {activeTab === "role-views" && <RoleViewsTab />}
         {activeTab === "milestones" && <MilestonesTab />}
       </main>
-
-      {selectedCustomerId && (
-        <CustomerDetailView customerId={selectedCustomerId} onClose={closeCustomerDetail} />
-      )}
     </>
+  );
+}
+
+export default function Dashboard() {
+  return (
+    <Suspense fallback={<div className="p-20 text-center font-black uppercase text-gray-400">Initializing Intelligence Engine...</div>}>
+      <DashboardContent />
+    </Suspense>
   );
 }

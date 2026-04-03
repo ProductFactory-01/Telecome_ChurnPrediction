@@ -163,64 +163,120 @@ export default function DataExplorerTab() {
 
   const renderSubscriber = () => {
     const d = data.subscriber_intel;
+    if (!d || !d.kpis) return null;
+
     return (
-      <div className="panel-grid panel-grid--2">
-        <ChartCard title="Age Distribution by Churn" icon="👤">
-          <Bar data={{
-            labels: d.age_distribution.bin_labels,
-            datasets: [
-              { label: "Stayed", data: d.age_distribution.stayed, backgroundColor: COLORS.greenAlpha, borderColor: COLORS.green, borderWidth: 1, borderRadius: 4 },
-              { label: "Churned", data: d.age_distribution.churned, backgroundColor: COLORS.redAlpha, borderColor: COLORS.red, borderWidth: 1, borderRadius: 4 },
-            ],
-          }} options={defaultOptions} />
-        </ChartCard>
-        <ChartCard title="Satisfaction Distribution" icon="⭐">
-          <Bar data={{
-            labels: d.satisfaction_distribution.scores.map((s: number) => `Score ${s}`),
-            datasets: [
-              { label: "Stayed", data: d.satisfaction_distribution.stayed, backgroundColor: COLORS.greenAlpha, borderColor: COLORS.green, borderWidth: 1, borderRadius: 4 },
-              { label: "Churned", data: d.satisfaction_distribution.churned, backgroundColor: COLORS.redAlpha, borderColor: COLORS.red, borderWidth: 1, borderRadius: 4 },
-            ],
-          }} options={defaultOptions} />
-        </ChartCard>
-        <ChartCard title="Churn Categories" icon="📂" height={240}>
-          <Doughnut data={{
-            labels: d.churn_categories.labels,
-            datasets: [{ data: d.churn_categories.values, backgroundColor: [COLORS.redAlpha, COLORS.amberAlpha, COLORS.blueAlpha, COLORS.purpleAlpha, COLORS.cyanAlpha], borderWidth: 1 }],
-          }} options={{ ...defaultOptions, scales: undefined }} />
-        </ChartCard>
-        <ChartCard title="Referral vs Churn" icon="🔗">
-          <Bar data={{
-            labels: d.referral_churn.labels,
-            datasets: [{ label: "Churn %", data: d.referral_churn.values, backgroundColor: [COLORS.greenAlpha, COLORS.redAlpha], borderColor: [COLORS.green, COLORS.red], borderWidth: 1, borderRadius: 6 }],
-          }} options={{ ...defaultOptions, plugins: { ...defaultOptions.plugins, legend: { display: false } } }} />
-        </ChartCard>
+      <div className="panel-grid--1">
+        <div className="panel-grid panel-grid--3 mb-6">
+          <KpiCard label="Senior Citizens" value={d.kpis.senior_citizens?.toLocaleString() ?? "0"} color="purple" />
+          <KpiCard label="High-Value Segment" value={`${d.kpis.high_cltv_ratio ?? 0}%`} color="cyan" />
+          <KpiCard label="Avg Tenure (Months)" value={d.kpis.avg_tenure ?? "0"} color="green" />
+        </div>
+
+        <div className="panel-grid panel-grid--2">
+          <ChartCard title="Age Distribution by Churn" icon="👤">
+            <Bar data={{
+              labels: d.age_distribution?.bin_labels ?? [],
+              datasets: [
+                { label: "Stayed", data: d.age_distribution?.stayed ?? [], backgroundColor: COLORS.greenAlpha, borderColor: COLORS.green, borderWidth: 1, borderRadius: 4 },
+                { label: "Churned", data: d.age_distribution?.churned ?? [], backgroundColor: COLORS.redAlpha, borderColor: COLORS.red, borderWidth: 1, borderRadius: 4 },
+              ],
+            }} options={defaultOptions} />
+          </ChartCard>
+          <ChartCard title="Satisfaction vs Churn" icon="⭐">
+            <Bar data={{
+              labels: d.satisfaction_distribution?.scores?.map((s: number) => `Score ${s}`) ?? [],
+              datasets: [
+                { label: "Stayed", data: d.satisfaction_distribution?.stayed ?? [], backgroundColor: COLORS.greenAlpha, borderColor: COLORS.green, borderWidth: 1, borderRadius: 4 },
+                { label: "Churned", data: d.satisfaction_distribution?.churned ?? [], backgroundColor: COLORS.redAlpha, borderColor: COLORS.red, borderWidth: 1, borderRadius: 4 },
+              ],
+            }} options={defaultOptions} />
+          </ChartCard>
+          <ChartCard title="Senior Citizen Churn Rate" icon="👴" height={240}>
+            <Doughnut data={{
+              labels: d.senior_impact?.labels ?? [],
+              datasets: [{ 
+                data: d.senior_impact?.values ?? [], 
+                backgroundColor: [COLORS.blueAlpha, COLORS.redAlpha], 
+                borderWidth: 1 
+              }],
+            }} options={{ ...defaultOptions, scales: undefined }} />
+          </ChartCard>
+          <ChartCard title="Internet Type Distribution" icon="🌐">
+            <Bar data={{
+              labels: d.internet_type_dist?.labels ?? [],
+              datasets: [{ 
+                label: "Subscribers", 
+                data: d.internet_type_dist?.values ?? [], 
+                backgroundColor: [COLORS.blueAlpha, COLORS.amberAlpha, COLORS.purpleAlpha, COLORS.greenAlpha], 
+                borderWidth: 1, 
+                borderRadius: 6 
+              }],
+            }} options={defaultOptions} />
+          </ChartCard>
+        </div>
       </div>
     );
   };
 
   const renderUsage = () => {
     const d = data.usage_services;
+    if (!d || !d.kpis) return null;
+
     return (
-      <div className="panel-grid panel-grid--2">
-        <ChartCard title="Service-Level Churn Rates" icon="⚙️">
-          <Bar data={{
-            labels: d.service_churn_rates.labels,
-            datasets: [{ label: "Churn %", data: d.service_churn_rates.values, backgroundColor: COLORS.purpleAlpha, borderColor: COLORS.purple, borderWidth: 1, borderRadius: 4 }],
-          }} options={{ ...defaultOptions, plugins: { ...defaultOptions.plugins, legend: { display: false } } }} />
-        </ChartCard>
-        <ChartCard title="Churn by Payment Method" icon="💳">
-          <Bar data={{
-            labels: d.churn_by_payment.labels,
-            datasets: [{ label: "Churn %", data: d.churn_by_payment.values, backgroundColor: [COLORS.redAlpha, COLORS.amberAlpha, COLORS.blueAlpha, COLORS.greenAlpha], borderColor: [COLORS.red, COLORS.amber, COLORS.blue, COLORS.green], borderWidth: 1, borderRadius: 6 }],
-          }} options={{ ...defaultOptions, plugins: { ...defaultOptions.plugins, legend: { display: false } } }} />
-        </ChartCard>
-        <ChartCard title="Churn by Internet Type" icon="🌐">
-          <Bar data={{
-            labels: d.churn_by_internet.labels,
-            datasets: [{ label: "Churn %", data: d.churn_by_internet.values, backgroundColor: [COLORS.blueAlpha, COLORS.redAlpha, COLORS.greenAlpha], borderColor: [COLORS.blue, COLORS.red, COLORS.green], borderWidth: 1, borderRadius: 6 }],
-          }} options={{ ...defaultOptions, plugins: { ...defaultOptions.plugins, legend: { display: false } } }} />
-        </ChartCard>
+      <div className="panel-grid--1">
+        <div className="panel-grid panel-grid--2 mb-6">
+          <KpiCard label="Avg GB Download / Mo" value={d.kpis.avg_gb_monthly ?? "0"} color="blue" />
+          <KpiCard label="Unlimited Data Adoption" value={`${d.kpis.unlimited_data_adoption ?? 0}%`} color="cyan" />
+        </div>
+
+        <div className="panel-grid panel-grid--2">
+          <ChartCard title="Tenure vs. Monthly Charges" icon="📈">
+            <Line data={{
+              labels: d.tenure_vs_charges?.stayed?.x ?? [],
+              datasets: [
+                { label: "Stayed ($)", data: d.tenure_vs_charges?.stayed?.y ?? [], borderColor: COLORS.green, backgroundColor: COLORS.greenAlpha, tension: 0.4, pointRadius: 0, fill: true },
+                { label: "Churned ($)", data: d.tenure_vs_charges?.churned?.y ?? [], borderColor: COLORS.red, backgroundColor: COLORS.redAlpha, tension: 0.4, pointRadius: 0, fill: true },
+              ],
+            }} options={defaultOptions} />
+          </ChartCard>
+          <ChartCard title="Value-Added Service Adoption" icon="🛠️">
+            <Bar data={{
+              labels: d.service_adoption?.labels ?? [],
+              datasets: [{ 
+                label: "Adoption %", 
+                data: d.service_adoption?.values ?? [], 
+                backgroundColor: COLORS.blueAlpha, 
+                borderColor: COLORS.blue, 
+                borderWidth: 1, 
+                borderRadius: 4 
+              }],
+            }} options={{ ...defaultOptions, indexAxis: "y" as const }} />
+          </ChartCard>
+          <ChartCard title="Data Usage by Internet Type (GB)" icon="🌐">
+            <Bar data={{
+              labels: d.gb_usage_by_type?.labels ?? [],
+              datasets: [{ 
+                label: "Avg GB", 
+                data: d.gb_usage_by_type?.values ?? [], 
+                backgroundColor: [COLORS.blueAlpha, COLORS.amberAlpha, COLORS.purpleAlpha], 
+                borderWidth: 1 
+              }],
+            }} options={defaultOptions} />
+          </ChartCard>
+          <ChartCard title="Churn by Internet Service" icon="📡">
+            <Bar data={{
+              labels: d.churn_by_internet?.labels ?? [],
+              datasets: [{ 
+                label: "Churn %", 
+                data: d.churn_by_internet?.values ?? [], 
+                backgroundColor: [COLORS.redAlpha, COLORS.amberAlpha, COLORS.greenAlpha], 
+                borderWidth: 1, 
+                borderRadius: 4 
+              }],
+            }} options={defaultOptions} />
+          </ChartCard>
+        </div>
       </div>
     );
   };

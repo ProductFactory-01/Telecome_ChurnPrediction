@@ -6,54 +6,75 @@ import ChartCard from "../shared/ChartCard";
 
 interface Props {
   churnTrend: { labels: string[]; without_ai: number[]; with_ai: number[] };
-  agentActivity: { labels: string[]; tasks_completed: number[] };
+  riskDistribution: { labels: string[]; counts: number[] };
 }
 
-export default function OverviewCharts({ churnTrend, agentActivity }: Props) {
+export default function OverviewCharts({ churnTrend, riskDistribution }: Props) {
   const trendData = {
     labels: churnTrend.labels,
     datasets: [
       {
-        label: "Without AI",
+        label: "Expected Churn % (Without AI)",
         data: churnTrend.without_ai,
         borderColor: COLORS.red,
         backgroundColor: "rgba(239,68,68,0.1)",
         borderDash: [6, 3],
-        tension: 0.3,
+        tension: 0.4,
         fill: false,
       },
       {
-        label: "With AI Pipeline",
+        label: "AI-Predicted Churn %",
         data: churnTrend.with_ai,
-        borderColor: COLORS.green,
-        backgroundColor: "rgba(16,185,129,0.1)",
-        tension: 0.3,
+        borderColor: COLORS.blue,
+        backgroundColor: "rgba(59,130,246,0.1)",
+        tension: 0.4,
         fill: true,
       },
     ],
   };
 
-  const actData = {
-    labels: agentActivity.labels,
+  const riskData = {
+    labels: riskDistribution.labels,
     datasets: [
       {
-        label: "Tasks Completed",
-        data: agentActivity.tasks_completed,
-        backgroundColor: [COLORS.blueAlpha, COLORS.amberAlpha, COLORS.greenAlpha, COLORS.purpleAlpha],
-        borderColor: [COLORS.blue, COLORS.amber, COLORS.green, COLORS.purple],
-        borderWidth: 1,
-        borderRadius: 6,
+        label: "Subscribers",
+        data: riskDistribution.counts,
+        backgroundColor: [COLORS.greenAlpha, COLORS.amberAlpha, COLORS.redAlpha],
+        borderColor: [COLORS.green, COLORS.amber, COLORS.red],
+        borderWidth: 1.5,
+        borderRadius: 8,
       },
     ],
   };
 
+  const trendOptions = {
+    ...defaultOptions,
+    plugins: {
+      ...defaultOptions.plugins,
+      legend: { position: "top" as const },
+      tooltip: { mode: "index" as const, intersect: false },
+    },
+    scales: {
+      y: { grid: { color: COLORS.gridColor, borderDash: [4, 4] }, title: { display: true, text: "Churn Probability %" } },
+      x: { grid: { display: false }, title: { display: true, text: "Tenure Groups" } },
+    },
+  };
+
+  const riskOptions = {
+    ...defaultOptions,
+    plugins: {
+      ...defaultOptions.plugins,
+      legend: { display: false },
+    },
+  };
+
   return (
     <div className="panel-grid panel-grid--2">
-      <ChartCard title="Projected Churn Trend" icon="📉">
-        <Line data={trendData} options={{ ...defaultOptions, plugins: { ...defaultOptions.plugins, legend: { ...defaultOptions.plugins.legend, position: "top" as const } } }} />
+      <ChartCard title="Churn Trajectory by Tenure" icon="📉">
+        <Line data={trendData} options={trendOptions} />
       </ChartCard>
-      <ChartCard title="Agent Activity" icon="⚡">
-        <Bar data={actData} options={{ ...defaultOptions, plugins: { ...defaultOptions.plugins, legend: { display: false } } }} />
+      <ChartCard title="Risk Flag Distribution" icon="🚨">
+        <Bar data={riskData} options={riskOptions} />
       </ChartCard>
     </div>
   );
