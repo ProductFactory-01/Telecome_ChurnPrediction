@@ -25,7 +25,8 @@ def get_eda_data():
             '"Tenure in Months"', '"Contract"', '"Payment Method"', '"Internet Service"', 
             '"Online Security"', '"Online Backup"', '"Device Protection Plan"', '"Premium Tech Support"', 
             '"Streaming TV"', '"Streaming Movies"', '"Monthly Charge"', '"CLTV"', 
-            '"Satisfaction Score"', '"Churn Label"', '"Churn Category"', '"Churn Reason"', '"State"', '"City"'
+            '"Satisfaction Score"', '"Churn Label"', '"Churn Category"', '"Churn Reason"', '"State"', '"City"',
+            '"Number of Referrals"', '"Married"', '"Avg Monthly GB Download"', '"Unlimited Data"', '"Internet Type"'
         ]
         
         query = f"SELECT {', '.join(cols_to_load)} FROM merged"
@@ -139,6 +140,34 @@ def get_eda_data():
         sources = ["Call Center", "Web Portal", "Mobile App", "In-Store"]
         source_counts = [int(total_dissat * 0.45), int(total_dissat * 0.25), int(total_dissat * 0.20), int(total_dissat * 0.10)]
 
+        # --- SUBSCRIBER INTEL (Demographics) ---
+        # Senior Citizen Churn
+        senior_churn = df.groupby(["Senior Citizen", "Churn Label"]).size().unstack(fill_value=0)
+        senior_labels = ["Non-Senior", "Senior Citizen"] # Based on No/Yes
+        senior_values = [
+            (senior_churn.loc["No", "Yes"] / senior_churn.loc["No"].sum() * 100) if "No" in senior_churn.index else 0,
+            (senior_churn.loc["Yes", "Yes"] / senior_churn.loc["Yes"].sum() * 100) if "Yes" in senior_churn.index else 0
+        ]
+        
+        # Internet Type Distribution
+        int_type_dist = df["Internet Type"].value_counts().fillna("None")
+        
+        # High CLTV Segment (CLTV > 5000)
+        high_cltv_count = len(df[df["CLTV"] > 5000])
+
+        # --- USAGE & SERVICES (Behavior) ---
+        # Service Adoption Rate (excluding non-internet users)
+        internet_users = df[df["Internet Service"] != "No"]
+        services = ["Online Security", "Online Backup", "Device Protection Plan", "Premium Tech Support", "Streaming TV", "Streaming Movies"]
+        adoption_vals = [(len(internet_users[internet_users[s] == "Yes"]) / len(internet_users) * 100) if len(internet_users) > 0 else 0 for s in services]
+        
+        # GB Usage by Internet Type
+        gb_usage = df.groupby("Internet Service")["Avg Monthly GB Download"].mean().round(1)
+        
+        # Churn rates for Usage & Services tab (legacy support)
+        pay_churn = df.groupby("Payment Method")["Churn Label"].apply(lambda x: (x == "Yes").mean() * 100).round(1)
+        int_churn = df.groupby("Internet Service")["Churn Label"].apply(lambda x: (x == "Yes").mean() * 100).round(1)
+
         # Churn rates for Usage & Services tab (legacy support)
         pay_churn = df.groupby("Payment Method")["Churn Label"].apply(lambda x: (x == "Yes").mean() * 100).round(1)
         int_churn = df.groupby("Internet Service")["Churn Label"].apply(lambda x: (x == "Yes").mean() * 100).round(1)
@@ -188,30 +217,36 @@ def get_eda_data():
                 },
             },
             "subscriber_intel": {
+                "kpis": {
+                    "senior_citizens": len(df[df["Senior Citizen"] == "Yes"]),
+                    "high_cltv_ratio": round((high_cltv_count / len(df)) * 100, 1) if len(df) > 0 else 0,
+                    "avg_tenure": round(df["Tenure in Months"].mean(), 1),
+                },
                 "age_distribution": {
                     "bin_labels": labels_age,
                     "stayed": stayed_age_counts,
                     "churned": churned_age_counts,
                 },
                 "satisfaction_distribution": {"scores": scores, "stayed": stayed_sat, "churned": churned_sat},
-                "churn_categories": {
-                    "labels": churn_cat.index.tolist(),
-                    "values": churn_cat.tolist(),
-                },
-                "referral_churn": {"labels": ["Referred", "Not Referred"], "values": [ref_groups.get("Yes", 0), ref_groups.get("No", 0)]},
+                "senior_impact": {"labels": senior_labels, "values": senior_values},
+                "internet_type_dist": {"labels": int_type_dist.index.tolist(), "values": int_type_dist.tolist()},
             },
             "usage_services": {
+                "kpis": {
+                    "avg_gb_monthly": round(df["Avg Monthly GB Download"].mean(), 1),
+                    "unlimited_data_adoption": round((len(df[df.get("Unlimited Data", "") == "Yes"]) / len(df)) * 100, 1) if "Unlimited Data" in df.columns else 0,
+                },
                 "tenure_vs_charges": {
                     "stayed": {"x": stayed_x, "y": stayed_y},
                     "churned": {"x": churned_x, "y": churned_y},
                 },
-                "service_churn_rates": {
-                    "labels": service_churn_labels,
-                    "values": service_churn_vals,
+                "service_adoption": {
+                    "labels": ["Security", "Backup", "Protection", "Tech Support", "TV", "Movies"],
+                    "values": [round(v, 1) for v in adoption_vals],
                 },
-                "churn_by_payment": {
-                    "labels": pay_churn.index.tolist(),
-                    "values": pay_churn.tolist(),
+                "gb_usage_by_type": {
+                    "labels": gb_usage.index.tolist(),
+                    "values": gb_usage.tolist(),
                 },
                 "churn_by_internet": {
                     "labels": int_churn.index.tolist(),
