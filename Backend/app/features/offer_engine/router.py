@@ -471,11 +471,11 @@ async def generate_offer_recommendations(payload: OfferGenerationRequest):
         },
         "rules": {
             "allowed_offer_types": [
-                "Discount",
-                "Custom Bundle",
-                "Loyalty Points",
-                "Gamification",
-                "Plan Upgrade",
+                {"type": "Discount", "description": "Purely financial recovery (percentage or fixed amount bill credit)."},
+                {"type": "Custom Bundle", "description": "Adding value without necessarily cutting price (e.g., Free Streaming, complementary add-on)."},
+                {"type": "Loyalty Points", "description": "Long-term engagement (locking customers into the ecosystem via rewards)."},
+                {"type": "Gamification", "description": "Behavioral nudges and interactive rewards (e.g., 'Complete your profile' or '3-month streak' for a reward)."},
+                {"type": "Plan Upgrade", "description": "Moving the user to a better experience or higher tier to reduce friction and improve service satisfaction."},
             ],
             "required_output": [
                 "plan_id",
@@ -488,18 +488,16 @@ async def generate_offer_recommendations(payload: OfferGenerationRequest):
             ],
         },
         "task": (
-            "Create exactly 3 distinct retention plan recommendations for this selected churn-risk segment. "
-            "Create exactly 3 distinct retention plan recommendations using only the selected_main_category, selected_sub_category, and selected_risk_level. "
+            "Create exactly 3 distinct retention plan recommendations for this selected churn-risk segment using only the selected_main_category, selected_sub_category, and selected_risk_level. "
+            "Use the provided allowed_offer_types and their descriptions to guide the strategy. "
             "Do not rely on individual customer records to decide the plan. "
             "Each recommendation must be category-level, not customer-level. "
-            "Each recommendation title must exactly match one allowed offer type. "
-            "Each recommendation must use one allowed offer type and contain concrete values such as discount percentage, loyalty points, bundle contents, or upgrade duration. "
+            "Each recommendation title must exactly match one of the 'type' names from allowed_offer_types. "
+            "Each recommendation must contain concrete values such as discount percentage, loyalty points count, specific bundle content, or upgrade duration. "
             "Each recommendation must include a projected_reduction_pct as an integer percentage and a projected_target_level using only Level 1 through Level 5. "
-            "Projected target level must never be Level 0 or any label outside Level 1 through Level 5. "
-            "The target should move the cohort toward Level 5, and if the cohort is already at Level 5 then the target stays Level 5. "
-            "Choose plans that make sense for the selected category and sub category. "
-            "Higher-risk levels such as Level 1 and Level 2 should generally get stronger retention interventions than Level 4 or Level 5. "
-            "The why_it_fits field must clearly explain why that retention plan was chosen for the selected category, selected sub category, and selected risk level. "
+            "Projected target level must move the cohort toward Level 5 (e.g., if current is Level 1, target should be Level 2 or better). "
+            "Logic: For Price-Sensitive segments, focus on 'Discount'; for Service Issue segments, prioritize 'Plan Upgrade' or 'Custom Bundle'. "
+            "The why_it_fits field must clearly explain the alignment between the category/sub_category and the chosen offer type's description. "
             "Return strict JSON only in the shape {\"recommendations\":[...]}."
         ),
     }
