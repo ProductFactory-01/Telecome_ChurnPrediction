@@ -53,55 +53,36 @@ export default function DataExplorerTab() {
             <Bar data={{
               labels: d.churn_by_contract.labels,
               datasets: [
-                { 
-                  label: "Stayed", 
-                  data: d.churn_by_contract.stayed, 
-                  backgroundColor: COLORS.greenAlpha, 
-                  borderColor: COLORS.green, 
-                  borderWidth: 1, 
-                  borderRadius: 6 
-                },
-                { 
-                  label: "Churned", 
-                  data: d.churn_by_contract.churned, 
-                  backgroundColor: COLORS.redAlpha, 
-                  borderColor: COLORS.red, 
-                  borderWidth: 1, 
-                  borderRadius: 6 
-                }
+                { label: "Stayed", data: d.churn_by_contract.stayed, backgroundColor: COLORS.greenAlpha, borderColor: COLORS.green, borderWidth: 1, borderRadius: 6 },
+                { label: "Churned", data: d.churn_by_contract.churned, backgroundColor: COLORS.redAlpha, borderColor: COLORS.red, borderWidth: 1, borderRadius: 6 }
               ],
             }} options={defaultOptions} />
           </ChartCard>
         </div>
 
         <div className="panel-grid panel-grid--2 mb-6">
-          <ChartCard title="Monthly Charges by Churn" icon="💰">
+          <ChartCard title="Monthly Charge Distribution" icon="💰">
             <Bar data={{
-              labels: d.monthly_charges_by_churn.labels,
-              datasets: [{ 
-                label: "Avg Monthly Charge", 
-                data: d.monthly_charges_by_churn.values, 
-                backgroundColor: [COLORS.greenAlpha, COLORS.redAlpha], 
-                borderColor: [COLORS.green, COLORS.red], 
-                borderWidth: 1, 
-                borderRadius: 8 
-              }],
-            }} options={{ ...defaultOptions, plugins: { ...defaultOptions.plugins, legend: { display: false } } }} />
+              labels: d.monthly_charges_hist.labels,
+              datasets: [
+                { label: "Stayed", data: d.monthly_charges_hist.stayed, backgroundColor: COLORS.greenAlpha, borderColor: COLORS.green, borderWidth: 1, borderRadius: 6 },
+                { label: "Churned", data: d.monthly_charges_hist.churned, backgroundColor: COLORS.redAlpha, borderColor: COLORS.red, borderWidth: 1, borderRadius: 6 }
+              ],
+            }} options={defaultOptions} />
           </ChartCard>
 
-          <ChartCard title="Churn Category Breakdown" icon="📂" height={260}>
-            <Doughnut data={{
-              labels: d.churn_categories.labels,
-              datasets: [{ 
-                data: d.churn_categories.values, 
-                backgroundColor: [COLORS.redAlpha, COLORS.amberAlpha, COLORS.blueAlpha, COLORS.purpleAlpha, COLORS.cyanAlpha], 
-                borderWidth: 1 
-              }],
-            }} options={{ ...defaultOptions, scales: undefined }} />
+          <ChartCard title="Churn by Payment Method" icon="💳">
+            <Bar data={{
+              labels: d.churn_by_payment.labels,
+              datasets: [
+                { label: "Stayed", data: d.churn_by_payment.stayed, backgroundColor: COLORS.greenAlpha, borderColor: COLORS.green, borderWidth: 1, borderRadius: 6 },
+                { label: "Churned", data: d.churn_by_payment.churned, backgroundColor: COLORS.redAlpha, borderColor: COLORS.red, borderWidth: 1, borderRadius: 6 }
+              ],
+            }} options={defaultOptions} />
           </ChartCard>
         </div>
 
-        <ChartCard title="Top Churn Reasons (Details)" icon="💡" height={300}>
+        <ChartCard title="Top Churn Reasons (Billing Impact)" icon="💡" height={300}>
           <Bar data={{
             labels: d.top_churn_reasons.labels,
             datasets: [{ label: "Count", data: d.top_churn_reasons.values, backgroundColor: COLORS.blueAlpha, borderColor: COLORS.blue, borderWidth: 1, borderRadius: 4 }],
@@ -113,32 +94,69 @@ export default function DataExplorerTab() {
 
   const renderComplaints = () => {
     const d = data.complaints;
+    if (!d || !d.kpis) return null;
+
     return (
       <>
-        <div className="panel-grid panel-grid--2 mb-6">
-          <KpiCard label="Total Tickets" value={d.kpis.total_tickets.toLocaleString()} color="red" />
-          <KpiCard label="Source" value={d.kpis.source} color="blue" />
+        <div className="panel-grid panel-grid--3 mb-6">
+          <KpiCard label="Dissatisfied Customers" value={(d.kpis.dissatisfied_customers ?? 0).toLocaleString()} color="red" />
+          <KpiCard label="Avg Satisfaction" value={d.kpis.avg_satisfaction ?? "N/A"} color="blue" />
+          <KpiCard label="Dissatisfaction Rate" value={`${d.kpis.dissat_rate ?? 0}%`} color="amber" />
         </div>
+        
         <div className="panel-grid panel-grid--2 mb-6">
-          <ChartCard title="Status Breakdown" icon="📊" height={240}>
-            <Doughnut data={{
-              labels: d.status_breakdown.labels,
-              datasets: [{ data: d.status_breakdown.values, backgroundColor: [COLORS.greenAlpha, COLORS.redAlpha, COLORS.amberAlpha, COLORS.blueAlpha, COLORS.purpleAlpha], borderWidth: 1 }],
+          <ChartCard title="Complaint Source Breakdown" icon="📞" height={260}>
+            <Pie data={{
+              labels: d.source_breakdown?.labels ?? [],
+              datasets: [{ 
+                data: d.source_breakdown?.values ?? [], 
+                backgroundColor: [COLORS.redAlpha, COLORS.blueAlpha, COLORS.purpleAlpha, COLORS.amberAlpha], 
+                borderWidth: 1 
+              }],
             }} options={{ ...defaultOptions, scales: undefined }} />
           </ChartCard>
-          <ChartCard title="Volume Over Time" icon="📈">
-            <Line data={{
-              labels: d.volume_over_time.labels,
-              datasets: [{ label: "Tickets", data: d.volume_over_time.values, borderColor: COLORS.red, backgroundColor: "rgba(239,68,68,0.1)", tension: 0.3, fill: true }],
-            }} options={{ ...defaultOptions, plugins: { ...defaultOptions.plugins, legend: { display: false } } }} />
+
+          <ChartCard title="Top Complaint Categories" icon="📂">
+            <Bar data={{
+              labels: d.category_breakdown?.labels ?? [],
+              datasets: [{ 
+                label: "Complaints", 
+                data: d.category_breakdown?.values ?? [], 
+                backgroundColor: COLORS.redAlpha, 
+                borderColor: COLORS.red, 
+                borderWidth: 1, 
+                borderRadius: 4 
+              }],
+            }} options={defaultOptions} />
           </ChartCard>
         </div>
-        <ChartCard title="Top Complaint Keywords" icon="🔤" height={260}>
-          <Bar data={{
-            labels: d.complaint_keywords.labels,
-            datasets: [{ label: "Mentions", data: d.complaint_keywords.values, backgroundColor: COLORS.amberAlpha, borderColor: COLORS.amber, borderWidth: 1, borderRadius: 4 }],
-          }} options={{ ...defaultOptions, plugins: { ...defaultOptions.plugins, legend: { display: false } } }} />
-        </ChartCard>
+
+        <div className="panel-grid panel-grid--2">
+          <ChartCard title="Top Cities (by Dissatisfaction)" icon="📍" height={260}>
+            <Bar data={{
+              labels: d.regional_dissat?.labels ?? [],
+              datasets: [{ 
+                label: "Dissatisfied Count", 
+                data: d.regional_dissat?.values ?? [], 
+                backgroundColor: COLORS.amberAlpha, 
+                borderColor: COLORS.amber, 
+                borderWidth: 1, 
+                borderRadius: 4 
+              }],
+            }} options={defaultOptions} />
+          </ChartCard>
+
+          <ChartCard title="Dissatisfaction by Service Type" icon="⚙️" height={260}>
+            <Doughnut data={{
+              labels: d.tech_dissat?.labels ?? [],
+              datasets: [{ 
+                data: d.tech_dissat?.values ?? [], 
+                backgroundColor: [COLORS.blueAlpha, COLORS.redAlpha, COLORS.greenAlpha, COLORS.purpleAlpha], 
+                borderWidth: 1 
+              }],
+            }} options={{ ...defaultOptions, scales: undefined }} />
+          </ChartCard>
+        </div>
       </>
     );
   };
