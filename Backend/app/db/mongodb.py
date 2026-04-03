@@ -4,5 +4,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-client = MongoClient(os.getenv("MONGO_URI"))
-db = client[os.getenv("MONGO_DB")]
+mongo_uri = os.getenv("MONGO_URI")
+mongo_db_name = os.getenv("MONGO_DB", "churn_prediction") # Default to 'churn_prediction' if not set
+
+client = MongoClient(mongo_uri)
+db = client[mongo_db_name]
