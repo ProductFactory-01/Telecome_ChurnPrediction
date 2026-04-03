@@ -8,6 +8,7 @@ import OfferTaxonomy, { TAXONOMY, RISK_LEVELS } from "./OfferTaxonomy";
 import OfferRecommendations, { Recommendation } from "./OfferRecommendations";
 import OfferCohortTable from "./OfferCohortTable";
 import styles from "./OfferEngine.module.css";
+import Loading from "../shared/Loading";
 
 export default function OfferEngineTab() {
   // --- State ---
@@ -70,6 +71,12 @@ export default function OfferEngineTab() {
   useEffect(() => {
     loadInitialData();
   }, [loadInitialData]);
+
+  if (!summaryData && !fetchError) return (
+    <div className="dashboard-content min-h-[400px] flex items-center justify-center">
+      <Loading message="Initializing Personalized Offer Strategies..." />
+    </div>
+  );
 
   const handleViewCustomers = async () => {
     setIsLoading(true);

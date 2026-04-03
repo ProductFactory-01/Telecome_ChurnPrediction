@@ -1,15 +1,16 @@
-"use client";
 import { useEffect, useState } from "react";
 import api from "../../lib/api";
 import AgentHeader from "../shared/AgentHeader";
 import SectionTitle from "../shared/SectionTitle";
 import SimulatorForm from "./SimulatorForm";
 import SubscriberTable from "./SubscriberTable";
+import CustomerDetails from "./CustomerDetails";
 
 export default function ChurnScoringTab() {
   const [activeTab, setActiveTab] = useState<"simulator" | "intelligence">("simulator");
   const [prediction, setPrediction] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+  const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
 
   const handlePredict = async (formData: any) => {
     setLoading(true);
@@ -25,8 +26,20 @@ export default function ChurnScoringTab() {
 
   const handleReset = () => setPrediction(null);
 
+  // If a customer is selected, show the details view instead of the tabs
+  if (selectedCustomerId) {
+    return (
+      <div className="dashboard-content">
+        <CustomerDetails 
+          customerId={selectedCustomerId} 
+          onBack={() => setSelectedCustomerId(null)} 
+        />
+      </div>
+    );
+  }
+
   return (
-    <div className="dashboard-content">
+    <div className="dashboard-content space-y-6">
       <AgentHeader
         number="2"
         title="Churn Propensity Scoring Agent"
@@ -36,29 +49,32 @@ export default function ChurnScoringTab() {
         statusType="scoring"
       />
 
-      <div className="flex gap-4 mb-6 border-b border-gray-200 pb-1">
+      <div className="flex gap-4 border-b border-slate-100 pb-1">
         <button
-          className={`pb-2 px-4 font-semibold text-sm transition-all ${activeTab === "simulator" ? "border-b-2 border-amber-500 text-amber-600" : "text-gray-500 hover:text-gray-700"}`}
+          className={`pb-3 px-6 text-[13px] font-bold transition-all relative ${activeTab === "simulator" ? "text-amber-600" : "text-slate-400 hover:text-slate-600"}`}
           onClick={() => setActiveTab("simulator")}
         >
           Simulator Prediction
+          {activeTab === "simulator" && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-amber-500 rounded-full animate-in fade-in zoom-in duration-300"></div>}
         </button>
         <button
-          className={`pb-2 px-4 font-semibold text-sm transition-all ${activeTab === "intelligence" ? "border-b-2 border-amber-500 text-amber-600" : "text-gray-500 hover:text-gray-700"}`}
+          className={`pb-3 px-6 text-[13px] font-bold transition-all relative ${activeTab === "intelligence" ? "text-amber-600" : "text-slate-400 hover:text-slate-600"}`}
           onClick={() => setActiveTab("intelligence")}
         >
           Customer 360
+          {activeTab === "intelligence" && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-amber-500 rounded-full animate-in fade-in zoom-in duration-300"></div>}
         </button>
       </div>
 
-      {activeTab === "simulator" ? (
-        <SimulatorForm onPredict={handlePredict} onReset={handleReset} loading={loading} result={prediction} />
-      ) : (
-        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-          <SectionTitle title="Subscriber Intelligence Database" color="blue" />
-          <SubscriberTable />
-        </div>
-      )}
+      <div className="animate-in fade-in-50 duration-500">
+        {activeTab === "simulator" ? (
+          <SimulatorForm onPredict={handlePredict} onReset={handleReset} loading={loading} result={prediction} />
+        ) : (
+          <div className="space-y-4">
+            <SubscriberTable onViewDetail={(id) => setSelectedCustomerId(id)} />
+          </div>
+        )}
+      </div>
     </div>
   );
 }

@@ -28,7 +28,7 @@ function DashboardContent() {
       <Header />
       <TabNavigation activeTab={activeTab} onTabChange={setActiveTab} />
 
-      <main className="max-w-[1440px] mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-10 min-h-[calc(100vh-160px)]">
+      <main className="max-w-[1440px] mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-2 min-h-[calc(100vh-160px)]">
         <div className="animate-in fade-in-20 duration-500">
           {activeTab === "overview" && <OverviewTab />}
           {activeTab === "data-agent" && <DataAgentTab />}

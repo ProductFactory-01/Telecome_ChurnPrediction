@@ -10,6 +10,8 @@ import "../../lib/chartSetup";
 import { COLORS, defaultOptions } from "../../lib/chartSetup";
 import UploadWizard from "./UploadWizard";
 
+import Loading from "../shared/Loading";
+
 interface Source {
   key: string; icon: string; title: string; description: string; records: number; completeness: number; active: boolean;
 }
@@ -29,7 +31,11 @@ export default function DataAgentTab() {
     setSources((prev) => prev.map((s) => s.key === key ? { ...s, active: !s.active } : s));
   };
 
-  if (!data) return <div className="dashboard-content text-muted">Loading…</div>;
+  if (!data) return (
+    <div className="dashboard-content min-h-[400px] flex items-center justify-center">
+      <Loading message="Synchronizing Data Source Intelligence..." />
+    </div>
+  );
 
   const k = data.kpis;
   const activeCount = sources.filter((s) => s.active).length;
