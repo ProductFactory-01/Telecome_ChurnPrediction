@@ -131,7 +131,6 @@ export default function OutreachTab() {
       <div className="panel-grid panel-grid--4 mb-6">
         <KpiCard label="Campaigns Triggered" value={k.campaigns_triggered} color="purple" />
         <KpiCard label="Messages Sent" value={k.messages_sent} color="blue" />
-        <KpiCard label="Avg Response Time" value={k.avg_response_time} color="amber" />
         <KpiCard label="Total Contact Cost" value={`$${k.total_contact_cost}`} color="cyan" />
       </div>
 

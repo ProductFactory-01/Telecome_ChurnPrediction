@@ -231,8 +231,6 @@ export default function OfferEngineTab() {
         title="Personalised Offer Generation Agent"
         subtitle="Craft tailored retention offers through discounts, upgrades, loyalty rewards, gamification, and bundles"
         color="green"
-        statusLabel="Generating"
-        statusType="generating"
       />
 
       <div className={styles.offerBuilder}>
