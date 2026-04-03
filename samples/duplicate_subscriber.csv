@@ -1,0 +1,3 @@
+Customer ID,Name,email,Gender,Age,Senior Citizen,Married,Dependents,Tenure in Months,Phone Service,Multiple Lines,Internet Service,Online Security,Online Backup,Device Protection Plan,Premium Tech Support,Streaming TV,Streaming Movies,Contract,Paperless Billing,Payment Method,Monthly Charge,Total Charges,City,Zip Code,Latitude,Longitude
+0004-TLHLJ,Aravind,aravind@example.com,Male,50,No,No,No,4,Yes,No,Fiber Optic,No,No,Yes,No,No,No,Month-to-Month,Yes,Bank Withdrawal,73.9,280.85,Costa Mesa,92627,33.64567,-117.9226
+TEST-DUP-01,New User,new.user@test.com,Female,30,No,No,No,1,Yes,No,Fiber Optic,No,No,No,No,No,No,Month-to-Month,Yes,Electronic check,70.0,70.0,Los Angeles,90001,34.0522,-118.2437

@@ -23,12 +23,12 @@ const DEFAULT_ENTRIES: LogEntry[] = [
 
 export default function AgentLog({ entries = DEFAULT_ENTRIES }: Props) {
   return (
-    <div className="agent-log" id="agent-log-console">
+    <div className="agent-log ring-1 ring-white/5 hover:ring-white/10 transition-all duration-300" id="agent-log-console">
       {entries.map((e, i) => (
-        <div key={i} className="agent-log__entry">
-          <span className="agent-log__time">{e.time}</span>
-          <span className={`agent-log__tag agent-log__tag--${e.tag}`}>{e.tag}</span>
-          <span className="agent-log__msg">{e.message}</span>
+        <div key={i} className="agent-log__entry hover:bg-slate-700/20 px-2 py-1.5 rounded transition-colors">
+          <span className="agent-log__time font-mono">{e.time}</span>
+          <span className={`agent-log__tag agent-log__tag--${e.tag} inline-block px-2 py-0.5 rounded text-xs font-semibold`}>{e.tag.toUpperCase()}</span>
+          <span className="agent-log__msg font-mono text-xs ml-2">{e.message}</span>
         </div>
       ))}
     </div>

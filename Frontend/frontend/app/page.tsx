@@ -24,23 +24,25 @@ function DashboardContent() {
   }, [searchParams]);
 
   return (
-    <>
+    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100">
       <Header />
       <TabNavigation activeTab={activeTab} onTabChange={setActiveTab} />
 
-      <main>
-        {activeTab === "overview" && <OverviewTab />}
-        {activeTab === "data-agent" && <DataAgentTab />}
-        {activeTab === "churn-scoring" && <ChurnScoringTab />}
-        {activeTab === "offer-engine" && <OfferEngineTab />}
-        {activeTab === "outreach" && <OutreachTab />}
-        {activeTab === "live-impact" && <LiveImpactTab />}
-        {activeTab === "data-explorer" && <DataExplorerTab />}
-        {activeTab === "ml-models" && <MlModelsTab />}
-        {activeTab === "role-views" && <RoleViewsTab />}
-        {activeTab === "milestones" && <MilestonesTab />}
+      <main className="max-w-[1440px] mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-10 min-h-[calc(100vh-160px)]">
+        <div className="animate-in fade-in-20 duration-500">
+          {activeTab === "overview" && <OverviewTab />}
+          {activeTab === "data-agent" && <DataAgentTab />}
+          {activeTab === "churn-scoring" && <ChurnScoringTab />}
+          {activeTab === "offer-engine" && <OfferEngineTab />}
+          {activeTab === "outreach" && <OutreachTab />}
+          {activeTab === "live-impact" && <LiveImpactTab />}
+          {activeTab === "data-explorer" && <DataExplorerTab />}
+          {activeTab === "ml-models" && <MlModelsTab />}
+          {activeTab === "role-views" && <RoleViewsTab />}
+          {activeTab === "milestones" && <MilestonesTab />}
+        </div>
       </main>
-    </>
+    </div>
   );
 }
 
