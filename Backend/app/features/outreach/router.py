@@ -59,7 +59,7 @@ def get_outreach_data():
             "kpis": {"campaigns_triggered": 0, "messages_sent": 0, "avg_response_time": "--", "total_contact_cost": 0},
             "charts": {
                 "channel_performance": {"labels": [c["title"] for c in channels], "counts": [0]*len(channels)},
-                "timeline": {"labels": ["09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00"], "messages_sent": [0]*9},
+                "timeline": {"labels": [], "messages_sent": []},
             },
         }
 
@@ -78,10 +78,10 @@ def get_outreach_data():
     # Channel Performance and Timeline from offer_campaigns
     # Initialize trackers
     channel_volume = {c["key"]: 0 for c in channels}
-    timeline_data = {f"{h:02d}:00": 0 for h in range(9, 18)}
+    timeline_data = {} # Will store as "YYYY-MM-DD"
     
-    # Query offer_campaigns where notification was sent
-    for offer in offer_coll.find({"notified_at": {"$exists": True}}):
+    # Query offer_campaigns where notification was sent (last 30 days)
+    for offer in offer_coll.find({"notified_at": {"$exists": True}}).sort("notified_at", 1):
         medium = offer.get("notification_medium", "").lower()
         cust_count = offer.get("customer_count", 0)
         notified_at = offer.get("notified_at")
@@ -97,11 +97,15 @@ def get_outreach_data():
         if found_key and found_key in channel_volume:
             channel_volume[found_key] += cust_count
             
-        # Track timeline (by hour)
+        # Track timeline (by date)
         if isinstance(notified_at, datetime):
-            hour_str = notified_at.strftime("%H:00")
-            if hour_str in timeline_data:
-                timeline_data[hour_str] += cust_count
+            date_str = notified_at.strftime("%Y-%m-%d")
+            timeline_data[date_str] = timeline_data.get(date_str, 0) + cust_count
+
+    # If no data, provide a small default range for the chart to look good
+    if not timeline_data:
+        today = datetime.now().strftime("%Y-%m-%d")
+        timeline_data = {today: 0}
 
     return {
         "channels": channels,

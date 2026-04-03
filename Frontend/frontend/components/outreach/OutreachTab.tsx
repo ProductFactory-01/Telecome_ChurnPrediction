@@ -283,30 +283,63 @@ export default function OutreachTab() {
                 label: "Customer Count", 
                 data: data.charts.channel_performance.counts, 
                 backgroundColor: [
-                  "rgba(124, 58, 237, 0.7)", // SMS
-                  "rgba(59, 130, 246, 0.7)",  // Email
-                  "rgba(16, 185, 129, 0.7)",  // Whatsapp
-                  "rgba(245, 158, 11, 0.7)",  // Live Agent
-                  "rgba(6, 182, 212, 0.7)"   // Telegram
+                  "rgba(59, 130, 246, 0.7)",  // SMS (Blue)
+                  "rgba(16, 185, 129, 0.7)",  // Email (Green)
+                  "rgba(245, 158, 11, 0.7)",  // Whatsapp (Orange)
+                  "rgba(6, 182, 212, 0.7)",   // Live Agent (Cyan)
+                  "rgba(124, 58, 237, 0.7)"   // Telegram (Purple)
                 ], 
                 borderColor: [
-                  "#7c3aed", 
                   "#3b82f6", 
                   "#10b981", 
                   "#f59e0b", 
-                  "#06b6d4"
+                  "#06b6d4", 
+                  "#7c3aed"
                 ], 
                 borderWidth: 1, 
                 borderRadius: 4 
               },
             ],
-          }} options={defaultOptions} />
+          }} options={{
+            ...defaultOptions,
+            plugins: {
+              ...defaultOptions.plugins,
+              legend: {
+                display: false
+              }
+            },
+            scales: {
+              ...defaultOptions.scales,
+              y: {
+                ...defaultOptions.scales?.y,
+                ticks: {
+                  stepSize: 1,
+                  callback: (value) => value
+                },
+                beginAtZero: true
+              }
+            }
+          }} />
         </ChartCard>
-        <ChartCard title="Message Timeline" icon="📈">
+        <ChartCard title="Daily Outreach Timeline" icon="📉">
           <Line data={{
             labels: data.charts.timeline.labels,
-            datasets: [{ label: "Messages Sent", data: data.charts.timeline.messages_sent, borderColor: COLORS.purple, backgroundColor: "rgba(124,58,237,0.1)", tension: 0.3, fill: true }],
-          }} options={{ ...defaultOptions, plugins: { ...defaultOptions.plugins, legend: { display: false } } }} />
+            datasets: [{ label: "Customers Notified", data: data.charts.timeline.messages_sent, borderColor: COLORS.purple, backgroundColor: "rgba(124,58,237,0.1)", tension: 0.3, fill: true }],
+          }} options={{ 
+            ...defaultOptions, 
+            plugins: { ...defaultOptions.plugins, legend: { display: false } },
+            scales: {
+              ...defaultOptions.scales,
+              y: {
+                ...defaultOptions.scales?.y,
+                ticks: {
+                  stepSize: 1,
+                  callback: (value) => value
+                },
+                beginAtZero: true
+              }
+            }
+          }} />
         </ChartCard>
       </div>
     </div>
