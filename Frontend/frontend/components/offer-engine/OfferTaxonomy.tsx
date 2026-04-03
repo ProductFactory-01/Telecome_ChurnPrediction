@@ -31,10 +31,12 @@ interface OfferTaxonomyProps {
   onMainChange: (val: string) => void;
   onSubChange: (val: string) => void;
   onRiskChange: (val: string) => void;
-  onGenerate: () => void;
+  onViewCustomers: () => void;
+  onGenerateAI: () => void;
   status: string;
   isLoading: boolean;
-  canGenerate: boolean;
+  canViewCustomers: boolean;
+  canGenerateAI: boolean;
 }
 
 export default function OfferTaxonomy({
@@ -44,10 +46,12 @@ export default function OfferTaxonomy({
   onMainChange,
   onSubChange,
   onRiskChange,
-  onGenerate,
+  onViewCustomers,
+  onGenerateAI,
   status,
   isLoading,
-  canGenerate,
+  canViewCustomers,
+  canGenerateAI,
 }: OfferTaxonomyProps) {
   const currentSubDrivers =
     TAXONOMY.find((t) => t.main_category === selectedMain)?.sub_drivers || [];
@@ -110,10 +114,19 @@ export default function OfferTaxonomy({
       <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 16 }}>
         <button
           className={`btn btn--primary ${
-            !canGenerate || isLoading ? styles.selectBlockDisabled : ""
+            !canViewCustomers || isLoading ? styles.selectBlockDisabled : ""
           }`}
-          onClick={onGenerate}
-          disabled={!canGenerate || isLoading}
+          onClick={onViewCustomers}
+          disabled={!canViewCustomers || isLoading}
+        >
+          🔍 View Customers
+        </button>
+        <button
+          className={`btn btn--primary ${
+            !canGenerateAI || isLoading ? styles.selectBlockDisabled : ""
+          }`}
+          onClick={onGenerateAI}
+          disabled={!canGenerateAI || isLoading}
         >
           🤖 Generate Offer
         </button>
