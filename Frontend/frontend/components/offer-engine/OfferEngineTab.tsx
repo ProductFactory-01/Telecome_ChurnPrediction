@@ -20,9 +20,10 @@ export default function OfferEngineTab() {
   const [riskLevel, setRiskLevel] = useState(RISK_LEVELS[0]);
   const [selectedRecId, setSelectedRecId] = useState("");
   
-  const [statusMsg, setStatusMsg] = useState("Select a main category, one sub category, and a risk level. The system will fetch the matching cohort and propose 3 retention plan recommendations.");
+  const [statusMsg, setStatusMsg] = useState("Select a main category, one sub category, and a risk level to view the matching customer cohort.");
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [canGenerateAI, setCanGenerateAI] = useState(false);
   const [fetchError, setFetchError] = useState("");
 
   // --- KPI Derived State ---
@@ -66,13 +67,14 @@ export default function OfferEngineTab() {
     loadInitialData();
   }, [loadInitialData]);
 
-  const matchCustomers = async () => {
+  const handleViewCustomers = async () => {
     setIsLoading(true);
-    setStatusMsg("Matching customers to selected criteria through AI Agent...");
+    setStatusMsg("Matching customers to selected criteria...");
     setFetchError("");
     setMatchedCustomers([]);
     setRecommendations([]);
     setSelectedRecId("");
+    setCanGenerateAI(false);
 
     try {
       const resp = await api.post("/offer-engine/match-customers", {
@@ -87,15 +89,28 @@ export default function OfferEngineTab() {
       setMatchedCustomers(rows);
       
       if (rows.length > 0) {
-        setStatusMsg(`Matched ${rows.length} customers. Generating AI-suggested offers and rationales...`);
-        await generatePerCustomerOffers(rows);
+        setStatusMsg(`Matched ${rows.length} customers. You can now click "Generate Offer" to run AI strategy analysis.`);
+        setCanGenerateAI(true);
       } else {
         setStatusMsg("No customers matched for the selected criteria.");
-        setIsLoading(false);
       }
     } catch (e: any) {
       setFetchError(e.response?.data?.detail || "Customer matching failed.");
       setStatusMsg("Matching failed. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleGenerateAI = async () => {
+    if (matchedCustomers.length === 0) return;
+    setIsLoading(true);
+    setStatusMsg("Generating AI-suggested offers and rationales for the cohort...");
+    
+    try {
+      await generatePerCustomerOffers(matchedCustomers);
+    } catch (e: any) {
+      setFetchError(e.response?.data?.detail || "AI generation failed.");
       setIsLoading(false);
     }
   };
@@ -172,7 +187,8 @@ export default function OfferEngineTab() {
     setMatchedCustomers([]);
     setRecommendations([]);
     setSelectedRecId("");
-    setStatusMsg("Loading customers for the selected criteria...");
+    setCanGenerateAI(false);
+    setStatusMsg("Criteria changed. Please click 'View Customers' to refresh the cohort.");
   };
 
   const handleSubChange = (val: string) => {
@@ -180,7 +196,8 @@ export default function OfferEngineTab() {
     setMatchedCustomers([]);
     setRecommendations([]);
     setSelectedRecId("");
-    setStatusMsg("Loading customers for the selected criteria...");
+    setCanGenerateAI(false);
+    setStatusMsg("Criteria changed. Please click 'View Customers' to refresh the cohort.");
   };
 
   const handleRiskChange = (val: string) => {
@@ -188,7 +205,8 @@ export default function OfferEngineTab() {
     setMatchedCustomers([]);
     setRecommendations([]);
     setSelectedRecId("");
-    setStatusMsg("Loading customers for the selected criteria...");
+    setCanGenerateAI(false);
+    setStatusMsg("Criteria changed. Please click 'View Customers' to refresh the cohort.");
   };
 
   const handleRecSelect = (id: string) => {
@@ -216,10 +234,12 @@ export default function OfferEngineTab() {
           onMainChange={handleMainChange}
           onSubChange={handleSubChange}
           onRiskChange={handleRiskChange}
-          onGenerate={matchCustomers}
+          onViewCustomers={handleViewCustomers}
+          onGenerateAI={handleGenerateAI}
           status={statusMsg}
           isLoading={isLoading}
-          canGenerate={allCustomers.length > 0}
+          canGenerateAI={canGenerateAI}
+          canViewCustomers={allCustomers.length > 0}
         />
 
         <OfferRecommendations
@@ -237,7 +257,7 @@ export default function OfferEngineTab() {
             onClick={saveOffer}
             disabled={isSaving}
           >
-            {isSaving ? "Saving..." : "💾 Save Offer Cohort"}
+            {isSaving ? "Saving..." : "Save Offer Cohort"}
           </button>
         </div>
       )}
