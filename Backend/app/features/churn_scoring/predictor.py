@@ -8,7 +8,7 @@ try:
 except ImportError:
     h3 = None
 
-from app.llm import GROQ_API_KEY, try_groq_json
+from service.llm import get_groq_llm
 from .schemas import CustomerInput
 
 # Resolve model path relative to this file
