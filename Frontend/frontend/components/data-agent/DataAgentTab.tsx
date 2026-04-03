@@ -8,6 +8,7 @@ import ChartCard from "../shared/ChartCard";
 import { Bar, Doughnut } from "react-chartjs-2";
 import "../../lib/chartSetup";
 import { COLORS, defaultOptions } from "../../lib/chartSetup";
+import UploadWizard from "./UploadWizard";
 
 interface Source {
   key: string; icon: string; title: string; description: string; records: number; completeness: number; active: boolean;
@@ -58,6 +59,11 @@ export default function DataAgentTab() {
             <div className="mt-2 text-xs font-semibold text-blue-600">{s.completeness}% Complete</div>
           </div>
         ))}
+      </div>
+
+      <SectionTitle title="AI Subscriber Ingestion Pipeline" color="purple" />
+      <div className="mb-8">
+        <UploadWizard />
       </div>
 
       <div className="panel-grid panel-grid--4 mb-6">

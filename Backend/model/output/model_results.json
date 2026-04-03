@@ -1,0 +1,417 @@
+{
+  "ibm_extended": {
+    "Logistic Regression": {
+      "metrics": {
+        "accuracy": 80.2,
+        "precision": 64.26,
+        "recall": 57.22,
+        "f1": 60.54,
+        "roc_auc": 84.88
+      },
+      "feature_importances": {
+        "labels": [
+          "Tenure Months",
+          "Dependents_Yes",
+          "Contract_Two year",
+          "Dependents_No",
+          "Internet Service_DSL",
+          "Contract_Month-to-month",
+          "Internet Service_Fiber optic",
+          "Total Charges",
+          "Monthly Charges",
+          "Paperless Billing_No",
+          "Partner_No",
+          "Multiple Lines_No",
+          "Online Security_No internet service",
+          "Tech Support_No internet service",
+          "Internet Service_No"
+        ],
+        "values": [
+          1.2495,
+          1.0048,
+          0.7609,
+          0.6225,
+          0.606,
+          0.558,
+          0.5133,
+          0.5005,
+          0.4476,
+          0.3705,
+          0.3359,
+          0.3125,
+          0.2896,
+          0.2896,
+          0.2896
+        ]
+      }
+    },
+    "Random Forest": {
+      "metrics": {
+        "accuracy": 80.34,
+        "precision": 65.59,
+        "recall": 54.55,
+        "f1": 59.56,
+        "roc_auc": 85.1
+      },
+      "feature_importances": {
+        "labels": [
+          "Tenure Months",
+          "Total Charges",
+          "Contract_Month-to-month",
+          "Monthly Charges",
+          "Online Security_No",
+          "Internet Service_Fiber optic",
+          "Tech Support_No",
+          "Payment Method_Electronic check",
+          "Dependents_Yes",
+          "Contract_Two year",
+          "Dependents_No",
+          "Internet Service_DSL",
+          "Online Backup_No",
+          "Online Security_Yes",
+          "Contract_One year"
+        ],
+        "values": [
+          0.1308,
+          0.1163,
+          0.0866,
+          0.0822,
+          0.0489,
+          0.0415,
+          0.0403,
+          0.0379,
+          0.0377,
+          0.0344,
+          0.0298,
+          0.0194,
+          0.0182,
+          0.0169,
+          0.0144
+        ]
+      }
+    },
+    "XGBoost": {
+      "metrics": {
+        "accuracy": 79.21,
+        "precision": 62.54,
+        "recall": 54.01,
+        "f1": 57.96,
+        "roc_auc": 84.19
+      },
+      "feature_importances": {
+        "labels": [
+          "Contract_Month-to-month",
+          "Internet Service_Fiber optic",
+          "Dependents_No",
+          "Contract_Two year",
+          "Streaming Movies_Yes",
+          "Online Security_No",
+          "Tech Support_No",
+          "Contract_One year",
+          "Tenure Months",
+          "Phone Service_No",
+          "Payment Method_Electronic check",
+          "Streaming Movies_No",
+          "Multiple Lines_No",
+          "Online Backup_No",
+          "Streaming TV_No"
+        ],
+        "values": [
+          0.3423,
+          0.2874,
+          0.0515,
+          0.0289,
+          0.0225,
+          0.0224,
+          0.0166,
+          0.016,
+          0.0145,
+          0.012,
+          0.0118,
+          0.0113,
+          0.0109,
+          0.0108,
+          0.0099
+        ]
+      }
+    }
+  },
+  "classic": {
+    "Logistic Regression": {
+      "metrics": {
+        "accuracy": 80.55,
+        "precision": 65.72,
+        "recall": 55.88,
+        "f1": 60.4,
+        "roc_auc": 84.19
+      },
+      "feature_importances": {
+        "labels": [
+          "tenure",
+          "Contract_Two year",
+          "InternetService_DSL",
+          "InternetService_Fiber optic",
+          "Contract_Month-to-month",
+          "MonthlyCharges",
+          "TotalCharges",
+          "PaperlessBilling_No",
+          "StreamingMovies_No internet service",
+          "TechSupport_No internet service",
+          "DeviceProtection_No internet service",
+          "StreamingTV_No internet service",
+          "InternetService_No",
+          "OnlineBackup_No internet service",
+          "OnlineSecurity_No internet service"
+        ],
+        "values": [
+          1.2361,
+          0.786,
+          0.6523,
+          0.6084,
+          0.5679,
+          0.556,
+          0.5117,
+          0.3609,
+          0.3059,
+          0.3059,
+          0.3059,
+          0.3059,
+          0.3059,
+          0.3059,
+          0.3059
+        ]
+      }
+    },
+    "Random Forest": {
+      "metrics": {
+        "accuracy": 80.27,
+        "precision": 66.33,
+        "recall": 52.14,
+        "f1": 58.38,
+        "roc_auc": 84.09
+      },
+      "feature_importances": {
+        "labels": [
+          "tenure",
+          "TotalCharges",
+          "Contract_Month-to-month",
+          "MonthlyCharges",
+          "OnlineSecurity_No",
+          "InternetService_Fiber optic",
+          "TechSupport_No",
+          "PaymentMethod_Electronic check",
+          "Contract_Two year",
+          "OnlineBackup_No",
+          "InternetService_DSL",
+          "DeviceProtection_No",
+          "PaperlessBilling_No",
+          "PaperlessBilling_Yes",
+          "Contract_One year"
+        ],
+        "values": [
+          0.1416,
+          0.1275,
+          0.0905,
+          0.0894,
+          0.0519,
+          0.0465,
+          0.0464,
+          0.041,
+          0.03,
+          0.0197,
+          0.0181,
+          0.0147,
+          0.0145,
+          0.0143,
+          0.0141
+        ]
+      }
+    },
+    "XGBoost": {
+      "metrics": {
+        "accuracy": 79.13,
+        "precision": 62.12,
+        "recall": 54.81,
+        "f1": 58.24,
+        "roc_auc": 82.91
+      },
+      "feature_importances": {
+        "labels": [
+          "Contract_Month-to-month",
+          "InternetService_Fiber optic",
+          "InternetService_DSL",
+          "OnlineSecurity_No",
+          "StreamingMovies_Yes",
+          "TechSupport_No",
+          "Contract_One year",
+          "MultipleLines_No",
+          "tenure",
+          "Contract_Two year",
+          "StreamingMovies_No",
+          "PaymentMethod_Electronic check",
+          "PhoneService_No",
+          "OnlineBackup_No",
+          "PaperlessBilling_No"
+        ],
+        "values": [
+          0.4288,
+          0.2873,
+          0.0195,
+          0.0173,
+          0.0167,
+          0.0155,
+          0.014,
+          0.012,
+          0.0116,
+          0.0111,
+          0.011,
+          0.0107,
+          0.0099,
+          0.0091,
+          0.0091
+        ]
+      }
+    }
+  },
+  "multi_table": {
+    "Logistic Regression": {
+      "metrics": {
+        "accuracy": 85.52,
+        "precision": 75.3,
+        "recall": 67.65,
+        "f1": 71.27,
+        "roc_auc": 90.93
+      },
+      "feature_importances": {
+        "labels": [
+          "Monthly Charge",
+          "Number of Referrals",
+          "Contract_Two Year",
+          "Contract_Month-to-Month",
+          "Location ID_RSNQJW7662",
+          "Location ID_JXYVVC5238",
+          "Location ID_SIOOCR9888",
+          "Location ID_ASANIE1936",
+          "Location ID_MULOYT6761",
+          "Location ID_AJWAMV4349",
+          "Location ID_ICSZEK9955",
+          "Location ID_UHPGXF7182",
+          "Location ID_LPAEGA5426",
+          "Location ID_ZHPXKA2757",
+          "Location ID_OHYGOC3918"
+        ],
+        "values": [
+          1.7302,
+          1.6934,
+          1.4057,
+          1.3489,
+          0.9962,
+          0.993,
+          0.9912,
+          0.9866,
+          0.972,
+          0.9714,
+          0.9676,
+          0.9594,
+          0.956,
+          0.9557,
+          0.9542
+        ]
+      }
+    },
+    "Random Forest": {
+      "metrics": {
+        "accuracy": 77.22,
+        "precision": 89.55,
+        "recall": 16.04,
+        "f1": 27.21,
+        "roc_auc": 87.72
+      },
+      "feature_importances": {
+        "labels": [
+          "Contract_Month-to-Month",
+          "Tenure in Months",
+          "Total Revenue",
+          "Total Charges",
+          "Internet Type_Fiber Optic",
+          "Contract_Two Year",
+          "Number of Referrals",
+          "Monthly Charge",
+          "Total Long Distance Charges",
+          "Dependents_Yes",
+          "Avg Monthly GB Download",
+          "Number of Dependents",
+          "Dependents_No",
+          "Internet Service_No",
+          "Internet Service_Yes"
+        ],
+        "values": [
+          0.0734,
+          0.0505,
+          0.0494,
+          0.0415,
+          0.0408,
+          0.0404,
+          0.0388,
+          0.0322,
+          0.0299,
+          0.0274,
+          0.0265,
+          0.0255,
+          0.0239,
+          0.0237,
+          0.0227
+        ]
+      }
+    },
+    "XGBoost": {
+      "metrics": {
+        "accuracy": 85.59,
+        "precision": 75.07,
+        "recall": 68.45,
+        "f1": 71.61,
+        "roc_auc": 90.8
+      },
+      "feature_importances": {
+        "labels": [
+          "Contract_Month-to-Month",
+          "Internet Type_Fiber Optic",
+          "Number of Referrals",
+          "Payment Method_Credit Card",
+          "Number of Dependents",
+          "Contract_One Year",
+          "Married_No",
+          "Contract_Two Year",
+          "Paperless Billing_No",
+          "Streaming Movies_No",
+          "Age",
+          "Tenure in Months",
+          "Monthly Charge",
+          "Phone Service_No",
+          "Streaming Music_No"
+        ],
+        "values": [
+          0.3933,
+          0.0442,
+          0.0425,
+          0.0415,
+          0.0385,
+          0.0284,
+          0.0236,
+          0.022,
+          0.0212,
+          0.0206,
+          0.0158,
+          0.0157,
+          0.0147,
+          0.014,
+          0.0139
+        ]
+      }
+    }
+  },
+  "best_model": {
+    "name": "Logistic Regression on multi_table",
+    "roc_auc": 90.93
+  }
+}

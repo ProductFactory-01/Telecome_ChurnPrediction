@@ -5,7 +5,8 @@ from fastapi.middleware.cors import CORSMiddleware
 
 load_dotenv()
 
-app = FastAPI(title="Churn Prediction Backend", version="2.0.0")
+# Version: 2.0.1 - Force Reload
+app = FastAPI(title="Churn Prediction Backend", version="2.0.1")
 
 # CORS
 app.add_middleware(
