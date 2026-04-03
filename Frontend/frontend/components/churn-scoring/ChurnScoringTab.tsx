@@ -6,11 +6,8 @@ import SectionTitle from "../shared/SectionTitle";
 import SimulatorForm from "./SimulatorForm";
 import SubscriberTable from "./SubscriberTable";
 
-interface Props {
-  onViewCustomer?: (id: string) => void;
-}
-
-export default function ChurnScoringTab({ onViewCustomer }: Props) {
+export default function ChurnScoringTab() {
+  const [activeTab, setActiveTab] = useState<"simulator" | "intelligence">("simulator");
   const [prediction, setPrediction] = useState<any>(null);
   const [loading, setLoading] = useState(false);
 
@@ -39,12 +36,29 @@ export default function ChurnScoringTab({ onViewCustomer }: Props) {
         statusType="scoring"
       />
 
-      <SimulatorForm onPredict={handlePredict} onReset={handleReset} loading={loading} result={prediction} />
-
-      <div className="mt-6">
-        <SectionTitle title="Subscriber Intelligence" color="blue" />
-        <SubscriberTable onViewCustomer={onViewCustomer} />
+      <div className="flex gap-4 mb-6 border-b border-gray-200 pb-1">
+        <button
+          className={`pb-2 px-4 font-semibold text-sm transition-all ${activeTab === "simulator" ? "border-b-2 border-amber-500 text-amber-600" : "text-gray-500 hover:text-gray-700"}`}
+          onClick={() => setActiveTab("simulator")}
+        >
+          Simulator Prediction
+        </button>
+        <button
+          className={`pb-2 px-4 font-semibold text-sm transition-all ${activeTab === "intelligence" ? "border-b-2 border-amber-500 text-amber-600" : "text-gray-500 hover:text-gray-700"}`}
+          onClick={() => setActiveTab("intelligence")}
+        >
+          Customer 360
+        </button>
       </div>
+
+      {activeTab === "simulator" ? (
+        <SimulatorForm onPredict={handlePredict} onReset={handleReset} loading={loading} result={prediction} />
+      ) : (
+        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <SectionTitle title="Subscriber Intelligence Database" color="blue" />
+          <SubscriberTable />
+        </div>
+      )}
     </div>
   );
 }

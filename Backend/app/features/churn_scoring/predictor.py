@@ -42,54 +42,65 @@ def latlng_to_numeric_cell(latitude: float, longitude: float, resolution: int = 
 
 
 def get_fallback_reason(prob: float, data: CustomerInput):
-    # Deterministic fallback rules for stability
+    # Mapping based on user provided table
     if prob < 0.4:
-        return None
+        return {"main_category": "Stable", "sub_category": "Loyal", "reason": "No immediate churn risk detected."}
+    
     if data.MonthlyCharges > 80 and data.TenureMonths < 12:
-        return {"main_category": "Price-Sensitive", "sub_category": "Price Issue", "reason": "High Cost Pressure for High-Value Subscriber"}
+        return {"main_category": "Price-Sensitive", "sub_category": "Price Issue", "reason": "High pricing in early tenure creates exit risk."}
     elif not data.TechSupport and data.InternetService == "Fiber optic":
-        return {"main_category": "Service Quality", "sub_category": "Technical Issue", "reason": "Lack of Tech Support on Fiber Connection"}
-    elif data.Contract == "Month-to-month" and data.TenureMonths < 6:
-        return {"main_category": "Competitor", "sub_category": "Better Offer", "reason": "Early-tenure Risk / Competitor pricing attractiveness"}
-    return {"main_category": "Customer Experience", "sub_category": "General Issue", "reason": "General dissatisfaction with service terms"}
+        return {"main_category": "Customer Experience Issues", "sub_category": "Support Issue", "reason": "Fiber users without tech support report lower reliability."}
+    elif data.Contract == "Month-to-month":
+        return {"main_category": "Plan & Product Mismatch", "sub_category": "Competitor", "reason": "Flexible contract makes them easy targets for competitor switch."}
+    return {"main_category": "Low Engagement", "sub_category": "Other", "reason": "Generalized risk signal based on usage behavior."}
 
 
 def get_llm_churn_reason(prob, data: CustomerInput):
-    # Use LLM (Groq) for high-fidelity reasoning
-    if not GROQ_API_KEY or prob < 0.4:
+    # Mapping Table Context for AI
+    mapping_table = """
+    Main Category                | Sub Category
+    -----------------------------|---------------
+    Price-Sensitive              | Price Issue
+    Low Engagement               | Other
+    Plan & Product Mismatch      | Competitor
+    Customer Experience Issues   | Service Issue, Support Issue
+    High-Value Customer Risk     | Other, Personal Reason
+    Demographics                 | Personal Reason
+    Geography                    | Service Issue
+    Behavior                     | Other
+    Billing                      | Price Issue
+    Product Adoption Gap         | Competitor, Other
+    """
+
+    if not GROQ_API_KEY:
         return get_fallback_reason(prob, data)
     
     prompt = {
         "churn_probability": prob,
-        "risk_level": "High" if prob > 0.7 else "Medium",
+        "risk_level": "High" if prob > 0.7 else "Medium" if prob > 0.4 else "Low",
         "customer_profile": {
-            "gender": data.Gender,
-            "senior_citizen": data.SeniorCitizen,
-            "tenure_months": data.TenureMonths,
+            "tenure": data.TenureMonths,
             "contract": data.Contract,
             "monthly_charges": data.MonthlyCharges,
-            "total_charges": data.TotalCharges,
-            "internet_service": data.InternetService,
-            "phone_service": data.PhoneService,
+            "internet": data.InternetService,
             "tech_support": data.TechSupport,
-            "online_security": data.OnlineSecurity,
-            "paperless_billing": data.PaperlessBilling,
+            "payment": data.PaymentMethod,
+            "location": {"lat": data.Latitude, "lng": data.Longitude}
         },
+        "mapping_rules": mapping_table,
         "task": (
-            "Analyze why this subscriber is at risk based on the data. "
-            "Return only valid JSON in the shape: "
-            "{\"main_category\": \"...\", \"sub_category\": \"...\", \"reason\": \"...\"}. "
-            "Categories should match: Service Quality, Pricing, Competitor, or Experience. "
-            "Reason must be a concise, one-sentence data-driven insight."
+            "Analyze the churn risk and assign a Main Category and Sub Category from the mapping table provided. "
+            "Return JSON only: {\"main_category\": \"...\", \"sub_category\": \"...\", \"reason\": \"...\"}. "
+            "Reason must be a 1-sentence data-driven explanation."
         )
     }
 
     parsed = try_groq_json(
-        "You are a churn analysis assistant. Return only valid JSON for reasoning.",
+        "You are a Churn Diagnostics Agent. Follow mapping rules strictly.",
         prompt
     )
     
-    if parsed and isinstance(parsed, dict) and "reason" in parsed:
+    if parsed and isinstance(parsed, dict) and "main_category" in parsed:
         return parsed
     return get_fallback_reason(prob, data)
 
