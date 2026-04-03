@@ -58,6 +58,13 @@ export default function OutreachTab() {
       return;
     }
 
+    // Check for non-email channels
+    const nonEmailChannels = selectedKeys.filter(k => k !== 'email');
+    if (nonEmailChannels.length > 0) {
+      alert("Multichannel support (SMS, WhatsApp, Web, IVR) is coming soon! Currently, only Email is available for execution.");
+      return;
+    }
+
     setIsTriggering(true);
 
     // Make Webhook Call for actual execution
@@ -128,7 +135,7 @@ export default function OutreachTab() {
         statusType="active"
       />
 
-      <div className="panel-grid panel-grid--4 mb-6">
+      <div className="panel-grid panel-grid--3 mb-6">
         <KpiCard label="Campaigns Triggered" value={k.campaigns_triggered} color="purple" />
         <KpiCard label="Messages Sent" value={k.messages_sent} color="blue" />
         <KpiCard label="Total Contact Cost" value={`$${k.total_contact_cost}`} color="cyan" />
