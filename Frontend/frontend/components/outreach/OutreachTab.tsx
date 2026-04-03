@@ -8,13 +8,20 @@ import ChartCard from "../shared/ChartCard";
 import { Bar, Line } from "react-chartjs-2";
 import "../../lib/chartSetup";
 import { COLORS, defaultOptions } from "../../lib/chartSetup";
+import { TAXONOMY, RISK_LEVELS } from "../offer-engine/OfferTaxonomy";
+import styles from "../offer-engine/OfferEngine.module.css";
 
 export default function OutreachTab() {
   const [data, setData] = useState<any>(null);
   const [channels, setChannels] = useState<any[]>([]);
-  const [msgTemplate, setMsgTemplate] = useState(
-    "Hi {{name}}, we noticed you've been with us for {{tenure}} months! As a valued customer, we'd like to offer you {{offer}}. Reply YES to accept."
-  );
+
+  // Strategy Mapping State
+  const [selectedMain, setSelectedMain] = useState(TAXONOMY[0].main_category);
+  const [selectedSub, setSelectedSub] = useState(TAXONOMY[0].sub_drivers[0]);
+  const [selectedRisk, setSelectedRisk] = useState("Level 1");
+  const [activeStrategy, setActiveStrategy] = useState<any>(null);
+  const [isFetchingStrategy, setIsFetchingStrategy] = useState(false);
+  const [isTriggering, setIsTriggering] = useState(false);
 
   useEffect(() => {
     api.get("/outreach").then((r) => {
@@ -22,6 +29,43 @@ export default function OutreachTab() {
       setChannels(r.data.channels);
     }).catch(console.error);
   }, []);
+
+  const fetchStrategy = () => {
+    setIsFetchingStrategy(true);
+    api.post("/outreach/active-campaign", {
+      main_category: selectedMain,
+      sub_category: selectedSub,
+      risk_level: selectedRisk
+    })
+    .then((r) => {
+      setActiveStrategy(r.data.active_strategy);
+    })
+    .catch(console.error)
+    .finally(() => setIsFetchingStrategy(false));
+  };
+
+  const handleTriggerCampaign = () => {
+    if (!activeStrategy) return;
+    const selectedKeys = channels.filter(c => c.selected).map(c => c.key);
+    if (selectedKeys.length === 0) {
+      alert("Please select at least one outreach channel.");
+      return;
+    }
+
+    setIsTriggering(true);
+    api.post("/outreach/trigger", {
+      campaign_id: activeStrategy._id,
+      channels: selectedKeys,
+      message_template: activeStrategy.recommendation.offer_summary
+    })
+    .then((r) => {
+      alert(`Campaign triggered successfully! ${r.data.messages_sent} messages sent.`);
+      // Optionally refresh global outreach stats
+      api.get("/outreach").then(res => setData(res.data));
+    })
+    .catch(console.error)
+    .finally(() => setIsFetchingStrategy(false));
+  };
 
   const toggleChannel = (key: string) => {
     setChannels((prev) => prev.map((c) => c.key === key ? { ...c, selected: !c.selected } : c));
@@ -49,16 +93,138 @@ export default function OutreachTab() {
         <KpiCard label="Total Contact Cost" value={`$${k.total_contact_cost}`} color="cyan" />
       </div>
 
-      <SectionTitle title="Channel Selection" color="purple" />
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "24px", marginBottom: "24px", alignItems: "start" }}>
+        {/* Taxonomy Selector */}
+        <div className={`${styles.controlPanel} ${styles.offerConfigPanel}`}>
+          <h4>Target Cohort Selection</h4>
+          
+          <div className={styles.selectorGroup} style={{ marginBottom: "12px" }}>
+            <div className={styles.selectorLabel}>Main Category</div>
+            <select 
+              className="dashboard-input" 
+              value={selectedMain} 
+              onChange={(e) => {
+                const newVal = e.target.value;
+                setSelectedMain(newVal);
+                // Reset sub-category to the first driver of the new main category
+                const firstSub = TAXONOMY.find(t => t.main_category === newVal)?.sub_drivers[0] || "";
+                setSelectedSub(firstSub);
+              }}
+              style={{ width: "100%" }}
+            >
+              {TAXONOMY.map(t => <option key={t.main_category} value={t.main_category}>{t.main_category}</option>)}
+            </select>
+          </div>
+
+          <div className={styles.selectorGroup} style={{ marginBottom: "12px" }}>
+            <div className={styles.selectorLabel}>Sub Category</div>
+            <select 
+              className="dashboard-input" 
+              value={selectedSub} 
+              onChange={(e) => setSelectedSub(e.target.value)}
+              style={{ width: "100%" }}
+            >
+              {(TAXONOMY.find((t) => t.main_category === selectedMain)?.sub_drivers || []).map(sub => (
+                <option key={sub} value={sub}>{sub}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className={styles.selectorGroup}>
+            <div className={styles.selectorLabel}>Risk Level</div>
+            <select 
+              className="dashboard-input" 
+              value={selectedRisk} 
+              onChange={(e) => setSelectedRisk(e.target.value)}
+              style={{ width: "100%" }}
+            >
+              {RISK_LEVELS.map(r => <option key={r} value={r}>{r}</option>)}
+            </select>
+          </div>
+
+          <button
+            className="btn btn--primary"
+            onClick={fetchStrategy}
+            disabled={isFetchingStrategy}
+            style={{ marginTop: "16px", width: "100%" }}
+          >
+            {isFetchingStrategy ? "🔄 Loading..." : "🔍 Load Strategy"}
+          </button>
+        </div>
+
+        {/* Active Strategy Panel */}
+        <div className={`${styles.controlPanel} ${styles.offerConfigPanel}`} style={{ display: "flex", flexDirection: "column" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+            <h4 style={{ margin: 0 }}>Active Campaign Strategy</h4>
+            {activeStrategy && (
+              <span className="badge badge--cyan">{activeStrategy.customer_count} Customers Targeted</span>
+            )}
+          </div>
+          
+          {isFetchingStrategy ? (
+            <div className="text-muted" style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <span style={{ fontSize: "20px" }}>🔄</span>
+              <span style={{ marginLeft: "12px" }}>Analyzing cohort data...</span>
+            </div>
+          ) : activeStrategy ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: "16px", flex: 1 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                <div style={{ 
+                  width: "48px", 
+                  height: "48px", 
+                  borderRadius: "12px", 
+                  background: "rgba(124,58,237,0.1)", 
+                  display: "flex", 
+                  alignItems: "center", 
+                  justifyContent: "center",
+                  fontSize: "24px"
+                }}>
+                  {activeStrategy.recommendation.offer_type === "Discount" ? "🏷️" : 
+                   activeStrategy.recommendation.offer_type === "Loyalty Points" ? "✨" : 
+                   activeStrategy.recommendation.offer_type === "Custom Bundle" ? "🎁" : "🚀"}
+                </div>
+                <div>
+                  <div style={{ fontSize: "12px", color: "var(--color-purple)", fontWeight: "bold", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                    {activeStrategy.recommendation.offer_type.toLowerCase() === activeStrategy.recommendation.title.toLowerCase() 
+                      ? "RECOMMENDED OFFER" 
+                      : activeStrategy.recommendation.offer_type}
+                  </div>
+                  <div style={{ fontSize: "18px", fontWeight: "700" }}>{activeStrategy.recommendation.title}</div>
+                </div>
+              </div>
+
+              <div style={{ background: "rgba(255,255,255,0.03)", padding: "12px", borderRadius: "8px", borderLeft: "4px solid var(--color-purple)" }}>
+                <p style={{ margin: 0, fontSize: "14px", lineHeight: "1.5" }}>{activeStrategy.recommendation.offer_summary}</p>
+              </div>
+            </div>
+          ) : (
+            <div className="text-muted" style={{ padding: "20px", textAlign: "center", background: "rgba(255,255,255,0.02)", borderRadius: "8px" }}>
+              No active strategy found for this exact cohort. Please generate and save an offer in the Offer Engine first.
+            </div>
+          )}
+        </div>
+      </div>
+
+      <SectionTitle title="Channel Execution Plan" color="purple" />
       <div className="panel-grid panel-grid--5 mb-6">
         {channels.map((c) => (
           <div key={c.key} className={`channel-card ${c.selected ? "channel-card--selected" : ""}`} onClick={() => toggleChannel(c.key)}>
             <div className="channel-card__icon">{c.icon}</div>
             <div className="channel-card__title">{c.title}</div>
-            <div className="channel-card__rate">{c.accept_rate}%</div>
-            <div className="channel-card__cost">${c.cost_per_contact}/contact</div>
+            <div className="channel-card__rate">{c.accept_rate}% conversion</div>
+            <div className="channel-card__cost">${c.cost_per_contact.toFixed(2)}/contact</div>
           </div>
         ))}
+      </div>
+
+      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "24px" }}>
+        <button
+          className="btn btn--primary"
+          onClick={handleTriggerCampaign}
+          disabled={!activeStrategy || isTriggering}
+        >
+          {isTriggering ? "🚀 Launching..." : `🚀 Execute Campaign for ${activeStrategy?.customer_count || 0} Customers`}
+        </button>
       </div>
 
       <div className="panel-grid panel-grid--2">
