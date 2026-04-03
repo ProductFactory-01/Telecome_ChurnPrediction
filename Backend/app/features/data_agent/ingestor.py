@@ -31,6 +31,26 @@ TABLE_COLUMNS = {
         "CLTV", "Churn Category", "Churn Reason"
     ]
 }
+def clean_value(val, col_name: str):
+    """Cleans and standardizes values for the database."""
+    if pd.isna(val) or val == "":
+        if col_name == "Count": return 1
+        return None
+        
+    s_val = str(val).strip()
+    
+    # Standardize Boolean-like fields (Yes/No)
+    if s_val.lower() in ['yes', 'true', '1', '1.0']:
+        return "Yes"
+    if s_val.lower() in ['no', 'false', '0', '0.0']:
+        return "No"
+        
+    # Handle numeric types
+    try:
+        if "." in s_val: return float(s_val)
+        return int(s_val)
+    except:
+        return s_val
 
 def ingest_data(df: pd.DataFrame, mapping: Dict[str, str], engine) -> Dict[str, Any]:
     """Inserts data into multiple tables based on column mappings."""
@@ -48,42 +68,46 @@ def ingest_data(df: pd.DataFrame, mapping: Dict[str, str], engine) -> Dict[str, 
     
     customer_ids = valid_df[customer_id_col].dropna().unique().tolist()
     
-    # 2. Iterate through segments/tables and insert
+    # 2. Iterate through segments/tables and UPSERT
     with engine.begin() as conn:
         for table_name, schema_cols in TABLE_COLUMNS.items():
-            # Identify columns in this CSV that belong to this table
             table_mapping = {user_col: target_col for user_col, target_col in mapping.items() if target_col in schema_cols}
             
-            # Ensure Customer ID is always included for joining/indexing
+            # Ensure Customer ID is always included
             if customer_id_col not in table_mapping:
                 table_mapping[customer_id_col] = "Customer ID"
             
-            # Prepare DataFrame subset for this table
-            subset_df = valid_df[list(table_mapping.keys())].copy()
-            subset_df = subset_df.rename(columns=table_mapping)
-            
-            # Add missing columns with default values
-            for col in schema_cols:
-                if col not in subset_df.columns:
-                    if col == "Count":
-                        subset_df[col] = 1
+            records = []
+            for _, row in valid_df.iterrows():
+                record = {}
+                for col in schema_cols:
+                    if col == "Count": record[col] = 1
                     elif "ID" in col and col != "Customer ID":
-                        subset_df[col] = [f"AG-{table_name[:3]}-{id}" for id in subset_df["Customer ID"]]
-                    else:
-                        subset_df[col] = None
-            
-            # Keep only canonical columns
-            subset_df = subset_df[schema_cols]
-            
-            # Logic: Update existing or Insert new
-            # To be safe and avoid multi-field conflicts, we delete existing and re-insert
-            if customer_ids:
-                id_list = ", ".join([f"'{cid}'" for cid in customer_ids])
-                conn.execute(text(f"DELETE FROM \"{table_name}\" WHERE \"Customer ID\" IN ({id_list})"))
+                        record[col] = f"AG-{table_name[:3]}-{row[customer_id_col]}"
+                    else: record[col] = None
                 
-            # Final insertion
-            if not subset_df.empty:
-                subset_df.to_sql(table_name, conn, if_exists='append', index=False)
+                for user_col, target_col in table_mapping.items():
+                    record[target_col] = clean_value(row[user_col], target_col)
+                records.append(record)
+
+            if not records: continue
+
+            # Postgres UPSERT SQL
+            cols_escaped = [f'"{c}"' for c in schema_cols]
+            placeholders = [f":{c.replace(' ', '_')}" for c in schema_cols]
+            update_cols = [c for c in schema_cols if c != "Customer ID"]
+            update_clause = ", ".join([f'"{c}" = EXCLUDED."{c}"' for c in update_cols])
+            
+            sql = f"""
+                INSERT INTO "{table_name}" ({", ".join(cols_escaped)})
+                VALUES ({", ".join(placeholders)})
+                ON CONFLICT ("Customer ID") DO UPDATE SET
+                {update_clause}
+            """
+            
+            for rec in records:
+                params = {k.replace(' ', '_'): v for k, v in rec.items()}
+                conn.execute(text(sql), params)
                 
     return {"new_customers": customer_ids, "rejected_count": rejected_count}
 
@@ -231,10 +255,11 @@ def run_churn_predictions(customer_ids: List[str], engine):
                     "Sub Category": reason.get("sub_category")
                 }
                 
-                # Dynamic insert
+                # Dynamic insert with sanitized placeholders
+                sanitized_data = {k.replace(' ', '_'): v for k, v in churn_new_data.items()}
                 cols = ", ".join([f'"{k}"' for k in churn_new_data.keys()])
-                vals = ", ".join([f":{k}" for k in churn_new_data.keys()])
-                conn.execute(text(f"INSERT INTO \"Churn_New\" ({cols}) VALUES ({vals})"), churn_new_data)
+                vals = ", ".join([f":{k.replace(' ', '_')}" for k in churn_new_data.keys()])
+                conn.execute(text(f"INSERT INTO \"Churn_New\" ({cols}) VALUES ({vals})"), sanitized_data)
                 
             results.append({"customer_id": row["Customer ID"], "status": "success"})
             
