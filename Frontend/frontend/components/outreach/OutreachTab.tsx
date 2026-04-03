@@ -61,7 +61,7 @@ export default function OutreachTab() {
     // Check for non-email channels
     const nonEmailChannels = selectedKeys.filter(k => k !== 'email');
     if (nonEmailChannels.length > 0) {
-      alert("Multichannel support (SMS, WhatsApp, Web, IVR) is coming soon! Currently, only Email is available for execution.");
+      alert("Multichannel support (SMS, WhatsApp, Telegram, Live Agent) is coming soon! Currently, only Email is available for execution.");
       return;
     }
 
@@ -259,7 +259,6 @@ export default function OutreachTab() {
           <div key={c.key} className={`channel-card ${c.selected ? "channel-card--selected" : ""}`} onClick={() => toggleChannel(c.key)}>
             <div className="channel-card__icon">{c.icon}</div>
             <div className="channel-card__title">{c.title}</div>
-            <div className="channel-card__rate">{c.accept_rate}% conversion</div>
             <div className="channel-card__cost">${c.cost_per_contact.toFixed(2)}/contact</div>
           </div>
         ))}
