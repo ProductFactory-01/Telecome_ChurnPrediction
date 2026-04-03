@@ -10,7 +10,7 @@ import "../../lib/chartSetup";
 import { COLORS, defaultOptions } from "../../lib/chartSetup";
 
 interface Source {
-  key: string; icon: string; title: string; description: string; records: number; active: boolean;
+  key: string; icon: string; title: string; description: string; records: number; completeness: number; active: boolean;
 }
 
 export default function DataAgentTab() {
@@ -39,13 +39,13 @@ export default function DataAgentTab() {
       <AgentHeader
         number="1"
         title="Customer360 Data Agent"
-        subtitle="Unify CRM, billing, network quality, social sentiment, and call centre data into a single subscriber intelligence view"
+        subtitle="Unify demographics, location, services, and AI scoring into a single subscriber intelligence view"
         color="blue"
         statusLabel="Active"
         statusType="active"
       />
 
-      <SectionTitle title="Data Sources — Toggle to Connect" color="blue" />
+      <SectionTitle title="Connected Data Sources" color="blue" />
 
       <div className="panel-grid panel-grid--6 mb-6">
         {sources.map((s) => (
@@ -55,45 +55,49 @@ export default function DataAgentTab() {
             <div className="source-card__title">{s.title}</div>
             <div className="source-card__desc">{s.description}</div>
             <div className="source-card__records">{s.records.toLocaleString()} records</div>
+            <div className="mt-2 text-xs font-semibold text-blue-600">{s.completeness}% Complete</div>
           </div>
         ))}
       </div>
 
-      <div className="file-upload mb-6">
-        <div className="file-upload__icon">📁</div>
-        <div className="file-upload__text"><b>Drag &amp; drop CSV files</b> or click to upload additional data sources</div>
-        <div className="file-upload__hint">Supports CRM exports, billing dumps, network logs, NPS data</div>
-      </div>
-
       <div className="panel-grid panel-grid--4 mb-6">
         <KpiCard label="Sources Connected" value={activeCount} color="green" />
-        <KpiCard label="Records Unified" value={totalRecords.toLocaleString()} color="blue" />
+        <KpiCard label="Total Source Records" value={totalRecords.toLocaleString()} color="blue" />
         <KpiCard label="Merge Completeness" value={`${k.merge_completeness}%`} color="amber" />
         <KpiCard label="Unique Subscribers" value={k.unique_subscribers.toLocaleString()} color="purple" />
       </div>
 
       <div className="panel-grid panel-grid--2">
-        <ChartCard title="Data Source Coverage" icon="📊">
+        <ChartCard title="Source Data Distribution" icon="📊">
           <Doughnut data={{
             labels: sources.map(s => s.title),
             datasets: [{
               data: sources.map(s => s.records),
-              backgroundColor: ["#3b82f6", "#22d3ee", "#f59e0b", "#a855f7", "#10b981", "#ef4444"],
+              backgroundColor: [COLORS.blue, COLORS.cyan, COLORS.green, COLORS.amber, COLORS.purple, COLORS.red],
               borderWidth: 2,
               borderColor: "#ffffff",
             }],
           }} options={{ ...defaultOptions, scales: undefined }} />
         </ChartCard>
-        <ChartCard title="Records by Source" icon="📋">
+        <ChartCard title="Data Quality by Source" icon="📋">
           <Bar data={{
             labels: sources.map(s => s.title),
             datasets: [{
-              label: "Records",
-              data: sources.map(s => s.records),
-              backgroundColor: sources.map(s => s.active ? "rgba(59,130,246,0.7)" : "rgba(203,213,225,0.5)"),
+              label: "Completeness %",
+              data: sources.map(s => s.completeness),
+              backgroundColor: sources.map(s => s.active ? COLORS.blueAlpha : "rgba(203,213,225,0.3)"),
+              borderColor: COLORS.blue,
+              borderWidth: 1,
               borderRadius: 6,
             }],
-          }} options={{ ...defaultOptions, plugins: { ...defaultOptions.plugins, legend: { display: false } } }} />
+          }} options={{ 
+            ...defaultOptions, 
+            indexAxis: 'y' as const,
+            plugins: { ...defaultOptions.plugins, legend: { display: false } },
+            scales: {
+                x: { min: 0, max: 100, title: { display: true, text: "Completeness Percentage" } }
+            }
+          }} />
         </ChartCard>
       </div>
     </div>
