@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Customer Churn Prediction & Retention - 4 AI Agents</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+:root{--navy:#0a1f44;--navy-light:#112d5e;--navy-dark:#061230;--amber:#f59e0b;--green:#16a34a;--blue:#1565c0;--red:#dc2626;--purple:#7c3aed;--cyan:#06b6d4;--orange:#ea5f0b;--bg:#f0f4f8;--card:#ffffff;--text:#1e293b;--text-light:#64748b;--border:#e2e8f0}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+.header{background:linear-gradient(135deg,var(--navy),var(--navy-light));color:#fff;padding:18px 32px;display:flex;align-items:center;gap:18px;box-shadow:0 4px 20px rgba(0,0,0,.3)}
+.header-icon{width:50px;height:50px;background:linear-gradient(135deg,var(--amber),var(--orange));border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:24px}
+.header h1{font-size:1.35rem;font-weight:700;letter-spacing:-.4px}
+.header p{font-size:.82rem;opacity:.8;margin-top:2px}
+.live-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(22,163,74,.2);border:1px solid var(--green);color:var(--green);padding:4px 12px;border-radius:20px;font-size:.75rem;font-weight:600;margin-left:auto}
+.live-dot{width:8px;height:8px;border-radius:50%;background:var(--green);animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.tabs{display:flex;background:var(--navy-dark);padding:0 24px;overflow-x:auto;gap:2px}
+.tab-btn{padding:13px 18px;color:rgba(255,255,255,.6);border:none;background:none;cursor:pointer;font-size:.82rem;font-weight:500;white-space:nowrap;border-bottom:3px solid transparent;transition:all .2s;text-decoration:none}
+.tab-btn:hover{color:rgba(255,255,255,.9);background:rgba(255,255,255,.05)}
+.tab-btn.active{color:var(--amber);border-bottom-color:var(--amber);background:rgba(245,158,11,.08)}
+.tab-btn .agent-badge{display:inline-block;width:18px;height:18px;border-radius:50%;background:var(--blue);color:#fff;font-size:.65rem;font-weight:700;line-height:18px;text-align:center;margin-right:4px;vertical-align:middle}
+.tab-btn:nth-child(3) .agent-badge{background:var(--amber)}
+.tab-btn:nth-child(4) .agent-badge{background:var(--green)}
+.tab-btn:nth-child(5) .agent-badge{background:var(--purple)}
+.main{max-width:1400px;margin:0 auto;padding:24px}
+.agent-header{display:flex;align-items:center;gap:14px;margin-bottom:20px;padding:18px 24px;background:var(--card);border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.agent-num{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.1rem;font-weight:800;background:var(--green)}
+.agent-header h2{font-size:1.15rem;font-weight:700;color:var(--navy)}
+.agent-header p{font-size:.82rem;color:var(--text-light);margin-top:2px}
+.agent-status{margin-left:auto;display:flex;align-items:center;gap:8px;padding:6px 16px;border-radius:20px;font-size:.78rem;font-weight:600;background:#dcfce7;color:#166534}
+.offer-builder{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px}
+@media(max-width:880px){.offer-builder{grid-template-columns:1fr}}
+.control-panel,.chart-card,.kpi-card{background:var(--card);border-radius:14px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.control-panel h4{font-size:.9rem;font-weight:700;color:var(--navy);margin-bottom:14px}
+.control-row{display:flex;align-items:center;gap:14px;margin-bottom:12px;flex-wrap:wrap}
+.control-label{font-size:.82rem;color:var(--text-light);min-width:140px}
+.control-value{font-size:.88rem;font-weight:700;color:var(--navy);min-width:60px;text-align:right}
+select{padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:.82rem;font-family:inherit;background:var(--card);color:var(--text);cursor:pointer}
+.btn{padding:10px 22px;border:none;border-radius:8px;font-size:.82rem;font-weight:600;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:6px}
+.btn-green{background:var(--green);color:#fff}.btn-green:hover{background:#138a3e}
+.btn-amber{background:var(--amber);color:#fff}.btn-amber:hover{background:#d98f09}
+.btn-primary{background:var(--blue);color:#fff}.btn-primary:hover{background:#1256a8}
+.offer-preview{background:var(--card);border-radius:14px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,.06);align-self:start;border:1px solid var(--border)}
+.offer-preview h3{color:var(--navy);font-size:.95rem;margin-bottom:14px}
+.recommendation-grid{display:grid;grid-template-columns:1fr;gap:12px}
+.recommendation-card{border:1px solid var(--border);border-radius:12px;padding:16px;background:#f8fafc;cursor:pointer;transition:border-color .2s,box-shadow .2s,background .2s}
+.recommendation-card.active{border-color:#93c5fd;background:#eff6ff;box-shadow:inset 0 0 0 1px #93c5fd}
+.recommendation-card h4{font-size:.92rem;color:var(--navy);margin-bottom:8px}
+.recommendation-meta{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.recommendation-pill{display:inline-flex;align-items:center;padding:5px 10px;border-radius:999px;background:#e2e8f0;color:#334155;font-size:.74rem;font-weight:600}
+.recommendation-summary{font-size:.84rem;color:#1e293b;line-height:1.5;margin-bottom:8px}
+.recommendation-note{font-size:.78rem;color:var(--text-light);line-height:1.5}
+.taxonomy-group{margin-top:16px}
+.selector-group{margin-top:16px}
+.selector-label{font-size:.76rem;color:var(--text-light);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px}
+.plan-list{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.plan-chip{display:inline-flex;align-items:center;padding:6px 10px;border-radius:999px;background:#e2e8f0;color:#334155;font-size:.76rem;font-weight:600}
+.block-grid{display:flex;flex-wrap:wrap;gap:10px}
+.select-block{padding:12px 14px;border:1px solid var(--border);border-radius:10px;background:#f8fafc;color:var(--navy);font-size:.82rem;cursor:pointer;min-width:180px}
+.select-block.active{border-color:#bfdbfe;background:#eff6ff;box-shadow:inset 0 0 0 1px #93c5fd}
+.select-block.disabled{opacity:.55}
+.generator-status{font-size:.8rem;color:var(--text-light);margin-top:12px}
+.assignment-table-wrap{overflow:auto;border:1px solid #d8dee6;border-radius:10px}
+.assignment-table{width:100%;border-collapse:collapse;font-size:.82rem;background:#fff}
+.assignment-table th,.assignment-table td{padding:12px 14px;border-bottom:1px solid #e5e7eb;text-align:left}
+.assignment-table th{background:#f8fafc;color:#334155;font-weight:600}
+.assignment-select{min-width:180px}
+.kpi-row,.chart-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px;margin-bottom:18px}
+.kpi-card{border-left:4px solid var(--blue)}
+.kpi-card.green{border-left-color:var(--green)}.kpi-card.amber{border-left-color:var(--amber)}.kpi-card.purple{border-left-color:var(--purple)}
+.kpi-label{font-size:.72rem;color:var(--text-light);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px}
+.kpi-value{font-size:1.6rem;font-weight:700;color:var(--navy)}
+.chart-card h3{font-size:.9rem;font-weight:700;color:var(--navy);margin-bottom:12px}
+.chart-wrap{position:relative;height:280px}
+.agent-log{background:#0d1117;border-radius:14px;padding:16px;font-family:'Courier New',monospace;font-size:.75rem;line-height:1.7;color:#8b949e;max-height:220px;overflow-y:auto}
+.log-entry{margin-bottom:2px}.log-time{color:#484f58}.log-agent{font-weight:700;color:var(--green)}.log-msg{color:#c9d1d9}.log-success{color:var(--green)}.log-warning{color:var(--amber)}
+.table-card{background:var(--card);border-radius:14px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,.06);margin-bottom:18px}
+.table-card h3{font-size:.95rem;font-weight:700;color:var(--navy);margin-bottom:6px}
+.table-card p{font-size:.8rem;color:var(--text-light);margin-bottom:14px}
+.table-wrap{overflow:auto;border:1px solid #d8dee6;border-radius:8px}
+.data-table{width:100%;border-collapse:collapse;font-size:.8rem;background:#fff}
+.data-table th,.data-table td{padding:10px 12px;border-bottom:1px solid #e5e7eb;text-align:left;white-space:nowrap}
+.data-table th{background:#f8fafc;color:#334155;font-weight:600;position:sticky;top:0}
+.data-table tr:hover td{background:#fafafa}
+.table-pagination{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:12px;flex-wrap:wrap}
+.table-page-info{font-size:.8rem;color:var(--text-light)}
+.offer-config-panel{align-self:start}
+.toast-container{position:fixed;top:80px;right:24px;z-index:1000;display:flex;flex-direction:column;gap:8px}
+.toast{padding:12px 20px;border-radius:10px;color:#fff;font-size:.82rem;font-weight:500;box-shadow:0 4px 16px rgba(0,0,0,.2);animation:slideIn .3s ease;max-width:380px}
+.toast.success{background:var(--green)}.toast.info{background:var(--blue)}.toast.warning{background:var(--amber)}
+@keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+</style>
+</head>
+<body>
+<div class="toast-container" id="toastContainer"></div>
+
+<div class="header">
+  <div class="header-icon">🛡️</div>
+  <div>
+    <h1>Customer Churn Prediction & Retention - 4 AI Agents</h1>
+    <p>Use Case 3 - Agentic AI PoC | Unified Subscriber Intelligence Platform</p>
+  </div>
+  <div class="live-badge"><span class="live-dot"></span>AGENTS LIVE</div>
+</div>
+
+<div class="tabs">
+  <a class="tab-btn" href="./churn_dashboard.html">Overview</a>
+  <a class="tab-btn" href="./churn_dashboard.html"><span class="agent-badge">1</span>Data Agent</a>
+  <a class="tab-btn" href="./churn_dashboard.html"><span class="agent-badge">2</span>Churn Scoring</a>
+  <a class="tab-btn active" href="./offer_engine.html"><span class="agent-badge">3</span>Offer Engine</a>
+  <a class="tab-btn" href="./churn_dashboard.html"><span class="agent-badge">4</span>Outreach</a>
+  <a class="tab-btn" href="./churn_dashboard.html">Live Impact</a>
+  <a class="tab-btn" href="./churn_dashboard.html">Data Explorer</a>
+  <a class="tab-btn" href="./churn_dashboard.html">ML Models</a>
+  <a class="tab-btn" href="./churn_dashboard.html">Role Views</a>
+  <a class="tab-btn" href="./churn_dashboard.html">Milestones</a>
+</div>
+
+<div class="main">
+  <div class="agent-header">
+    <div class="agent-num">3</div>
+    <div>
+      <h2>Personalised Offer Generation Agent</h2>
+      <p>Craft tailored retention offers through discounts, upgrades, loyalty rewards, gamification, and bundles.</p>
+    </div>
+    <div class="agent-status" id="a3Status">● Generating</div>
+  </div>
+
+  <div class="offer-builder">
+    <div class="control-panel offer-config-panel">
+      <h4>Offer Intelligence Taxonomy</h4>
+      <div class="selector-group">
+        <div class="selector-label">Main Category</div>
+        <div class="block-grid" id="mainCategoryList"></div>
+      </div>
+      <div class="selector-group">
+        <div class="selector-label">Sub Category</div>
+        <div class="block-grid" id="subCategoryList"></div>
+      </div>
+      <div class="selector-group">
+        <div class="selector-label">Risk Level</div>
+        <div class="block-grid" id="riskLevelList"></div>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px">
+        <button class="btn btn-green" id="generateOffersBtn" onclick="saveSelectedOfferPlan()">Generate Offer</button>
+      </div>
+      <div class="generator-status" id="generatorStatus">Select a main category, one sub category, and a risk level. The system will fetch the matching cohort and propose 3 retention plan recommendations. Select one plan to enable Generate Offer.</div>
+    </div>
+
+    <div class="offer-preview" id="offerPreview">
+      <h3>AI Offer Recommendations</h3>
+      <div class="recommendation-grid" id="recommendationList"></div>
+    </div>
+  </div>
+
+  <div class="table-card">
+    <h3>Matched Customer Cohort</h3>
+    <p>This table shows only the customers matched for the currently selected main category, sub category, and risk level.</p>
+    <div class="table-wrap">
+      <table class="data-table" id="customerTable">
+        <thead>
+          <tr>
+            <th>Customer ID</th>
+            <th>Country</th>
+            <th>State</th>
+            <th>City</th>
+            <th>Zip Code</th>
+            <th>Gender</th>
+            <th>Senior Citizen</th>
+            <th>Partner</th>
+            <th>Dependents</th>
+            <th>Tenure Months</th>
+            <th>Internet Service</th>
+            <th>Contract</th>
+            <th>Payment Method</th>
+            <th>Monthly Charges</th>
+            <th>Total Charges</th>
+            <th>Churn Label</th>
+            <th>Churn Score</th>
+            <th>Main Category</th>
+            <th>Sub Category</th>
+            <th>Churn Reason</th>
+          </tr>
+        </thead>
+        <tbody id="customerTableBody"></tbody>
+      </table>
+    </div>
+    <div class="table-pagination">
+      <div class="table-page-info" id="tablePageInfo">Showing 0-0 of 0</div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-primary" id="prevPageBtn" onclick="changeTablePage(-1)">Previous</button>
+        <button class="btn btn-primary" id="nextPageBtn" onclick="changeTablePage(1)">Next</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="kpi-row">
+    <div class="kpi-card green"><div class="kpi-label">Offers Generated</div><div class="kpi-value" id="a3Generated">0</div></div>
+    <div class="kpi-card amber"><div class="kpi-label">Avg Acceptance (projected)</div><div class="kpi-value" id="a3Accept">0%</div></div>
+    <div class="kpi-card purple"><div class="kpi-label">Gamification Active</div><div class="kpi-value" id="a3Gamify">OFF</div></div>
+    <div class="kpi-card"><div class="kpi-label">Est. Revenue Protected</div><div class="kpi-value" id="a3Revenue">$0</div></div>
+  </div>
+
+  <div class="chart-grid">
+    <div class="chart-card"><h3>Offer Type Effectiveness</h3><div class="chart-wrap"><canvas id="a3Effectiveness"></canvas></div></div>
+    <div class="chart-card"><h3>Acceptance Rate by Churn Risk Level</h3><div class="chart-wrap"><canvas id="a3CLVAccept"></canvas></div></div>
+  </div>
+</div>
+
+<script>
+const C={navy:'#0a1f44',amber:'#f59e0b',green:'#16a34a',blue:'#1565c0',red:'#dc2626',purple:'#7c3aed',cyan:'#06b6d4',orange:'#ea5f0b'};
+const STATE={offersGenerated:0,gamificationOn:false,revenueProtected:0,selectedMainCategory:'Price-Sensitive',selectedSubCategory:'Price Issue',selectedRiskLevel:'Level 1',matchingReady:false,isLoadingMatches:false,isLoadingRecommendations:false,isSavingOffer:false,selectedRecommendationId:''};
+const BACKEND_BASE_URL=(window.BACKEND_BASE_URL||'http://localhost:8000');
+const CUSTOMER_DATA_ENDPOINT=`${BACKEND_BASE_URL}/api/v1/offer-engine/customers`;
+const MATCH_CUSTOMERS_ENDPOINT=`${BACKEND_BASE_URL}/api/v1/offer-engine/match-customers`;
+const RECOMMENDATIONS_ENDPOINT=`${BACKEND_BASE_URL}/api/v1/offer-engine/recommendations`;
+const SAVE_OFFER_ENDPOINT=`${BACKEND_BASE_URL}/api/v1/offer-engine/save-offer`;
+const TABLE_PAGE_SIZE=10;
+const CACHE_PREFIX='offer_engine_v9';
+let customerRows=[];
+let displayedCustomerRows=[];
+let analyzedRows=[];
+let recommendationRows=[];
+let currentTablePage=1;
+const TAXONOMY=[
+  {main_category:'Price-Sensitive',sub_drivers:['Price Issue']},
+  {main_category:'Low Engagement',sub_drivers:['Other']},
+  {main_category:'Plan & Product Mismatch',sub_drivers:['Competitor']},
+  {main_category:'Customer Experience Issues',sub_drivers:['Service Issue','Support Issue']},
+  {main_category:'High-Value Customer Risk',sub_drivers:['Other','Personal Reason']},
+  {main_category:'Demographics',sub_drivers:['Personal Reason']},
+  {main_category:'Geography',sub_drivers:['Service Issue']},
+  {main_category:'Behavior',sub_drivers:['Other']},
+  {main_category:'Billing',sub_drivers:['Price Issue']},
+  {main_category:'Product Adoption Gap',sub_drivers:['Competitor','Other']}
+];
+const RISK_LEVELS=['Level 1','Level 2','Level 3','Level 4','Level 5'];
+
+if(window.Chart){
+  Chart.defaults.font.family="'Segoe UI',system-ui,sans-serif";
+  Chart.defaults.font.size=11;
+  Chart.defaults.plugins.legend.labels.usePointStyle=true;
+}
+
+function toast(msg,type='info'){
+  const t=document.createElement('div');
+  t.className=`toast ${type}`;
+  t.textContent=msg;
+  document.getElementById('toastContainer').appendChild(t);
+  setTimeout(()=>t.remove(),3200);
+}
+
+function addLog(message,type='log-msg'){
+  const log=document.getElementById('agentLog');
+  if(!log)return;
+  const now=new Date();
+  const time=now.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  const line=document.createElement('div');
+  line.className='log-entry';
+  line.innerHTML=`<span class="log-time">${time}</span> <span class="log-agent">A3</span> <span class="${type}">${message}</span>`;
+  log.prepend(line);
+}
+
+function updateOffer(){
+  const selectedRecommendation=recommendationRows.find(item=>item.plan_id===STATE.selectedRecommendationId);
+  const gamifyOn=(selectedRecommendation?.offer_type||'').toLowerCase()==='gamification';
+  STATE.gamificationOn=gamifyOn;
+  document.getElementById('a3Gamify').textContent=gamifyOn?'ON':'OFF';
+  document.getElementById('a3Gamify').style.color=gamifyOn?C.green:C.red;
+}
+
+function getRiskWeight(level){
+  const normalized=(level||'').toLowerCase();
+  return {
+    'level 1':0.28,
+    'level 2':0.23,
+    'level 3':0.18,
+    'level 4':0.12,
+    'level 5':0.07
+  }[normalized]||0.12;
+}
+
+function getSelectionCacheKey(kind){
+  return `${CACHE_PREFIX}:${kind}:${STATE.selectedMainCategory}|${STATE.selectedSubCategory}|${STATE.selectedRiskLevel}`;
+}
+
+function readCache(kind){
+  try{
+    const raw=localStorage.getItem(getSelectionCacheKey(kind));
+    if(!raw)return null;
+    const parsed=JSON.parse(raw);
+    return Array.isArray(parsed)?parsed:null;
+  }catch(_error){
+    return null;
+  }
+}
+
+function writeCache(kind,data){
+  try{
+    localStorage.setItem(getSelectionCacheKey(kind),JSON.stringify(data));
+  }catch(_error){
+  }
+}
+
+function updateGenerateButtonState(){
+  document.getElementById('generateOffersBtn').disabled=!STATE.matchingReady || !STATE.selectedRecommendationId || STATE.isLoadingMatches || STATE.isLoadingRecommendations || STATE.isSavingOffer;
+}
+
+function applyAnalyzedRows(rows,statusMessage){
+  analyzedRows=Array.isArray(rows)?rows:[];
+  displayedCustomerRows=analyzedRows;
+  currentTablePage=1;
+  STATE.matchingReady=true;
+  STATE.selectedRecommendationId='';
+  renderCustomerTable(displayedCustomerRows);
+  generateOffer();
+  if(statusMessage)document.getElementById('generatorStatus').textContent=statusMessage;
+  updateGenerateButtonState();
+}
+
+function clearAnalyzedRows(statusMessage){
+  analyzedRows=[];
+  recommendationRows=[];
+  displayedCustomerRows=[];
+  currentTablePage=1;
+  STATE.matchingReady=false;
+  STATE.selectedRecommendationId='';
+  renderRecommendationCards();
+  renderCustomerTable(displayedCustomerRows);
+  generateOffer();
+  if(statusMessage)document.getElementById('generatorStatus').textContent=statusMessage;
+  updateGenerateButtonState();
+}
+
+function getRecommendedPlan(driver){
+  const recommendedPlan={
+    high_monthly_charge:'Discount',
+    no_offer_applied:'Discount',
+    month_to_month_contract:'Custom Bundle',
+    low_tenure_customer:'Loyalty Points',
+    high_charges_payment_issue:'Discount',
+    refund_billing_adjustment:'Discount',
+    low_data_usage:'Gamification',
+    low_call_usage:'Gamification',
+    no_streaming_services:'Custom Bundle',
+    no_value_added_services:'Custom Bundle',
+    low_satisfaction_score:'Loyalty Points',
+    no_tech_support:'Plan Upgrade',
+    no_device_protection:'Plan Upgrade',
+    no_unlimited_data:'Plan Upgrade',
+    basic_internet_type:'Plan Upgrade',
+    low_revenue_customer:'Custom Bundle'
+  };
+  return recommendedPlan[driver]||'Custom Bundle';
+}
+
+function driverLabel(driver){
+  return {
+    high_monthly_charge:'High Monthly Charge',
+    no_offer_applied:'No Offer Applied',
+    month_to_month_contract:'Month-to-Month Contract',
+    low_tenure_customer:'Low Tenure Customer',
+    high_charges_payment_issue:'High Charges / Payment Issue',
+    refund_billing_adjustment:'Refund / Billing Adjustment',
+    low_data_usage:'Low Data Usage',
+    low_call_usage:'Low Call Usage',
+    no_streaming_services:'No Streaming Services',
+    no_value_added_services:'No Value-Added Services',
+    low_satisfaction_score:'Low Satisfaction Score',
+    no_tech_support:'No Tech Support',
+    no_device_protection:'No Device Protection',
+    no_unlimited_data:'No Unlimited Data',
+    basic_internet_type:'Basic Internet Type',
+    low_revenue_customer:'Low Revenue Customer'
+  }[driver]||driver;
+}
+
+function deriveDriverKey(row){
+  const reason=(row.churn_reason||'').toLowerCase();
+  const mapping={
+    'price too high':'high_monthly_charge',
+    'product dissatisfaction':'no_value_added_services',
+    'network reliability':'basic_internet_type',
+    'limited range of services':'no_value_added_services',
+    'competitor made better offer':'no_offer_applied',
+    'attitude of service provider':'low_satisfaction_score',
+    'attitude of support person':'no_tech_support',
+    'competitor offered higher download speeds':'basic_internet_type',
+    'competitor offered more data':'no_unlimited_data',
+    'lack of affordable download/upload speed':'high_charges_payment_issue',
+    'lack of self-service on website':'refund_billing_adjustment'
+  };
+  if(mapping[reason])return mapping[reason];
+  if((row.contract||'').toLowerCase().includes('month-to-month'))return 'month_to_month_contract';
+  if((row.tenure_months||0)<=6)return 'low_tenure_customer';
+  if((row.monthly_charges||0)>=90)return 'high_monthly_charge';
+  return 'low_revenue_customer';
+}
+
+function generateOffer(){
+  if(!analyzedRows.length){
+    document.getElementById('a3Generated').textContent='0';
+    document.getElementById('a3Accept').textContent='0%';
+    document.getElementById('a3Revenue').textContent='$0';
+    updateOffer();
+    return;
+  }
+  const acceptance=analyzedRows.reduce((sum,row)=>sum+getRiskWeight(row.risk_level),0)/analyzedRows.length*100;
+  document.getElementById('a3Accept').textContent=acceptance.toFixed(1)+'%';
+  const estRev=Math.round(analyzedRows.reduce((sum,row)=>sum+(getRiskWeight(row.risk_level)*650),0));
+  STATE.revenueProtected=estRev;
+  document.getElementById('a3Revenue').textContent='$'+estRev.toLocaleString();
+  document.getElementById('a3Generated').textContent=analyzedRows.length.toLocaleString();
+  updateOffer();
+}
+
+function mc(id,cfg){
+  if(!window.Chart)return null;
+  return new Chart(document.getElementById(id),cfg);
+}
+
+function renderSelectors(){
+  const mainContainer=document.getElementById('mainCategoryList');
+  const subContainer=document.getElementById('subCategoryList');
+  const riskContainer=document.getElementById('riskLevelList');
+  mainContainer.innerHTML='';
+  subContainer.innerHTML='';
+  riskContainer.innerHTML='';
+
+  TAXONOMY.forEach(item=>{
+    const block=document.createElement('div');
+    block.className=`select-block${item.main_category===STATE.selectedMainCategory?' active':''}`;
+    block.textContent=item.main_category;
+    block.addEventListener('click',()=>{
+      if(STATE.selectedMainCategory===item.main_category)return;
+      STATE.selectedMainCategory=item.main_category;
+      STATE.selectedSubCategory=item.sub_drivers[0];
+      clearAnalyzedRows('Loading customers for the selected criteria...');
+      renderSelectors();
+      triggerSelectionFetch();
+    });
+    mainContainer.appendChild(block);
+  });
+
+  const selectedTaxonomy=TAXONOMY.find(item=>item.main_category===STATE.selectedMainCategory);
+  (selectedTaxonomy?.sub_drivers||[]).forEach(sub=>{
+    const block=document.createElement('div');
+    block.className=`select-block${sub===STATE.selectedSubCategory?' active':''}`;
+    block.textContent=sub;
+    block.addEventListener('click',()=>{
+      if(STATE.selectedSubCategory===sub)return;
+      STATE.selectedSubCategory=sub;
+      clearAnalyzedRows('Loading customers for the selected criteria...');
+      renderSelectors();
+      triggerSelectionFetch();
+    });
+    subContainer.appendChild(block);
+  });
+
+  RISK_LEVELS.forEach(level=>{
+    const block=document.createElement('div');
+    block.className=`select-block${level===STATE.selectedRiskLevel?' active':''}`;
+    block.textContent=level;
+    block.addEventListener('click',()=>{
+      if(STATE.selectedRiskLevel===level)return;
+      STATE.selectedRiskLevel=level;
+      clearAnalyzedRows('Loading customers for the selected criteria...');
+      renderSelectors();
+      triggerSelectionFetch();
+    });
+    riskContainer.appendChild(block);
+  });
+  updateGenerateButtonState();
+}
+
+function renderRecommendationCards(){
+  const container=document.getElementById('recommendationList');
+  container.innerHTML='';
+  if(!recommendationRows.length){
+    container.innerHTML='<div class="recommendation-card"><div class="recommendation-note">No recommendations yet. Select filters and wait for the AI recommendations to load.</div></div>';
+    return;
+  }
+  recommendationRows.forEach(recommendation=>{
+    const card=document.createElement('div');
+    card.className=`recommendation-card${STATE.selectedRecommendationId===recommendation.plan_id?' active':''}`;
+    card.innerHTML=`
+      <h4>${recommendation.offer_type??recommendation.title??''}</h4>
+      <div class="recommendation-meta">
+        <span class="recommendation-pill">${recommendation.offer_type??recommendation.title??''}</span>
+        <span class="recommendation-pill">Target ${recommendation.projected_target_level??''}</span>
+        <span class="recommendation-pill">${recommendation.projected_reduction_pct??0}% potential reduction</span>
+      </div>
+      <div class="recommendation-summary">${recommendation.offer_summary??''}</div>
+      <div class="recommendation-note">${recommendation.why_it_fits??''}</div>
+    `;
+    card.addEventListener('click',()=>{
+      STATE.selectedRecommendationId=recommendation.plan_id;
+      renderRecommendationCards();
+      updateOffer();
+      updateGenerateButtonState();
+      document.getElementById('generatorStatus').textContent=`Selected "${recommendation.offer_type??recommendation.title}". You can now generate and save the offer cohort document.`;
+    });
+    container.appendChild(card);
+  });
+}
+
+async function matchCustomersWithLLM(){
+  const status=document.getElementById('generatorStatus');
+  if(!customerRows.length){
+    status.textContent='No customer data available to analyze.';
+    return;
+  }
+  STATE.isLoadingMatches=true;
+  STATE.matchingReady=false;
+  updateGenerateButtonState();
+  analyzedRows=[];
+  recommendationRows=[];
+  STATE.selectedRecommendationId='';
+  renderRecommendationCards();
+  generateOffer();
+  status.textContent='Matching customers to selected criteria through Groq...';
+  try{
+    const response=await fetch(MATCH_CUSTOMERS_ENDPOINT,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        customers:customerRows,
+        taxonomy:TAXONOMY,
+        selected_main_category:STATE.selectedMainCategory,
+        selected_sub_category:STATE.selectedSubCategory,
+        selected_risk_level:STATE.selectedRiskLevel
+      })
+    });
+    if(!response.ok){
+      const error=await response.json().catch(()=>({detail:'Request failed'}));
+      throw new Error(error.detail||`HTTP ${response.status}`);
+    }
+    const result=await response.json();
+    const rows=result.offers||[];
+    writeCache('matched',rows);
+    applyAnalyzedRows(rows,`Found ${rows.length} customers for ${STATE.selectedMainCategory} / ${STATE.selectedSubCategory} / ${STATE.selectedRiskLevel}.`);
+    await fetchRecommendationsForSelection(rows);
+  }catch(error){
+    STATE.matchingReady=false;
+    status.textContent=`Customer matching failed: ${error.message}`;
+  }finally{
+    STATE.isLoadingMatches=false;
+    updateGenerateButtonState();
+  }
+}
+
+async function fetchRecommendationsForSelection(payloadRows){
+  const status=document.getElementById('generatorStatus');
+  STATE.selectedRecommendationId='';
+  const cachedRecommendations=readCache('recommendations');
+  if(cachedRecommendations){
+    recommendationRows=cachedRecommendations;
+    recommendationRows.sort((a,b)=>(Number(b.projected_reduction_pct)||0)-(Number(a.projected_reduction_pct)||0));
+    renderRecommendationCards();
+    updateGenerateButtonState();
+    status.textContent=`Loaded ${cachedRecommendations.length} plan recommendations from local cache.`;
+    return;
+  }
+  STATE.isLoadingRecommendations=true;
+  updateGenerateButtonState();
+  status.textContent='Generating 3 cohort-level offer recommendations through Groq...';
+  try{
+    const response=await fetch(RECOMMENDATIONS_ENDPOINT,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        customers:Array.isArray(payloadRows)?payloadRows:[],
+        taxonomy:TAXONOMY,
+        selected_main_category:STATE.selectedMainCategory,
+        selected_sub_category:STATE.selectedSubCategory,
+        selected_risk_level:STATE.selectedRiskLevel
+      })
+    });
+    if(!response.ok){
+      const error=await response.json().catch(()=>({detail:'Request failed'}));
+      throw new Error(error.detail||`HTTP ${response.status}`);
+    }
+    const result=await response.json();
+    recommendationRows=result.recommendations||[];
+    recommendationRows.sort((a,b)=>(Number(b.projected_reduction_pct)||0)-(Number(a.projected_reduction_pct)||0));
+    writeCache('recommendations',recommendationRows);
+    renderRecommendationCards();
+    status.textContent=`Generated ${recommendationRows.length} plan recommendations. Select one to enable Generate Offer.`;
+  }catch(error){
+    recommendationRows=[];
+    STATE.selectedRecommendationId='';
+    renderRecommendationCards();
+    status.textContent=`Recommendation generation failed: ${error.message}`;
+  }finally{
+    STATE.isLoadingRecommendations=false;
+    updateGenerateButtonState();
+  }
+}
+
+function triggerSelectionFetch(){
+  if(!customerRows.length)return;
+  const cachedMatched=readCache('matched');
+  if(cachedMatched){
+    applyAnalyzedRows(cachedMatched,`Loaded ${cachedMatched.length} matched customers from local cache for the selected criteria.`);
+    fetchRecommendationsForSelection(cachedMatched);
+    return;
+  }
+  matchCustomersWithLLM();
+}
+
+async function saveSelectedOfferPlan(){
+  const status=document.getElementById('generatorStatus');
+  const selectedRecommendation=recommendationRows.find(item=>item.plan_id===STATE.selectedRecommendationId);
+  if(!analyzedRows.length){
+    status.textContent='No matched customers are available to save.';
+    return;
+  }
+  if(!selectedRecommendation){
+    status.textContent='Select one recommendation first.';
+    updateGenerateButtonState();
+    return;
+  }
+  STATE.isSavingOffer=true;
+  updateGenerateButtonState();
+  status.textContent='Saving selected offer cohort to MongoDB...';
+  try{
+    const response=await fetch(SAVE_OFFER_ENDPOINT,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        customers:analyzedRows,
+        selected_main_category:STATE.selectedMainCategory,
+        selected_sub_category:STATE.selectedSubCategory,
+        selected_risk_level:STATE.selectedRiskLevel,
+        selected_recommendation:selectedRecommendation
+      })
+    });
+    if(!response.ok){
+      const error=await response.json().catch(()=>({detail:'Request failed'}));
+      throw new Error(error.detail||`HTTP ${response.status}`);
+    }
+    const result=await response.json();
+    status.textContent=`Saved ${result.customer_count||0} customers into Mongo document ${result.document_name||''}.`;
+  }catch(error){
+    status.textContent=`Offer save failed: ${error.message}`;
+  }finally{
+    STATE.isSavingOffer=false;
+    updateGenerateButtonState();
+  }
+}
+
+function renderCustomerTable(rows){
+  const tbody=document.getElementById('customerTableBody');
+  tbody.innerHTML='';
+  const total=rows.length;
+  const totalPages=Math.max(1,Math.ceil(total/TABLE_PAGE_SIZE));
+  if(currentTablePage>totalPages)currentTablePage=totalPages;
+  const start=(currentTablePage-1)*TABLE_PAGE_SIZE;
+  const pageRows=rows.slice(start,start+TABLE_PAGE_SIZE);
+  pageRows.forEach(row=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
+      <td>${row.customer_id??''}</td>
+      <td>${row.country??''}</td>
+      <td>${row.state??''}</td>
+      <td>${row.city??''}</td>
+      <td>${row.zip_code??''}</td>
+      <td>${row.gender??''}</td>
+      <td>${row.senior_citizen??''}</td>
+      <td>${row.partner??''}</td>
+      <td>${row.dependents??''}</td>
+      <td>${row.tenure_months??''}</td>
+      <td>${row.internet_service??''}</td>
+      <td>${row.contract??''}</td>
+      <td>${row.payment_method??''}</td>
+      <td>${row.monthly_charges??''}</td>
+      <td>${row.total_charges??''}</td>
+      <td>${row.churn_label??''}</td>
+      <td>${row.churn_score??''}</td>
+      <td>${row.main_category??''}</td>
+      <td>${row.sub_category??''}</td>
+      <td>${row.churn_reason??''}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+  const from=total===0?0:start+1;
+  const to=Math.min(start+TABLE_PAGE_SIZE,total);
+  document.getElementById('tablePageInfo').textContent=`Showing ${from}-${to} of ${total}`;
+  document.getElementById('prevPageBtn').disabled=currentTablePage===1;
+  document.getElementById('nextPageBtn').disabled=currentTablePage>=totalPages;
+}
+
+function changeTablePage(direction){
+  const totalPages=Math.max(1,Math.ceil(displayedCustomerRows.length/TABLE_PAGE_SIZE));
+  currentTablePage=Math.min(totalPages,Math.max(1,currentTablePage+direction));
+  renderCustomerTable(displayedCustomerRows);
+}
+
+async function loadCustomerTable(){
+  try{
+    const response=await fetch(CUSTOMER_DATA_ENDPOINT,{headers:{'Content-Type':'application/json'}});
+    if(!response.ok){
+      const error=await response.json().catch(()=>({detail:`HTTP ${response.status}`}));
+      throw new Error(error.detail||`HTTP ${response.status}`);
+    }
+    const payload=await response.json();
+    const rows=Array.isArray(payload)?payload:(payload.data||[]);
+    if(!rows.length)throw new Error('No data returned');
+    customerRows=rows;
+    displayedCustomerRows=[];
+    currentTablePage=1;
+    renderCustomerTable(displayedCustomerRows);
+    triggerSelectionFetch();
+  }catch(error){
+    customerRows=[];
+    displayedCustomerRows=[];
+    currentTablePage=1;
+    renderCustomerTable(displayedCustomerRows);
+    clearAnalyzedRows(`Customer data fetch failed: ${error.message}`);
+  }
+}
+
+function initCharts(){
+  if(!window.Chart)return;
+  mc('a3Effectiveness',{type:'bar',data:{labels:['Discount','Upgrade','Loyalty Pts','Gamification','Bundle'],datasets:[{label:'Acceptance %',data:[18,14,16,22,12],backgroundColor:[C.green,C.blue,C.amber,C.purple,C.cyan],borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,title:{display:true,text:'Acceptance Rate %'}}}}});
+  mc('a3CLVAccept',{type:'bar',data:{labels:['Level 5','Level 4','Level 3','Level 2','Level 1'],datasets:[{label:'Generic',data:[5,7,9,11,13],backgroundColor:C.red+'77',borderRadius:4},{label:'AI Personalised',data:[10,14,19,24,29],backgroundColor:C.green,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}},scales:{y:{beginAtZero:true,title:{display:true,text:'Acceptance Rate %'}}}}});
+}
+
+updateOffer();
+initCharts();
+renderSelectors();
+loadCustomerTable();
+</script>
+</body>
+</html>
