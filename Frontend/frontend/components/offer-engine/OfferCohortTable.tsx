@@ -78,15 +78,13 @@ export default function OfferCohortTable({ customers }: OfferCohortTableProps) {
               <th>Main Category</th>
               <th>Sub Category</th>
               <th>Churn Reason</th>
-              <th>Planned Offer</th>
-              <th>Rationale</th>
             </tr>
           </thead>
           <tbody>
             {pageRows.length === 0 ? (
               <tr>
                 <td
-                  colSpan={22}
+                  colSpan={20}
                   style={{ textAlign: "center", padding: "40px", color: "#64748b" }}
                 >
                   No customers matched for the current selection.
@@ -115,8 +113,6 @@ export default function OfferCohortTable({ customers }: OfferCohortTableProps) {
                   <td>{c.main_category || c["Main Category"] || "—"}</td>
                   <td>{c.sub_category || c["Sub Category"] || "—"}</td>
                   <td>{c.churn_reason || c["Churn Reason"] || "—"}</td>
-                  <td style={{ fontWeight: "600", color: "#10b981" }}>{c.planned_offer || "—"}</td>
-                  <td style={{ minWidth: "200px", fontSize: "12px", color: "#6366f1" }}>{c.rationale || "—"}</td>
                 </tr>
               ))
             )}
