@@ -25,7 +25,7 @@ def call_groq_json(system_content: str, user_payload: dict):
     try:
         response = groq_client.chat.completions.create(
             model="llama-3.3-70b-versatile",
-            temperature=0.2,
+            temperature=0.6,
             messages=[
                 {"role": "system", "content": system_content},
                 {"role": "user", "content": json.dumps(user_payload)},

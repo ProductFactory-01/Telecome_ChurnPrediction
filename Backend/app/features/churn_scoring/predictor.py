@@ -44,15 +44,15 @@ def latlng_to_numeric_cell(latitude: float, longitude: float, resolution: int = 
 def get_fallback_reason(prob: float, data: CustomerInput):
     # Mapping based on user provided table
     if prob < 0.4:
-        return {"main_category": "Stable", "sub_category": "Loyal", "reason": "No immediate churn risk detected."}
+        return {"main_category": "Stable", "sub_category": "Loyal", "reason": f"No immediate risk detected given stable {data.TenureMonths}-month tenure."}
     
     if data.MonthlyCharges > 80 and data.TenureMonths < 12:
-        return {"main_category": "Price-Sensitive", "sub_category": "Price Issue", "reason": "High pricing in early tenure creates exit risk."}
+        return {"main_category": "Price-Sensitive", "sub_category": "Price Issue", "reason": f"High pricing of ${data.MonthlyCharges} combined with early tenure ({data.TenureMonths}mo) creates flight risk."}
     elif not data.TechSupport and data.InternetService == "Fiber optic":
-        return {"main_category": "Customer Experience Issues", "sub_category": "Support Issue", "reason": "Fiber users without tech support report lower reliability."}
+        return {"main_category": "Customer Experience Issues", "sub_category": "Support Issue", "reason": f"Premium Fiber users paying ${data.MonthlyCharges} without tech support report lower network satisfaction."}
     elif data.Contract == "Month-to-month":
-        return {"main_category": "Plan & Product Mismatch", "sub_category": "Competitor", "reason": "Flexible contract makes them easy targets for competitor switch."}
-    return {"main_category": "Low Engagement", "sub_category": "Other", "reason": "Generalized risk signal based on usage behavior."}
+        return {"main_category": "Plan & Product Mismatch", "sub_category": "Competitor", "reason": "Unsecured month-to-month contract provides zero barrier to competitor switching."}
+    return {"main_category": "Low Engagement", "sub_category": "Other", "reason": f"High probability risk detected based on combination of ${data.MonthlyCharges}/mo pricing and {data.TenureMonths}-month history."}
 
 
 def get_llm_churn_reason(prob, data: CustomerInput):
@@ -73,6 +73,7 @@ def get_llm_churn_reason(prob, data: CustomerInput):
     """
 
     if not GROQ_API_KEY:
+        print("⚠ No GROQ_API_KEY found, using fallback reasons.")
         return get_fallback_reason(prob, data)
     
     prompt = {
@@ -89,19 +90,23 @@ def get_llm_churn_reason(prob, data: CustomerInput):
         },
         "mapping_rules": mapping_table,
         "task": (
-            "Analyze the churn risk and assign a Main Category and Sub Category from the mapping table provided. "
-            "Return JSON only: {\"main_category\": \"...\", \"sub_category\": \"...\", \"reason\": \"...\"}. "
-            "Reason must be a 1-sentence data-driven explanation."
+            "Analyze the churn risk using the exact customer profile parameters provided. "
+            "You MUST assign a 'main_category' and 'sub_category' STRICTLY from the mapping table. "
+            "For 'reason', you MUST generate a highly specific, unique 1-sentence explanation that directly cites the worst-performing factors in the profile (e.g., mention their exact tenure, high monthly charge, lack of tech support, or specific contract type). Do NOT use generic templates. "
+            "Return JSON only: {\"main_category\": \"...\", \"sub_category\": \"...\", \"reason\": \"...\"}."
         )
     }
 
     parsed = try_groq_json(
-        "You are a Churn Diagnostics Agent. Follow mapping rules strictly.",
+        "You are an expert Telecom Data Scientist AI. You must provide distinct, hyper-specific reasoning based on the variables provided. Output strictly valid JSON.",
         prompt
     )
     
     if parsed and isinstance(parsed, dict) and "main_category" in parsed:
+        print(f"✓ AI reasoning successfully generated: {parsed['main_category']}")
         return parsed
+        
+    print("⚠ Groq API failed or returned invalid JSON. Falling back to static mapping.")
     return get_fallback_reason(prob, data)
 
 
