@@ -101,45 +101,20 @@ def fallback_offer_template(selected_sub_category: str, risk_level: str) -> str:
         return "Custom Bundle: Premium Support + Tech Pack for 3 months"
     return "Loyalty Points: 1000 bonus points credited to account"
 
-def persist_offer_documents(offers: List[dict], main_cat: str, sub_cat: str, risk_level: str):
-    """Save individual customer offers to MongoDB 'offer' collection."""
-    if mongo_db is None: return
-    try:
-        coll = mongo_db["offer"]
-        timestamp = datetime.now(timezone.utc)
-        for off in offers:
-            cid = str(off.get("customer_id", "")).strip()
-            if not cid: continue
-            
-            doc = {
-                "customer_id": cid,
-                "main_category": main_cat,
-                "sub_category": sub_cat,
-                "risk_level": risk_level,
-                "planned_offer": off.get("planned_offer"),
-                "rationale": off.get("rationale"),
-                "updated_at": timestamp
-            }
-            coll.update_one(
-                {"customer_id": cid, "main_category": main_cat, "sub_category": sub_cat},
-                {"$set": doc, "$setOnInsert": {"created_at": timestamp}},
-                upsert=True
-            )
-    except Exception as e:
-        print(f"Failed to persist individual offers: {e}")
 
 def save_offer_cohort_document(payload: SaveOfferPlanRequest):
-    """Save the finalized cohort and plan to MongoDB."""
+    """Save a new finalized cohort and plan to MongoDB (History-aware)."""
     if mongo_db is None:
         raise HTTPException(status_code=500, detail="MongoDB not connected")
     try:
         coll = mongo_db["offer_campaigns"]
         timestamp = datetime.now(timezone.utc)
         
-        # Consistent naming from reference
+        # Append timestamp to doc_name to make every save unique
         normalized_level = normalize_level_label(payload.selected_risk_level).lower().replace(" ", "")
         main_key = "".join(c for c in payload.selected_main_category if c.isalnum())
-        doc_name = f"{normalized_level}_{main_key}"
+        time_suffix = timestamp.strftime("%Y%m%d_%H%M%S")
+        doc_name = f"{normalized_level}_{main_key}_{time_suffix}"
         
         doc = {
             "document_name": doc_name,
@@ -149,14 +124,14 @@ def save_offer_cohort_document(payload: SaveOfferPlanRequest):
             "recommendation": payload.selected_recommendation,
             "customer_count": len(payload.customers),
             "customers": payload.customers,
+            "notify_user": False,
             "created_at": timestamp,
             "updated_at": timestamp
         }
-        coll.update_one(
-            {"document_name": doc_name},
-            {"$set": doc},
-            upsert=True
-        )
+        
+        # Use insert_one instead of update_one to preserve history
+        coll.insert_one(doc)
+        
         return {"document_name": doc_name, "customer_count": len(payload.customers)}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Database save failed: {str(e)}")
@@ -334,12 +309,6 @@ async def generate_offer_plans(payload: OfferGenerationRequest):
     # Merge suggestions with FULL original customer data
     enriched_offers = enrich_offer_rows(offers_from_llm, customer_lookup)
     
-    persist_offer_documents(
-        enriched_offers, 
-        payload.selected_main_category, 
-        payload.selected_sub_category, 
-        payload.selected_risk_level
-    )
     
     return {"offers": enriched_offers}
 
