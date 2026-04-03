@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import api from "../../lib/api";
+import Loading from "../shared/Loading";
 import SectionTitle from "../shared/SectionTitle";
 
 export default function MilestonesTab() {
@@ -10,7 +11,7 @@ export default function MilestonesTab() {
     api.get("/milestones").then((r) => setData(r.data)).catch(console.error);
   }, []);
 
-  if (!data) return <div className="dashboard-content text-muted">Loading…</div>;
+  if (!data) return <Loading message="Loading System Milestones..." />;
 
   return (
     <div className="dashboard-content">

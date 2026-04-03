@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Bar, Line } from "react-chartjs-2";
 
 import api from "../../lib/api";
+import Loading from "../shared/Loading";
 import "../../lib/chartSetup";
 import { COLORS, defaultOptions } from "../../lib/chartSetup";
 import ChartCard from "../shared/ChartCard";
@@ -58,7 +59,7 @@ export default function MlModelsTab() {
   }, []);
 
   if (!data) {
-    return <div className="dashboard-content text-muted">Loading...</div>;
+    return <Loading message="Querying AI Model Intelligence..." />;
   }
 
   if (!data.ds_names.length) {

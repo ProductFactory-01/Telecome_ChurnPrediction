@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import api from "../../lib/api";
+import Loading from "../shared/Loading";
 import SectionTitle from "../shared/SectionTitle";
 import KpiCard from "../shared/KpiCard";
 import ChartCard from "../shared/ChartCard";
@@ -9,20 +10,20 @@ import "../../lib/chartSetup";
 import { COLORS, defaultOptions } from "../../lib/chartSetup";
 
 const ROLE_TABS = [
-  { key: "noc", label: "🖥️ NOC Dashboard" },
-  { key: "crm", label: "🎯 CRM Team" },
-  { key: "finance", label: "💰 Finance" },
+  { key: "ops", label: "🖥️ AI & Data Ops" },
+  { key: "retention", label: "🎯 Retention Team" },
+  { key: "strategy", label: "💰 Executive Strategy" },
 ];
 
 export default function RoleViewsTab() {
   const [data, setData] = useState<any>(null);
-  const [activeRole, setActiveRole] = useState("noc");
+  const [activeRole, setActiveRole] = useState("ops");
 
   useEffect(() => {
     api.get("/role-views").then((r) => setData(r.data)).catch(console.error);
   }, []);
 
-  if (!data) return <div className="dashboard-content text-muted">Loading…</div>;
+  if (!data) return <Loading message="Generating Role-Based Insights..." />;
 
   const roleData = data[activeRole];
   if (!roleData) return null;

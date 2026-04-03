@@ -7,7 +7,7 @@ interface Props {
 
 export default function Loading({ message = "Synchronizing Intelligence...", fullPage = false }: Props) {
   return (
-    <div className={`flex flex-col items-center justify-center p-12 transition-all duration-500 animate-in fade-in zoom-in-95 ${fullPage ? "fixed inset-0 bg-white/80 backdrop-blur-md z-50" : "w-full"}`}>
+    <div className={`flex flex-col items-center justify-center p-12 transition-all duration-500 animate-in fade-in zoom-in-95 ${fullPage ? "fixed inset-0 bg-white/80 backdrop-blur-md z-50" : "flex-1 min-h-[60vh] w-full"}`}>
       <div className="relative mb-6">
         {/* Outer Ring */}
         <div className="w-16 h-16 rounded-full border-4 border-slate-100 border-t-indigo-600 animate-spin"></div>
