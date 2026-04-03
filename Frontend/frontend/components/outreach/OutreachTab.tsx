@@ -72,7 +72,15 @@ export default function OutreachTab() {
             offer_title: activeStrategy.recommendation.title,
             offer_type: activeStrategy.recommendation.offer_type,
             offer_summary: activeStrategy.recommendation.offer_summary,
-            channels: selectedKeys
+            channels: selectedKeys,
+            target_customers: activeStrategy.customers.map((c: any) => ({
+              customer_id: c.customer_id,
+              name: `Customer ${c.customer_id}`,
+              email: `${c.customer_id.toLowerCase()}@client.com`,
+              state: c.state,
+              churn_reason: c.churn_reason,
+              rationale: c.rationale
+            }))
           })
         });
       }
