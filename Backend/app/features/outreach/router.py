@@ -194,12 +194,12 @@ def get_active_campaign(
     try:
         coll = mongo_db["offer_campaigns"]
         
-        # Sort by created_at descending to get the latest
+        # Sort by updated_at (then created_at) descending to get the latest activity
         cursor = coll.find({
             "main_category": main_category,
             "sub_category": sub_category,
             "risk_level": risk_level
-        }).sort("created_at", -1).limit(1)
+        }).sort([("updated_at", -1), ("created_at", -1)]).limit(1)
         
         campaigns = list(cursor)
         if not campaigns:
