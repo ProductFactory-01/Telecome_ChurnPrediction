@@ -139,7 +139,9 @@ async def upload_csv(file: UploadFile = File(...)):
     
     # 6. Prepare preview (first 10 rows)
     preview_data = []
-    for _, row in df_with_valid.head(10).iterrows():
+    # Replace NaN with None for JSON compliance
+    df_clean = df_with_valid.replace({np.nan: None})
+    for _, row in df_clean.head(10).iterrows():
         row_dict = row.to_dict()
         preview_data.append({
             "row_data": row_dict,
