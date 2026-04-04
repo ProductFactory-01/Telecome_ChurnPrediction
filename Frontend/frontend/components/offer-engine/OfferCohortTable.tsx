@@ -50,11 +50,11 @@ export default function OfferCohortTable({ customers }: OfferCohortTableProps) {
 
   return (
     <div className={styles.tableCard}>
-      <h3>Matched Customer Cohort</h3>
-      <p>
+      <h3>Matched Customers</h3>
+      {/* <p>
         This table shows only the customers matched for the currently selected
-        main category, sub category, and risk level.
-      </p>
+        main categories
+      </p> */}
 
       <div className={styles.tableWrap}>
         <table className={styles.dataTable}>

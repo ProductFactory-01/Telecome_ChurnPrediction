@@ -51,7 +51,7 @@ export default function DataAgentTab() {
       <AgentHeader
         number="1"
         title="Customer360 Data Agent"
-        subtitle="Unify demographics, location, services, and population data into a single subscriber intelligence view"
+        subtitle="Unified subscriber intelligence view"
         color="blue"
         statusLabel="Active"
         statusType="active"

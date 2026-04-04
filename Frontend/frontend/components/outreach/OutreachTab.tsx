@@ -72,9 +72,11 @@ export default function OutreachTab() {
     try {
       const webhookUrl = process.env.NEXT_PUBLIC_WEBHOOK_URL || "https://api.agents.snsihub.ai/webhook";
       
-      if (selectedKeys.includes('email')) {
-        console.log("Triggering Webhook at:", `${webhookUrl}/triggerEmail`);
-        await fetch(`${webhookUrl}/triggerEmail`, {
+      const hasActiveChannel = selectedKeys.includes('email') || selectedKeys.includes('whatsapp');
+      
+      if (hasActiveChannel) {
+        console.log("Triggering Webhook for channels:", selectedKeys.join(", "));
+        await fetch(`${webhookUrl}/triggerEmail`, { // Keeping the endpoint as-is for now (likely a multi-channel receiver)
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -87,10 +89,12 @@ export default function OutreachTab() {
             offer_type: activeStrategy.recommendation.offer_type,
             offer_summary: activeStrategy.recommendation.offer_summary,
             channels: selectedKeys,
+            platforms: selectedKeys, // Explicit platforms field requested
             target_customers: activeStrategy.customers.map((c: any) => ({
               customer_id: c.customer_id || c["Customer ID"],
               name: c.name || `Customer ${c.customer_id}`,
               email: c.email || `${(c.customer_id || "unknown").toLowerCase()}@client.com`,
+              phone: c.mobile_number || "",
               state: c.state,
               churn_reason: c.churn_reason,
               rationale: c.rationale
@@ -130,7 +134,7 @@ export default function OutreachTab() {
       <AgentHeader
         number="4"
         title="Outreach Automation Agent"
-        subtitle="Multi-channel campaign orchestration with smart scheduling"
+        subtitle="Multi-channel campaign orchestration"
         color="purple"
         statusLabel="Ready"
         statusType="active"

@@ -135,9 +135,9 @@ export default function SubscriberTable({ onViewDetail }: Props) {
       <div className="relative min-h-[400px]">
         {loading ? (
           <div className="absolute inset-0 bg-white/50 backdrop-blur-[1px] z-10 flex items-center justify-center">
-            <Loading message="Fetching Intelligence Records..." />
+            <Loading message="Fetching Records..." />
           </div>
-        ) : null}
+        ) : null} 
 
         <div style={{ overflowX: "auto" }}>
           <table className="data-table">

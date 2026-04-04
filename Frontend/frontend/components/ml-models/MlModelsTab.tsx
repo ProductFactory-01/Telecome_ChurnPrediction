@@ -86,7 +86,7 @@ export default function MlModelsTab() {
 
   return (
     <div className="dashboard-content">
-      <SectionTitle title="ML Model Comparison" description="Performance across datasets and algorithms" color="purple" />
+      <SectionTitle title="ML Model Comparison" description="Performance across Models and algorithms" color="purple" />
 
       <div className="panel-grid panel-grid--4 mb-6">
         <div className="card">

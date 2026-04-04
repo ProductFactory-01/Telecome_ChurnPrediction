@@ -24,7 +24,7 @@ export default function PipelineFlow({ steps }: Props) {
         </div>
         <div>
           <h2 className="text-sm font-bold text-slate-800 tracking-tight">AI AGENT ORCHESTRATION</h2>
-          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Autonomous Pipeline Flow</p>
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Agents Pipeline Flow</p>
         </div>
       </div>
 
