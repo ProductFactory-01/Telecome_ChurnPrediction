@@ -19,11 +19,12 @@ export default function Loading({ message = "Synchronizing Intelligence...", ful
         </div>
       </div>
       <div className="text-center">
-        <div className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.2em] mb-1 animate-pulse">
-           Agent Protocol Active
-        </div>
+
         <div className="text-sm font-bold text-slate-600 tracking-tight">
           {message}
+        </div>
+                <div className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.2em] mb-1 animate-pulse">
+           Gathering Data, It may take Few seconds
         </div>
       </div>
     </div>
