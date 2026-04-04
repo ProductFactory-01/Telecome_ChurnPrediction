@@ -22,7 +22,7 @@ export default function OfferEngineTab() {
   const [riskLevel, setRiskLevel] = useState(RISK_LEVELS[0]);
   const [selectedRecId, setSelectedRecId] = useState("");
   
-  const [statusMsg, setStatusMsg] = useState("Select a main category, one sub category, and a risk level to view the matching customer cohort.");
+  const [statusMsg, setStatusMsg] = useState("Select the categories to view the matching customers.");
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [canGenerateAI, setCanGenerateAI] = useState(false);
@@ -236,7 +236,7 @@ export default function OfferEngineTab() {
       <AgentHeader
         number="3"
         title="Personalised Offer Generation Agent"
-        subtitle="Craft tailored retention offers through discounts, upgrades, loyalty rewards, gamification, and bundles"
+        subtitle="Craft tailored retention offers through discounts and upgrades."
         color="green"
       />
 

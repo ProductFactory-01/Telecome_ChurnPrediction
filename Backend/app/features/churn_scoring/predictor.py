@@ -82,18 +82,46 @@ def get_llm_churn_reason(prob, data: CustomerInput):
     prompt = {
         "churn_probability": prob,
         "risk_level": "High" if prob > 0.7 else "Medium" if prob > 0.4 else "Low",
-        "customer_profile": {
-            "tenure": data.TenureMonths,
-            "contract": data.Contract,
-            "monthly_charges": data.MonthlyCharges,
-            "internet": data.InternetService,
-            "tech_support": data.TechSupport,
-            "payment": data.PaymentMethod,
-            "location": {"lat": data.Latitude, "lng": data.Longitude}
+        "feature_context": {
+            "TenureMonths_Scale": "0 to 72 months",
+            "MonthlyCharges_Scale": "$18 to $120 ($18 is LOW, >$85 is HIGH)",
+            "TotalCharges_Scale": "Cumulative spend over tenure"
         },
-        "mapping_rules": mapping_table,
+        "customer_profile": {
+            "Gender": data.Gender,
+            "SeniorCitizen": data.SeniorCitizen,
+            "Partner": data.Partner,
+            "Dependents": data.Dependents,
+            "TenureMonths": data.TenureMonths,
+            "PhoneService": data.PhoneService,
+            "MultipleLines": data.MultipleLines,
+            "InternetService": data.InternetService,
+            "OnlineSecurity": data.OnlineSecurity,
+            "OnlineBackup": data.OnlineBackup,
+            "DeviceProtection": data.DeviceProtection,
+            "TechSupport": data.TechSupport,
+            "StreamingTV": data.StreamingTV,
+            "StreamingMovies": data.StreamingMovies,
+            "Contract": data.Contract,
+            "PaperlessBilling": data.PaperlessBilling,
+            "PaymentMethod": data.PaymentMethod,
+            "MonthlyCharges": data.MonthlyCharges,
+            "TotalCharges": data.TotalCharges,
+            "Latitude": data.Latitude,
+            "Longitude": data.Longitude
+        },
+        "mapping_rules": {
+            "Plan & Product Mismatch | Competitor": "Use for month-to-month contracts or short tenure where the user can easily leave.",
+            "Price-Sensitive | Price Issue": "Use for MonthlyCharges > $85 or high charges without enough services.",
+            "Geography | Service Issue": "Use if local factors (Latitude/Longitude) are relevant to the diagnosis.",
+            "Customer Experience Issues | Support Issue": "Use if lack of TechSupport or OnlineSecurity is the driver.",
+            "Low Engagement | Other": "Only use if no other specific category applies."
+        },
         "task": (
-            "For 'reason', you MUST generate a highly specific, unique 1-sentence explanation that directly cites the worst-performing factors in the profile (e.g., mention their exact tenure, high monthly charge, lack of tech support, or specific contract type). Do NOT use generic templates. "
+            "You are a Telecom Diagnostic AI. Analyze the profile and location. "
+            "1. Select the BEST 'main_category' and 'sub_category' from the mapping rules. Be specific—avoid 'Other' if possible. "
+            "2. Generate a hyper-specific 'reason' (max 25 words) citing exact data points. "
+            "Note: $18 is MINIMUM charge (Low), >$85 is HIGH. "
             "Return JSON only: {{\"main_category\": \"...\", \"sub_category\": \"...\", \"reason\": \"...\"}}."
         )
     }
