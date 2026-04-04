@@ -143,11 +143,23 @@ def trigger_outreach(payload: dict = Body(...)):
         
     cust_count = campaign.get("customer_count", 0)
     
-    # Simple cost calculation using metadata
+        # Simple cost calculation using metadata
     total_cost = 0.0
     for ch_key in selected_channels:
         cost = CHANNEL_METADATA.get(ch_key.lower(), {}).get("cost", 0.1) # low default
         total_cost += cost * cust_count
+    
+    # Update the campaign document with notification info
+    mongo_db["offer_campaigns"].update_one(
+        {"_id": ObjectId(campaign_id)},
+        {
+            "$set": {
+                "notify_user": True,
+                "notification_medium": ", ".join(selected_channels),
+                "notified_at": datetime.now(timezone.utc)
+            }
+        }
+    )
     
     execution_doc = {
         "offer_campaign_id": ObjectId(campaign_id),

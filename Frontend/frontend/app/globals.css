@@ -1870,3 +1870,270 @@ select:focus-visible {
 }
 .mb-4 { margin-bottom: 16px; }
 .mb-6 { margin-bottom: 24px; }
+
+/* ═══════════════════════════════════════════════════════════════ */
+/*  Live Impact — Campaign Activity Table                          */
+/* ═══════════════════════════════════════════════════════════════ */
+.impact-table {
+  width: 100%;
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+
+.impact-table th {
+  padding: 14px 16px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  text-align: left;
+  border-bottom: 2px solid var(--border);
+  background: var(--bg-input);
+  white-space: nowrap;
+}
+
+.impact-table td {
+  padding: 12px 16px;
+  font-size: 13px;
+  border-bottom: 1px solid var(--border-light);
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.impact-table tr:hover td {
+  background: var(--bg-input-hover);
+}
+
+.impact-table__name {
+  font-weight: 600;
+  color: var(--text-primary);
+  max-width: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.impact-table__date {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/*  Risk-Level Badges                                               */
+/* ═══════════════════════════════════════════════════════════════ */
+.risk-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
+
+.risk-badge--level1 { background: rgba(239,68,68,0.12); color: #dc2626; }
+.risk-badge--level2 { background: rgba(245,158,11,0.12); color: #d97706; }
+.risk-badge--level3 { background: rgba(59,130,246,0.12); color: #2563eb; }
+.risk-badge--level4 { background: rgba(34,197,94,0.12); color: #16a34a; }
+.risk-badge--level5 { background: rgba(100,116,139,0.12); color: #64748b; }
+
+/* ═══════════════════════════════════════════════════════════════ */
+/*  Status Pills                                                    */
+/* ═══════════════════════════════════════════════════════════════ */
+.status-pill {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  text-transform: capitalize;
+}
+
+.status-pill--completed { background: rgba(22,163,74,0.12); color: #16a34a; }
+.status-pill--pending   { background: rgba(245,158,11,0.12); color: #d97706; }
+.status-pill--failed    { background: rgba(239,68,68,0.12); color: #dc2626; }
+
+/* ═══════════════════════════════════════════════════════════════ */
+/*  Live Impact — Hero KPI Cards (dark blue)                       */
+/* ═══════════════════════════════════════════════════════════════ */
+.impact-hero-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+@media (max-width: 900px) {
+  .impact-hero-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 540px) {
+  .impact-hero-grid { grid-template-columns: 1fr; }
+}
+
+.impact-hero-card {
+  background: linear-gradient(145deg, #0f172a, #1e293b);
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  border-radius: var(--radius-lg);
+  padding: 24px 20px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  transition: var(--transition);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.impact-hero-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.04), transparent);
+  pointer-events: none;
+}
+
+.impact-hero-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
+  border-color: rgba(148, 163, 184, 0.2);
+}
+
+.impact-hero-card__icon {
+  font-size: 28px;
+  margin-bottom: 10px;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+}
+
+.impact-hero-card__value {
+  font-size: 36px;
+  font-weight: 900;
+  letter-spacing: -0.5px;
+  margin-bottom: 6px;
+  line-height: 1.1;
+}
+
+.impact-hero-card__label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #94a3b8;
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/*  Live Impact — Secondary Metric Cards                           */
+/* ═══════════════════════════════════════════════════════════════ */
+.impact-secondary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+@media (max-width: 900px) {
+  .impact-secondary-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 540px) {
+  .impact-secondary-grid { grid-template-columns: 1fr; }
+}
+
+.impact-metric-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  text-align: center;
+  transition: var(--transition);
+  box-shadow: var(--shadow-xs);
+}
+
+.impact-metric-card:hover {
+  border-color: var(--border-hover);
+  box-shadow: var(--shadow-sm);
+  transform: translateY(-2px);
+}
+
+.impact-metric-card__label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+}
+
+.impact-metric-card__value {
+  font-size: 32px;
+  font-weight: 900;
+  color: var(--text-primary);
+  margin-bottom: 12px;
+  line-height: 1;
+}
+
+.impact-metric-card__targets {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--text-muted);
+  padding-top: 10px;
+  border-top: 1px solid var(--border-light);
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/*  Live Impact — ROI Summary Banner                               */
+/* ═══════════════════════════════════════════════════════════════ */
+.impact-roi-banner {
+  background: linear-gradient(145deg, #0f172a, #1e293b);
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  border-radius: var(--radius-lg);
+  padding: 28px 24px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  position: relative;
+  overflow: hidden;
+}
+
+.impact-roi-banner::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.03), transparent);
+  pointer-events: none;
+}
+
+.impact-roi-banner__title {
+  text-align: center;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: #38bdf8;
+  margin-bottom: 20px;
+}
+
+.impact-roi-banner__grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  text-align: center;
+}
+
+@media (max-width: 700px) {
+  .impact-roi-banner__grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+.impact-roi-banner__item {
+  position: relative;
+}
+
+.impact-roi-banner__value {
+  font-size: 28px;
+  font-weight: 900;
+  margin-bottom: 4px;
+  line-height: 1.1;
+}
+
+.impact-roi-banner__label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: #94a3b8;
+}
+

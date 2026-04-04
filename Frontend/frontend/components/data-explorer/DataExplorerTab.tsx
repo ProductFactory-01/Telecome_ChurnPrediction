@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import api from "../../lib/api";
+import Loading from "../shared/Loading";
 import SectionTitle from "../shared/SectionTitle";
 import KpiCard from "../shared/KpiCard";
 import ChartCard from "../shared/ChartCard";
@@ -118,7 +119,7 @@ export default function DataExplorerTab() {
     api.get("/eda").then((r) => setData(r.data)).catch(console.error);
   }, []);
 
-  if (!data) return <div className="dashboard-content text-muted">Loading...</div>;
+  if (!data) return <Loading message="Exploring Subscriber Data Domains..." />;
 
   const renderCrmBilling = () => {
     const d = data.crm_billing;

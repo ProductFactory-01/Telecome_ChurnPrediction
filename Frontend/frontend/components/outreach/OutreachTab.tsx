@@ -255,13 +255,42 @@ export default function OutreachTab() {
 
       <SectionTitle title="Channel Execution Plan" color="purple" />
       <div className="panel-grid panel-grid--5 mb-6">
-        {channels.map((c) => (
-          <div key={c.key} className={`channel-card ${c.selected ? "channel-card--selected" : ""}`} onClick={() => toggleChannel(c.key)}>
-            <div className="channel-card__icon">{c.icon}</div>
-            <div className="channel-card__title">{c.title}</div>
-            <div className="channel-card__cost">${c.cost_per_contact.toFixed(2)}/contact</div>
-          </div>
-        ))}
+        {channels.map((c) => {
+          const isEmail = c.key === "email";
+          return (
+            <div
+              key={c.key}
+              className={`channel-card ${c.selected ? "channel-card--selected" : ""}`}
+              onClick={() => isEmail && toggleChannel(c.key)}
+              style={{
+                opacity: isEmail ? 1 : 0.6,
+                cursor: isEmail ? "pointer" : "not-allowed",
+                filter: isEmail ? "none" : "grayscale(0.8)",
+                position: "relative",
+                background: isEmail ? undefined : "rgba(241, 245, 249, 0.5)",
+                border: isEmail ? undefined : "1px dashed #cbd5e1",
+              }}
+            >
+              {!isEmail && (
+                <div
+                  style={{
+                    position: "absolute",
+                    top: "8px",
+                    right: "8px",
+                    fontSize: "12px",
+                  }}
+                >
+                  🔒
+                </div>
+              )}
+              <div className="channel-card__icon">{c.icon}</div>
+              <div className="channel-card__title">
+                {c.title} {!isEmail && <span style={{ fontSize: "10px", display: "block", color: "#64748b" }}>(Locked)</span>}
+              </div>
+              <div className="channel-card__cost">${c.cost_per_contact.toFixed(2)}/contact</div>
+            </div>
+          );
+        })}
       </div>
 
       <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "24px" }}>

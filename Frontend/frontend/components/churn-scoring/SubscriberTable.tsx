@@ -20,6 +20,7 @@ export default function SubscriberTable({ onViewDetail }: Props) {
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [search, setSearch] = useState("");
+  const [searchInput, setSearchInput] = useState("");
   const [loading, setLoading] = useState(true);
   
   // New Filters
@@ -50,14 +51,23 @@ export default function SubscriberTable({ onViewDetail }: Props) {
   }, [page, search, churnFilter, genderFilter, cityFilter]);
 
   useEffect(() => { 
-    fetchCustomers(); 
+    const timer = setTimeout(() => {
+      fetchCustomers();
+    }, 0);
+
+    return () => clearTimeout(timer);
   }, [fetchCustomers]);
 
   const totalPages = Math.ceil(total / limit);
 
+  const handleSearch = () => {
+    setPage(1);
+    setSearch(searchInput.trim());
+  };
+
   return (
     <div className="card overflow-hidden">
-      <div className="card__header flex flex-col md:flex-row md:items-center justify-between gap-4 py-6 px-6 border-b border-slate-50">
+      <div className="card__header flex items-center justify-between gap-4 py-6 px-6 border-b border-slate-50">
         <div className="flex items-center gap-2">
            <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white shadow-sm shadow-indigo-200">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/><rect width="20" height="14" x="2" y="6" rx="2"/></svg>
@@ -69,10 +79,10 @@ export default function SubscriberTable({ onViewDetail }: Props) {
         </div>
         
         {/* Filter Bar */}
-        <div className="flex items-center gap-3 overflow-x-auto pb-2 md:pb-0 w-full md:w-auto">
+        <div className="flex shrink-0 items-center gap-3">
           
           <select 
-            className="sim-field__input px-3 py-1.5 text-[11px] font-bold bg-slate-50 border-slate-200 min-w-[120px] flex-shrink-0"
+            className="sim-field__input h-10 w-[170px] px-3 text-[11px] font-bold bg-slate-50 border-slate-200"
             value={churnFilter}
             onChange={(e) => { setChurnFilter(e.target.value); setPage(1); }}
           >
@@ -82,7 +92,7 @@ export default function SubscriberTable({ onViewDetail }: Props) {
           </select>
 
           <select 
-            className="sim-field__input px-3 py-1.5 text-[11px] font-bold bg-slate-50 border-slate-200 min-w-[120px] flex-shrink-0"
+            className="sim-field__input h-10 w-[170px] px-3 text-[11px] font-bold bg-slate-50 border-slate-200"
             value={genderFilter}
             onChange={(e) => { setGenderFilter(e.target.value); setPage(1); }}
           >
@@ -92,21 +102,33 @@ export default function SubscriberTable({ onViewDetail }: Props) {
           </select>
 
           <input
-            className="sim-field__input px-3 py-1.5 text-[11px] font-bold bg-slate-50 border-slate-200 min-w-[140px] flex-shrink-0"
-            placeholder="CITY..."
+            className="sim-field__input h-10 w-[180px] px-3 text-[12px] bg-white border-slate-200"
+            placeholder="Search by city..."
             value={cityFilter}
             onChange={(e) => { setCityFilter(e.target.value); setPage(1); }}
           />
 
-          <div className="h-6 w-[1px] bg-slate-200 mx-1 hidden md:block flex-shrink-0"></div>
-
           <input
-            className="sim-field__input px-3 py-1.5 text-[11px] font-bold bg-white min-w-[150px] flex-shrink-0"
-            style={{ width: 200 }}
-            placeholder="SEARCH NAME/ID..."
-            value={search}
-            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+            className="sim-field__input h-10 w-[320px] px-3 text-[12px] bg-white border-slate-200"
+            placeholder="Search by name or customer ID..."
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                handleSearch();
+              }
+            }}
           />
+
+          <button
+            type="button"
+            onClick={handleSearch}
+            aria-label="Search customers"
+            className="inline-flex h-10 items-center gap-2 rounded-xl bg-blue-600 px-4 text-[12px] font-bold text-white transition-all hover:bg-blue-700 active:scale-95"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+            Search
+          </button>
         </div>
       </div>
 
