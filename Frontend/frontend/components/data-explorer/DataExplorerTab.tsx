@@ -125,11 +125,11 @@ export default function DataExplorerTab() {
     const d = data.crm_billing;
     return (
       <>
-        <div className="panel-grid panel-grid--4 mb-6">
+        <div className="panel-grid panel-grid--3 mb-6">
           <KpiCard label="Total Subscribers" value={d.kpis.subscribers.toLocaleString()} color="blue" />
           <KpiCard label="Churn Rate" value={`${d.kpis.churn_rate}%`} color="red" />
           <KpiCard label="Avg Monthly Charges" value={`$${d.kpis.avg_monthly_charges}`} color="amber" />
-          <KpiCard label="Avg CLTV" value={`$${d.kpis.avg_cltv.toLocaleString()}`} color="green" />
+          {/* <KpiCard label="Avg CLTV" value={`$${d.kpis.avg_cltv.toLocaleString()}`} color="green" /> */}
         </div>
 
         <div className="panel-grid panel-grid--2 mb-6">
