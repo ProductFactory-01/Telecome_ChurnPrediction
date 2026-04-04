@@ -30,6 +30,20 @@ export default function CustomerDetailView({ customerId, onClose }: Props) {
     );
   }
 
+  const toNumber = (value: any) => {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : 0;
+  };
+
+  const totalCharges = toNumber(detail["Total Charges"]);
+  const totalRefunds = toNumber(detail["Total Refunds"]);
+  const extraDataCharges = toNumber(detail["Total Extra Data Charges"]);
+  const longDistanceCharges = toNumber(detail["Total Long Distance Charges"]);
+  const ltdRevenue =
+    detail["LTD Revenue"] ??
+    detail["Total Revenue"] ??
+    totalCharges + extraDataCharges + longDistanceCharges - totalRefunds;
+
   const StatBox = ({ label, value, color = "blue" }: { label: string; value: any; color?: string }) => (
     <div className="text-center px-4 border-r border-gray-100 last:border-0">
       <div className="text-[10px] uppercase tracking-wider text-gray-400 font-bold mb-1">{label}</div>
@@ -81,7 +95,7 @@ export default function CustomerDetailView({ customerId, onClose }: Props) {
 
           <div className="flex bg-gray-50 p-4 rounded-2xl border border-gray-100 shadow-inner">
              <StatBox label="Tenure" value={`${detail["Tenure in Months"]} Months`} />
-             <StatBox label="CLTV" value={`$${detail.CLTV?.toLocaleString()}`} color="green" />
+             <StatBox label="LTD Revenue" value={`$${ltdRevenue?.toLocaleString()}`} color="green" />
              <StatBox label="Contract" value={detail.Contract} />
              <StatBox label="Payment" value={detail.PaymentMethod || detail["Payment Method"]} />
           </div>
@@ -140,10 +154,11 @@ export default function CustomerDetailView({ customerId, onClose }: Props) {
               </div>
               <div className="grid grid-cols-2 gap-x-8 gap-y-1">
                 <DataRow label="Monthly" value={`$${detail["Monthly Charge"]}`} color="green" />
-                <DataRow label="Total Revenue" value={`$${detail["Total Revenue"]}`} color="green" />
-                <DataRow label="Total Charges" value={`$${detail["Total Charges"]}`} />
-                <DataRow label="Total Refunds" value={`$${detail["Total Refunds"] || 0}`} color="red" />
-                <DataRow label="Extra Data" value={`$${detail["Total Extra Data Charges"] || 0}`} />
+                <DataRow label="LTD Revenue" value={`$${ltdRevenue}`} color="green" />
+                <DataRow label="Total Charges" value={`$${totalCharges}`} />
+                <DataRow label="Long Distance" value={`$${longDistanceCharges}`} />
+                <DataRow label="Extra Data" value={`$${extraDataCharges}`} />
+                <DataRow label="Total Refunds" value={`$${totalRefunds}`} color="red" />
                 <DataRow label="Paperless" value={detail["Paperless Billing"]} />
               </div>
             </div>

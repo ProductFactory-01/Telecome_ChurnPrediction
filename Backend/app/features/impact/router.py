@@ -423,3 +423,183 @@ def get_impact_data():
         },
         "campaign_log": campaign_log,
     }
+
+
+# ═══════════════════════════════════════════════════════════════
+#  Simulator Data Endpoint
+# ═══════════════════════════════════════════════════════════════
+
+RISK_BUCKETS = {
+    "Critical (>80)": (80, 101),
+    "High (60-80)": (60, 80),
+    "Medium (40-60)": (40, 60),
+    "Low (20-40)": (20, 40),
+}
+
+
+def _get_historical_retention_by_risk() -> dict:
+    """
+    From MongoDB campaigns, calculate what % of targeted customers
+    per risk level currently have Customer Status = 'Stayed' in Postgres.
+    Returns {risk_level_label: retention_rate}.
+    """
+    if mongo_db is None:
+        return {}
+
+    offer_coll = mongo_db["offer_campaigns"]
+    all_campaigns = list(offer_coll.find({}))
+
+    # Collect customer IDs per churn score bucket
+    bucket_ids = defaultdict(set)
+    for camp in all_campaigns:
+        for cust in camp.get("customers", []):
+            cid = str(cust.get("customer_id", ""))
+            score = float(cust.get("churn_score", 0))
+            if not cid:
+                continue
+            for label, (lo, hi) in RISK_BUCKETS.items():
+                if lo <= score < hi:
+                    bucket_ids[label].add(cid)
+                    break
+
+    # Query Postgres for current status
+    all_ids = set()
+    for ids in bucket_ids.values():
+        all_ids.update(ids)
+
+    status_map = _get_current_status_map(list(all_ids))
+
+    retention_rates = {}
+    for label, ids in bucket_ids.items():
+        if not ids:
+            continue
+        stayed = sum(1 for cid in ids if status_map.get(cid, {}).get("status") == "Stayed")
+        retention_rates[label] = round(stayed / len(ids), 3) if ids else 0
+    return retention_rates
+
+
+@router.get("/impact/simulator-data")
+def get_simulator_data():
+    """
+    Returns pre-aggregated risk bucket data for the Retention Simulator.
+    All heavy computation is done here; the frontend does instant client-side math.
+    """
+    engine = get_db_engine()
+    if not engine:
+        return {
+            "risk_buckets": {},
+            "avg_campaign_cost_per_customer": 2.50,
+            "historical_retention_rate": 0,
+            "total_at_risk_customers": 0,
+            "total_revenue_at_risk": 0,
+        }
+
+    try:
+        # 1. Query all at-risk customers from merged (Churn Score > 20)
+        query = """
+            SELECT "Customer ID", "Churn Score", "Monthly Charge", "CLTV",
+                   "Total Revenue", "Customer Status", "Contract", 
+                   "Tenure in Months", "Internet Service"
+            FROM merged
+            WHERE "Churn Score" > 20
+        """
+        import pandas as pd
+        df = pd.read_sql(query, engine)
+
+        if df.empty:
+            return {
+                "risk_buckets": {},
+                "avg_campaign_cost_per_customer": 2.50,
+                "historical_retention_rate": 0,
+                "total_at_risk_customers": 0,
+                "total_revenue_at_risk": 0,
+            }
+
+        # 2. Get historical retention from MongoDB campaigns
+        hist_retention = _get_historical_retention_by_risk()
+
+        # 3. Bucket customers by Churn Score ranges
+        risk_buckets = {}
+        for label, (lo, hi) in RISK_BUCKETS.items():
+            mask = (df["Churn Score"] >= lo) & (df["Churn Score"] < hi)
+            bucket_df = df[mask]
+
+            if bucket_df.empty:
+                risk_buckets[label] = {
+                    "customer_count": 0,
+                    "avg_monthly_charge": 0,
+                    "avg_cltv": 0,
+                    "avg_churn_score": 0,
+                    "total_revenue_at_risk": 0,
+                    "avg_total_revenue": 0,
+                    "retention_probability": 0.5,
+                }
+                continue
+
+            count = len(bucket_df)
+            avg_monthly = float(bucket_df["Monthly Charge"].mean()) if "Monthly Charge" in bucket_df else 0
+            avg_cltv = float(bucket_df["CLTV"].mean()) if "CLTV" in bucket_df and not bucket_df["CLTV"].isna().all() else 0
+            avg_score = float(bucket_df["Churn Score"].mean())
+            total_rev = float(bucket_df["Total Revenue"].sum()) if "Total Revenue" in bucket_df else 0
+            avg_rev = float(bucket_df["Total Revenue"].mean()) if "Total Revenue" in bucket_df else 0
+
+            # Retention probability: use historical if available, else formula
+            if label in hist_retention and hist_retention[label] > 0:
+                ret_prob = hist_retention[label]
+            else:
+                # Formula: higher churn score → lower retention probability
+                ret_prob = round(1 - (avg_score / 100) * 0.8, 3)
+
+            risk_buckets[label] = {
+                "customer_count": int(count),
+                "avg_monthly_charge": round(avg_monthly, 2),
+                "avg_cltv": round(avg_cltv, 2),
+                "avg_churn_score": round(avg_score, 1),
+                "total_revenue_at_risk": round(total_rev, 2),
+                "avg_total_revenue": round(avg_rev, 2),
+                "retention_probability": round(ret_prob, 3),
+            }
+
+        # 4. Calculate avg campaign cost per customer from MongoDB
+        avg_cost = 2.50  # fallback
+        if mongo_db is not None:
+            try:
+                exec_coll = mongo_db["campaign_executions"]
+                offer_coll = mongo_db["offer_campaigns"]
+                total_cost = sum(e.get("total_cost", 0) for e in exec_coll.find({}))
+                total_targeted = sum(c.get("customer_count", 0) for c in offer_coll.find({}))
+                if total_targeted > 0:
+                    avg_cost = round(total_cost / total_targeted, 2)
+            except Exception as e:
+                print(f"[Simulator] MongoDB cost error: {e}")
+
+        # 5. Overall metrics
+        total_at_risk = int(len(df))
+        total_rev_at_risk = float(df["Total Revenue"].sum()) if "Total Revenue" in df else 0
+
+        # Historical global retention rate
+        total_targeted_global = sum(b["customer_count"] for b in risk_buckets.values())
+        weighted_retention = 0
+        for b in risk_buckets.values():
+            if total_targeted_global > 0:
+                weighted_retention += b["retention_probability"] * b["customer_count"]
+        global_retention = round(weighted_retention / total_targeted_global, 3) if total_targeted_global > 0 else 0
+
+        return {
+            "risk_buckets": risk_buckets,
+            "avg_campaign_cost_per_customer": avg_cost,
+            "historical_retention_rate": global_retention,
+            "total_at_risk_customers": total_at_risk,
+            "total_revenue_at_risk": round(total_rev_at_risk, 2),
+        }
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return {
+            "risk_buckets": {},
+            "avg_campaign_cost_per_customer": 2.50,
+            "historical_retention_rate": 0,
+            "total_at_risk_customers": 0,
+            "total_revenue_at_risk": 0,
+        }

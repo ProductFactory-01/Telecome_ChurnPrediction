@@ -27,10 +27,9 @@ def get_data_agent():
         tables = {
             "demographics": ("👤", "Demographics", "Age, Gender, Name, Email, Dependents"),
             "location": ("🌍", "Location Info", "City, State, Zip, Lat/Long, Population"),
-            "population": ("👥", "Market Data", "Zip-level localized population stats"),
+            "population": ("👥", "Population Data", "Zip-level localized census and population stats"),
             "services": ("📡", "Services & Billing", "Plan, Internet, Phone, Charges, Contract"),
             "status": ("📋", "System Status", "Satisfaction, Label, Status, Reason"),
-            "Churn_New": ("🎯", "AI Churn Scoring", "Updated Intelligence & AI Categories")
         }
 
         sources = []
@@ -53,7 +52,6 @@ def get_data_agent():
             "population": ["population"], # Population linked via Zip
             "services": ["Phone Service", "Internet Service", "Contract", "Monthly Charge"],
             "status": ["Satisfaction Score", "Customer Status", "Churn Label"],
-            "Churn_New": ["Churn Score", "CLTV"]
         }
         
         all_cols = []
@@ -77,7 +75,7 @@ def get_data_agent():
                 domain_max = total_rows * len(cols)
                 completeness = round((domain_points / domain_max) * 100, 1)
             else:
-                completeness = 100.0 if table_name != "Churn_New" else 0.0 # Fallback
+                completeness = 100.0 # Fallback
                 
             sources.append({
                 "key": table_name,
@@ -123,7 +121,8 @@ async def upload_csv(file: UploadFile = File(...)):
         
     # 1. Get AI mapping
     csv_cols = df.columns.tolist()
-    mapping = await get_column_mapping(csv_cols)
+    sample_data = df.head(5).to_dict(orient='records')
+    mapping = await get_column_mapping(csv_cols, sample_data)
     
     # 2. Check for duplicates and validate structure
     structure_errors = validate_csv_structure(df, mapping)
@@ -162,7 +161,8 @@ async def upload_csv(file: UploadFile = File(...)):
             "is_ready": is_ready_for_ml,
             "missing_fields": missing_fields
         },
-        "preview": preview_data
+        "preview": preview_data,
+        "null_counts": df.isnull().sum().to_dict()
     }
 
 @router.post("/confirm-ingest")
@@ -189,16 +189,40 @@ async def ingest_csv(payload: IngestRequest):
         ingest_result = ingest_data(df, confirmed_mapping, engine)
         
         if "error" in ingest_result:
+            if ingest_result["error"] == "No new valid rows to ingest":
+                # Handle gracefully: send back summary with zero inserted but 100% rejection reason
+                agent_logs.append({
+                    "time": now_str, 
+                    "tag": "warn", 
+                    "message": "Ingestion skipped: 100% of records were either duplicates or invalid."
+                })
+                return {
+                    "status": "skipped",
+                    "summary": {
+                        "total_rows": len(df),
+                        "inserted": 0,
+                        "rejected": ingest_result.get("rejected_count", 0),
+                        "predictions_run": 0,
+                        "risk_breakdown": {"high": 0, "medium": 0, "low": 0}
+                    },
+                    "agent_logs": agent_logs
+                }
             raise Exception(ingest_result["error"])
             
         new_ids = ingest_result["new_customers"]
-        rejected_count = ingest_result.get("rejected_count", 0)
+        rej_count = ingest_result.get("rejected_count", 0)
+        rej_invalid = ingest_result.get("rejected_invalid", 0)
+        rej_duplicate = ingest_result.get("rejected_duplicate", 0)
         
-        if rejected_count > 0:
+        if rej_count > 0:
+            reasons = []
+            if rej_invalid > 0: reasons.append(f"{rej_invalid} incomplete (missing mandatory fields)")
+            if rej_duplicate > 0: reasons.append(f"{rej_duplicate} duplicates (already exist)")
+            
             agent_logs.append({
                 "time": now_str, 
                 "tag": "warn", 
-                "message": f"Rejected {rejected_count} record(s) — Unable to store: missing mandatory fields."
+                "message": f"Rejected {rej_count} record(s) — {', '.join(reasons)}."
             })
             
         agent_logs.append({"time": datetime.datetime.now().strftime("%H:%M:%S"), "tag": "ok", "message": f"Data processed for target tables — {len(new_ids)} record(s) stored."})
@@ -233,7 +257,7 @@ async def ingest_csv(payload: IngestRequest):
             "summary": {
                 "total_rows": len(df),
                 "inserted": len(new_ids),
-                "rejected": rejected_count,
+                "rejected": rej_count,
                 "predictions_run": len(new_ids) if is_mapping_complete else 0,
                 "risk_breakdown": prediction_summary
             },

@@ -32,34 +32,71 @@ TABLE_COLUMNS = {
     ]
 }
 def clean_value(val, col_name: str):
-    """Cleans and standardizes values for the database."""
+    """Cleans and standardizes values for the database, handling numeric vs boolean types correctly."""
     if pd.isna(val) or val == "":
         if col_name == "Count": return 1
         return None
         
     s_val = str(val).strip()
     
-    # Standardize Boolean-like fields (Yes/No)
-    if s_val.lower() in ['yes', 'true', '1', '1.0']:
-        return "Yes"
-    if s_val.lower() in ['no', 'false', '0', '0.0']:
-        return "No"
-        
-    # Handle numeric types
+    # 1. Identify if target column is strictly numeric
+    numeric_columns = [
+        "Count", "Age", "Number of Dependents", "Tenure in Months", 
+        "Number of Referrals", "Avg Monthly Long Distance Charges", 
+        "Avg Monthly GB Download", "Monthly Charge", "Total Charges", 
+        "Total Refunds", "Total Extra Data Charges", "Total Long Distance Charges", 
+        "Total Revenue", "Satisfaction Score", "Churn Value", "Churn Score", "CLTV",
+        "Latitude", "Longitude", "population", "Population"
+    ]
+    is_numeric_target = col_name in numeric_columns
+
+    # 2. Try numeric parsing first
     try:
-        if "." in s_val: return float(s_val)
-        return int(s_val)
+        if "." in s_val: num_val = float(s_val)
+        else: num_val = int(s_val)
+        
+        # If it's a numeric target, always return the number
+        if is_numeric_target:
+            return num_val
+            
+        # If it's (0, 1) and NOT a numeric target, convert to Yes/No for string-based DB columns
+        if not is_numeric_target and num_val in [0, 1, 0.0, 1.0]:
+            return "Yes" if num_val == 1 else "No"
+            
+        return num_val
     except:
+        # 3. Handle non-numeric strings
+        if s_val.lower() in ['yes', 'true']: return "Yes"
+        if s_val.lower() in ['no', 'false']: return "No"
+        
+        # If we got "Yes" but it's a numeric target, we have a mapping issue, 
+        # but we should at least avoid crashing if possible or return 0
+        if is_numeric_target:
+            return 0 if s_val.lower() in ['no', 'false'] else 1
+            
         return s_val
 
 def ingest_data(df: pd.DataFrame, mapping: Dict[str, str], engine) -> Dict[str, Any]:
     """Inserts data into multiple tables based on column mappings."""
-    # 1. Filter out invalid rows (missing mandatory fields)
-    valid_df = df[df.get('is_valid', True)].copy()
+    # 1. Filter out invalid rows (missing mandatory fields OR already existing in DB)
+    is_valid = df.get('is_valid', True)
+    is_duplicate = df.get('is_duplicate', False)
+    
+    # We reject any row that is either invalid or a duplicate
+    valid_df = df[is_valid & ~is_duplicate].copy()
+    
     rejected_count = len(df) - len(valid_df)
+    rejected_invalid = (~is_valid).sum()
+    rejected_duplicate = (is_valid & is_duplicate).sum()
     
     if valid_df.empty:
-        return {"new_customers": [], "rejected_count": rejected_count, "error": "No valid rows to ingest"}
+        return {
+            "new_customers": [], 
+            "rejected_count": int(rejected_count), 
+            "rejected_invalid": int(rejected_invalid),
+            "rejected_duplicate": int(rejected_duplicate),
+            "error": "No new valid rows to ingest" if rejected_count > 0 else "File is empty"
+        }
 
     # Find the user's Customer ID column
     customer_id_col = next((k for k, v in mapping.items() if v == "Customer ID"), None)
@@ -109,7 +146,12 @@ def ingest_data(df: pd.DataFrame, mapping: Dict[str, str], engine) -> Dict[str, 
                 params = {k.replace(' ', '_'): v for k, v in rec.items()}
                 conn.execute(text(sql), params)
                 
-    return {"new_customers": customer_ids, "rejected_count": rejected_count}
+    return {
+        "new_customers": customer_ids, 
+        "rejected_count": int(rejected_count),
+        "rejected_invalid": int(rejected_invalid),
+        "rejected_duplicate": int(rejected_duplicate)
+    }
 
 def update_merged_table(customer_ids: List[str], engine):
     """

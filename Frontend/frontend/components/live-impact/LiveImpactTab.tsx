@@ -4,6 +4,7 @@ import api from "../../lib/api";
 import Loading from "../shared/Loading";
 import SectionTitle from "../shared/SectionTitle";
 import ChartCard from "../shared/ChartCard";
+import RetentionSimulator from "./RetentionSimulator";
 import { Bar, Doughnut, Line } from "react-chartjs-2";
 import "../../lib/chartSetup";
 import { COLORS, defaultOptions } from "../../lib/chartSetup";
@@ -33,10 +34,13 @@ const DOUGHNUT_COLORS = [COLORS.blue, COLORS.green, COLORS.amber, COLORS.purple,
 /* ═══════════════════════════════════════════ */
 export default function LiveImpactTab() {
   const [data, setData] = useState<any>(null);
+  const [simulatorData, setSimulatorData] = useState<any>(null);
+  const [simState, setSimState] = useState<any>(null);
   const [error, setError] = useState(false);
 
   useEffect(() => {
     api.get("/impact").then((r) => setData(r.data)).catch(() => setError(true));
+    api.get("/impact/simulator-data").then((r) => setSimulatorData(r.data)).catch((e) => console.warn("Simulator data unavailable:", e));
   }, []);
 
   if (error) return <div className="dashboard-content text-muted">Failed to load impact data.</div>;
@@ -55,17 +59,48 @@ export default function LiveImpactTab() {
 
   const emptyArr = { labels: [], targeted: [], retained: [], at_campaign: [], current: [], cumulative_spend: [], cumulative_revenue_protected: [], values: [] };
 
+  // ── Make charts responsive to the Simulator ──
+  let displayCh = { ...ch };
+  if (simState && simState.chartLabels?.length > 0) {
+    displayCh.retention_by_risk = {
+      labels: simState.chartLabels.map((l: string) => l.split(" ")[0] + " (Simulated)"),
+      targeted: simState.chartLabels.map((l: string) => simulatorData.risk_buckets[l].customer_count),
+      retained: simState.chartDataCustomersRetained,
+    };
+    
+    if (simState.profitCurve?.length > 0) {
+      displayCh.spend_vs_revenue = {
+        labels: simState.profitCurve.map((p: any) => "$" + p.cost),
+        cumulative_spend: simState.profitCurve.map((p: any) => p.investment),
+        cumulative_revenue_protected: simState.profitCurve.map((p: any) => p.revenue),
+      };
+    }
+
+    if (simState.strategy) {
+      displayCh.retention_by_offer_type = {
+        labels: [simState.strategy.label + " (Sim)"],
+        targeted: [simState.totalCustomers],
+        retained: [simState.projections.customersSaved],
+      };
+      
+      displayCh.cost_by_channel = {
+        labels: [simState.strategy.label + " (Sim)"],
+        values: [simState.projections.totalInvestment],
+      };
+    }
+  }
+
   return (
     <div className="dashboard-content">
       {/* ── Header ── */}
-      <SectionTitle
+      {/* <SectionTitle
         title="Live Impact Dashboard"
         description="Measuring the real-world impact of AI-driven retention campaigns"
         color="green"
-      />
+      /> */}
 
       {/* ── Top Hero Cards ── */}
-      <div className="panel-grid panel-grid--3 mb-6 animate-in">
+      {/* <div className="panel-grid panel-grid--3 mb-6 animate-in">
         <div className="kpi-card kpi-card--green">
           <div className="kpi-card__label">CUSTOMERS RETAINED</div>
           <div className="kpi-card__value">{roi.subscribers_retained.toLocaleString()}</div>
@@ -83,11 +118,11 @@ export default function LiveImpactTab() {
           <div className="kpi-card__value">—</div>
           <div className="kpi-card__sub">{fmtCurrency(roi.total_spend || 0)} total spend</div>
         </div>
-      </div>
+      </div> */}
 
       {/* ── Performance Meters ── */}
-      <SectionTitle title="Performance Meters" color="blue" />
-      <div className="card mb-6 animate-in" style={{ padding: '24px 32px' }}>
+      {/* <SectionTitle title="Performance Meters" color="blue" /> */}
+      {/* <div className="card mb-6 animate-in" style={{ padding: '24px 32px' }}>
         <div className="meter">
           <div className="meter__label">
             <span>Retention Rate</span>
@@ -117,20 +152,34 @@ export default function LiveImpactTab() {
             <div className="meter__fill meter__fill--amber" style={{ width: '0%' }} />
           </div>
         </div>
+      </div> */}
+
+      {/* ══════════════════════════════════════════════════════ */}
+      {/* Section 3: Retention Simulator                        */}
+      {/* ══════════════════════════════════════════════════════ */}
+      <SectionTitle title="Retention Simulator" description="Adjust budget & segments to project retention outcomes" color="cyan" />
+      <div className="mb-6 animate-in">
+        {simulatorData && Object.keys(simulatorData.risk_buckets || {}).length > 0 ? (
+          <RetentionSimulator data={simulatorData} onSimulate={setSimState} />
+        ) : (
+          <div className="card" style={{ padding: "40px", textAlign: "center", color: "var(--text-muted)" }}>
+            {simulatorData ? "No at-risk customers found for simulation" : "Loading simulator data..."}
+          </div>
+        )}
       </div>
 
       {/* ══════════════════════════════════════════════════════ */}
-      {/* Section 3: Retention & Churn Impact                   */}
+      {/* Section 4: Retention & Churn Impact                   */}
       {/* ══════════════════════════════════════════════════════ */}
       <SectionTitle title="Retention & Churn Impact" color="green" />
       <div className="panel-grid panel-grid--2 mb-6">
-        <ChartCard title="Retention by Risk Level" icon="🛡️">
+        <ChartCard title={simState ? "Simulated Retention Target by Risk" : "Retention by Risk Level"} icon="🛡️">
           <Bar
             data={{
-              labels: (ch.retention_by_risk || emptyArr).labels,
+              labels: (displayCh.retention_by_risk || emptyArr).labels,
               datasets: [
-                { label: "Targeted", data: (ch.retention_by_risk || emptyArr).targeted, backgroundColor: COLORS.redAlpha, borderColor: COLORS.red, borderWidth: 1, borderRadius: 4 },
-                { label: "Retained", data: (ch.retention_by_risk || emptyArr).retained, backgroundColor: COLORS.greenAlpha, borderColor: COLORS.green, borderWidth: 1, borderRadius: 4 },
+                { label: "Targeted", data: (displayCh.retention_by_risk || emptyArr).targeted, backgroundColor: COLORS.redAlpha, borderColor: COLORS.red, borderWidth: 1, borderRadius: 4 },
+                { label: "Retained", data: (displayCh.retention_by_risk || emptyArr).retained, backgroundColor: COLORS.greenAlpha, borderColor: COLORS.green, borderWidth: 1, borderRadius: 4 },
               ],
             }}
             options={{ ...defaultOptions, indexAxis: "y" as const }}
@@ -140,10 +189,10 @@ export default function LiveImpactTab() {
         <ChartCard title="Churn Score Shift" icon="📉">
           <Bar
             data={{
-              labels: (ch.churn_score_shift || emptyArr).labels,
+              labels: (displayCh.churn_score_shift || emptyArr).labels,
               datasets: [
-                { label: "At Campaign", data: (ch.churn_score_shift || emptyArr).at_campaign, backgroundColor: COLORS.amberAlpha, borderColor: COLORS.amber, borderWidth: 1, borderRadius: 4 },
-                { label: "Current", data: (ch.churn_score_shift || emptyArr).current, backgroundColor: COLORS.cyanAlpha, borderColor: COLORS.cyan, borderWidth: 1, borderRadius: 4 },
+                { label: "At Campaign", data: (displayCh.churn_score_shift || emptyArr).at_campaign, backgroundColor: COLORS.amberAlpha, borderColor: COLORS.amber, borderWidth: 1, borderRadius: 4 },
+                { label: "Current", data: (displayCh.churn_score_shift || emptyArr).current, backgroundColor: COLORS.cyanAlpha, borderColor: COLORS.cyan, borderWidth: 1, borderRadius: 4 },
               ],
             }}
             options={defaultOptions}
@@ -156,24 +205,24 @@ export default function LiveImpactTab() {
       {/* ══════════════════════════════════════════════════════ */}
       <SectionTitle title="Financial ROI" color="amber" />
       <div className="panel-grid panel-grid--2 mb-6">
-        <ChartCard title="Spend vs Revenue Protected" icon="💰">
+        <ChartCard title={simState ? "Simulated Spend vs Protected" : "Spend vs Revenue Protected"} icon="💰">
           <Line
             data={{
-              labels: (ch.spend_vs_revenue || emptyArr).labels,
+              labels: (displayCh.spend_vs_revenue || emptyArr).labels,
               datasets: [
-                { label: "Cumulative Spend", data: (ch.spend_vs_revenue || emptyArr).cumulative_spend, borderColor: COLORS.red, backgroundColor: "rgba(239,68,68,0.08)", tension: 0.3, fill: true, pointRadius: 4, pointBackgroundColor: COLORS.red },
-                { label: "Revenue Protected", data: (ch.spend_vs_revenue || emptyArr).cumulative_revenue_protected, borderColor: COLORS.green, backgroundColor: "rgba(22,163,74,0.08)", tension: 0.3, fill: true, pointRadius: 4, pointBackgroundColor: COLORS.green },
+                { label: "Cumulative Spend", data: (displayCh.spend_vs_revenue || emptyArr).cumulative_spend, borderColor: COLORS.red, backgroundColor: "rgba(239,68,68,0.08)", tension: 0.3, fill: true, pointRadius: 4, pointBackgroundColor: COLORS.red },
+                { label: "Revenue Protected", data: (displayCh.spend_vs_revenue || emptyArr).cumulative_revenue_protected, borderColor: COLORS.green, backgroundColor: "rgba(22,163,74,0.08)", tension: 0.3, fill: true, pointRadius: 4, pointBackgroundColor: COLORS.green },
               ],
             }}
             options={defaultOptions}
           />
         </ChartCard>
 
-        <ChartCard title="Cost by Channel" icon="📊">
+        <ChartCard title={simState ? "Cost by Strategy (Simulated)" : "Cost by Channel"} icon="📊">
           <Doughnut
             data={{
-              labels: (ch.cost_by_channel || emptyArr).labels,
-              datasets: [{ data: (ch.cost_by_channel || emptyArr).values, backgroundColor: DOUGHNUT_COLORS.slice(0, (ch.cost_by_channel || emptyArr).labels.length), borderColor: "rgba(15,23,42,0.8)", borderWidth: 2, hoverOffset: 8 }],
+              labels: (displayCh.cost_by_channel || emptyArr).labels,
+              datasets: [{ data: (displayCh.cost_by_channel || emptyArr).values, backgroundColor: [...DOUGHNUT_COLORS, ...DOUGHNUT_COLORS].slice(0, (displayCh.cost_by_channel || emptyArr).labels.length), borderColor: "rgba(15,23,42,0.8)", borderWidth: 2, hoverOffset: 8 }],
             }}
             options={doughnutOptions}
           />
@@ -185,13 +234,13 @@ export default function LiveImpactTab() {
       {/* ══════════════════════════════════════════════════════ */}
       <SectionTitle title="Offer Effectiveness" color="purple" />
       <div className="mb-6">
-        <ChartCard title="Retention by Offer Type" icon="✅">
+        <ChartCard title={simState ? "Simulated Strategy Retention" : "Retention by Offer Type"} icon="✅">
           <Bar
             data={{
-              labels: (ch.retention_by_offer_type || emptyArr).labels,
+              labels: (displayCh.retention_by_offer_type || emptyArr).labels,
               datasets: [
-                { label: "Targeted", data: (ch.retention_by_offer_type || emptyArr).targeted, backgroundColor: COLORS.purpleAlpha, borderColor: COLORS.purple, borderWidth: 1, borderRadius: 4 },
-                { label: "Retained", data: (ch.retention_by_offer_type || emptyArr).retained, backgroundColor: COLORS.greenAlpha, borderColor: COLORS.green, borderWidth: 1, borderRadius: 4 },
+                { label: "Targeted", data: (displayCh.retention_by_offer_type || emptyArr).targeted, backgroundColor: COLORS.purpleAlpha, borderColor: COLORS.purple, borderWidth: 1, borderRadius: 4 },
+                { label: "Retained", data: (displayCh.retention_by_offer_type || emptyArr).retained, backgroundColor: COLORS.greenAlpha, borderColor: COLORS.green, borderWidth: 1, borderRadius: 4 },
               ],
             }}
             options={defaultOptions}

@@ -29,6 +29,18 @@ export default function CustomerPage({ params }: { params: Params }) {
   const riskScore = detail["Churn Score"] / 100;
   const riskColor = riskScore > 0.7 ? "text-red-600" : riskScore > 0.4 ? "text-amber-500" : "text-green-600";
   const riskBg = riskScore > 0.7 ? "bg-red-50" : riskScore > 0.4 ? "bg-amber-50" : "bg-green-50";
+  const toNumber = (value: any) => {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : 0;
+  };
+  const totalCharges = toNumber(detail["Total Charges"]);
+  const totalRefunds = toNumber(detail["Total Refunds"]);
+  const extraDataCharges = toNumber(detail["Total Extra Data Charges"]);
+  const longDistanceCharges = toNumber(detail["Total Long Distance Charges"]);
+  const ltdRevenue =
+    detail["LTD Revenue"] ??
+    detail["Total Revenue"] ??
+    totalCharges + extraDataCharges + longDistanceCharges - totalRefunds;
 
   const StatusBadge = ({ value }: { value: any }) => {
     const isYes = String(value).toLowerCase() === "yes";
@@ -83,8 +95,8 @@ export default function CustomerPage({ params }: { params: Params }) {
                <div className="text-xl font-black text-gray-800">{detail["Tenure in Months"]} Mo</div>
              </div>
              <div className="px-8 text-center border-r border-gray-200">
-               <div className="text-[10px] uppercase font-black text-gray-300 mb-1 tracking-widest">CLTV Value</div>
-               <div className="text-xl font-black text-green-600">${detail.CLTV?.toLocaleString()}</div>
+               <div className="text-[10px] uppercase font-black text-gray-300 mb-1 tracking-widest">LTD Revenue</div>
+               <div className="text-xl font-black text-green-600">${ltdRevenue?.toLocaleString()}</div>
              </div>
              <div className="px-8 text-center border-r border-gray-200">
                <div className="text-[10px] uppercase font-black text-gray-300 mb-1 tracking-widest">Contract</div>
@@ -154,10 +166,11 @@ export default function CustomerPage({ params }: { params: Params }) {
               </div>
               <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-x-12">
                 <DataRow label="Monthly Charge" value={`$${detail["Monthly Charge"]}`} color="text-green-600" />
-                <DataRow label="Total Charges" value={`$${detail["Total Charges"]}`} />
-                <DataRow label="LTD Revenue" value={`$${detail["Total Revenue"]}`} color="text-green-600" />
-                <DataRow label="Total Refunds" value={`$${detail["Total Refunds"] || 0}`} color="text-red-500" />
-                <DataRow label="Data Overage" value={`$${detail["Total Extra Data Charges"] || 0}`} />
+                <DataRow label="Total Charges" value={`$${totalCharges}`} />
+                <DataRow label="LTD Revenue" value={`$${ltdRevenue}`} color="text-green-600" />
+                <DataRow label="Total Refunds" value={`$${totalRefunds}`} color="text-red-500" />
+                <DataRow label="Long Distance" value={`$${longDistanceCharges}`} />
+                <DataRow label="Data Overage" value={`$${extraDataCharges}`} />
                 <DataRow label="Paperless bill" value={detail["Paperless Billing"]} />
               </div>
            </div>
