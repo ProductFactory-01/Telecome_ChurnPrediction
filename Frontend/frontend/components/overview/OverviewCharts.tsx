@@ -14,21 +14,15 @@ export default function OverviewCharts({ churnTrend, riskDistribution }: Props) 
     labels: churnTrend.labels,
     datasets: [
       {
-        label: "Expected Churn % (Without AI)",
-        data: churnTrend.without_ai,
+        label: "Actual Churn Rate %",
+        data: churnTrend.with_ai,
         borderColor: COLORS.red,
         backgroundColor: "rgba(239,68,68,0.1)",
-        borderDash: [6, 3],
-        tension: 0.4,
-        fill: false,
-      },
-      {
-        label: "AI-Predicted Churn %",
-        data: churnTrend.with_ai,
-        borderColor: COLORS.blue,
-        backgroundColor: "rgba(59,130,246,0.1)",
         tension: 0.4,
         fill: true,
+        pointRadius: 4,
+        pointBackgroundColor: COLORS.red,
+        borderWidth: 2.5,
       },
     ],
   };
