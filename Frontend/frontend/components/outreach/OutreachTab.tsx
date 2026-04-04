@@ -58,10 +58,11 @@ export default function OutreachTab() {
       return;
     }
 
-    // Check for non-email channels
-    const nonEmailChannels = selectedKeys.filter(k => k !== 'email');
-    if (nonEmailChannels.length > 0) {
-      alert("Multichannel support (SMS, WhatsApp, Telegram, Live Agent) is coming soon! Currently, only Email is available for execution.");
+    // Check for non-supported channels
+    const allowedChannels = ['email', 'whatsapp'];
+    const unsupportedChannels = selectedKeys.filter(k => !allowedChannels.includes(k));
+    if (unsupportedChannels.length > 0) {
+      alert("Multichannel support (SMS, Telegram, Live Agent) is coming soon! Currently, only Email and WhatsApp are available for execution.");
       return;
     }
 
@@ -256,22 +257,22 @@ export default function OutreachTab() {
       <SectionTitle title="Channel Execution Plan" color="purple" />
       <div className="panel-grid panel-grid--5 mb-6">
         {channels.map((c) => {
-          const isEmail = c.key === "email";
+          const isEnabled = c.key === "email" || c.key.toLowerCase() === "whatsapp";
           return (
             <div
               key={c.key}
               className={`channel-card ${c.selected ? "channel-card--selected" : ""}`}
-              onClick={() => isEmail && toggleChannel(c.key)}
+              onClick={() => isEnabled && toggleChannel(c.key)}
               style={{
-                opacity: isEmail ? 1 : 0.6,
-                cursor: isEmail ? "pointer" : "not-allowed",
-                filter: isEmail ? "none" : "grayscale(0.8)",
+                opacity: isEnabled ? 1 : 0.6,
+                cursor: isEnabled ? "pointer" : "not-allowed",
+                filter: isEnabled ? "none" : "grayscale(0.8)",
                 position: "relative",
-                background: isEmail ? undefined : "rgba(241, 245, 249, 0.5)",
-                border: isEmail ? undefined : "1px dashed #cbd5e1",
+                background: isEnabled ? undefined : "rgba(241, 245, 249, 0.5)",
+                border: isEnabled ? undefined : "1px dashed #cbd5e1",
               }}
             >
-              {!isEmail && (
+              {!isEnabled && (
                 <div
                   style={{
                     position: "absolute",
@@ -285,7 +286,7 @@ export default function OutreachTab() {
               )}
               <div className="channel-card__icon">{c.icon}</div>
               <div className="channel-card__title">
-                {c.title} {!isEmail && <span style={{ fontSize: "10px", display: "block", color: "#64748b" }}>(Locked)</span>}
+                {c.title} {!isEnabled && <span style={{ fontSize: "10px", display: "block", color: "#64748b" }}>(Locked)</span>}
               </div>
               <div className="channel-card__cost">${c.cost_per_contact.toFixed(2)}/contact</div>
             </div>
