@@ -28,6 +28,7 @@ export default function CustomerDetails({ customerId, onBack }: Props) {
   const riskColor = riskScore > 0.7 ? "text-red-600" : riskScore > 0.4 ? "text-amber-500" : "text-green-600";
   const riskBg = riskScore > 0.7 ? "bg-red-50/50" : riskScore > 0.4 ? "bg-amber-50/50" : "bg-green-50/50";
   const riskBorder = riskScore > 0.7 ? "border-red-100" : riskScore > 0.4 ? "border-amber-100" : "border-green-100";
+  const ltdRevenue = detail["LTD Revenue"] ?? detail["Total Revenue"];
 
   const StatusBadge = ({ value }: { value: any }) => {
     const isYes = String(value).toLowerCase() === "yes";
@@ -96,7 +97,7 @@ export default function CustomerDetails({ customerId, onBack }: Props) {
            <div className="flex flex-wrap items-center bg-white border border-slate-100 p-2 rounded-2xl shadow-sm">
              {[
                { label: "Tenure", value: `${detail["Tenure in Months"]} MO` },
-               { label: "CLTV", value: `$${detail.CLTV?.toLocaleString()}`, color: "text-emerald-600" },
+               { label: "LTD Revenue", value: `$${ltdRevenue?.toLocaleString()}`, color: "text-emerald-600" },
                { label: "Contract", value: detail.Contract, color: "text-indigo-600" },
                { label: "Payment", value: detail.PaymentMethod || detail["Payment Method"] }
              ].map((item, idx) => (

@@ -30,6 +30,8 @@ export default function CustomerDetailView({ customerId, onClose }: Props) {
     );
   }
 
+  const ltdRevenue = detail["LTD Revenue"] ?? detail["Total Revenue"];
+
   const StatBox = ({ label, value, color = "blue" }: { label: string; value: any; color?: string }) => (
     <div className="text-center px-4 border-r border-gray-100 last:border-0">
       <div className="text-[10px] uppercase tracking-wider text-gray-400 font-bold mb-1">{label}</div>
@@ -81,7 +83,7 @@ export default function CustomerDetailView({ customerId, onClose }: Props) {
 
           <div className="flex bg-gray-50 p-4 rounded-2xl border border-gray-100 shadow-inner">
              <StatBox label="Tenure" value={`${detail["Tenure in Months"]} Months`} />
-             <StatBox label="CLTV" value={`$${detail.CLTV?.toLocaleString()}`} color="green" />
+             <StatBox label="LTD Revenue" value={`$${ltdRevenue?.toLocaleString()}`} color="green" />
              <StatBox label="Contract" value={detail.Contract} />
              <StatBox label="Payment" value={detail.PaymentMethod || detail["Payment Method"]} />
           </div>

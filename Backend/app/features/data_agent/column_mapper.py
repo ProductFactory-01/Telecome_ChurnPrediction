@@ -45,24 +45,33 @@ def fuzzy_match(user_col: str, target_cols: List[str], threshold: float = 0.8) -
                 return original
     return None
 
-async def get_column_mapping(csv_columns: List[str]) -> Dict:
+async def get_column_mapping(csv_columns: List[str], sample_data: List[Dict] = None) -> Dict:
     """
     Uses Groq LLM with a highly semantic prompt to map user CSV columns 
-    to our database schema.
+    to our database schema. Now includes sample rows for better disambiguation.
     """
     try:
         llm = get_groq_llm()
         
+        sample_text = ""
+        if sample_data:
+            sample_text = "\n\n### DATA SAMPLES (First 3-5 rows) ###\n"
+            for i, row in enumerate(sample_data):
+                sample_text += f"Row {i+1}: {json.dumps(row)}\n"
+
         prompt = ChatPromptTemplate.from_messages([
             ("system", (
                 "You are an expert Telecom Data Engineer. Your task is to perform high-precision "
                 "semantic mapping of CSV columns to a canonical Telecom Churn database schema. "
                 "\n\n### MAPPING RULES ###\n"
                 "1. If a column is a perfect semantic match, map it (e.g., 'Sex' maps to 'Gender').\n"
-                "2. If a column is an alias for a subscriber detail, map it (e.g., 'Client Name' maps to 'Name').\n"
+                "2. Use the provided DATA SAMPLES to resolve ambiguities (e.g., 'DSL' or 'Fiber' means it is 'Internet Type', while 'Yes/No' for internet means it is 'Internet Service').\n"
                 "3. If a column represents a service field, map it (e.g., 'WebType' maps to 'Internet Type').\n"
                 "4. If a column is a duplicate of a previously mapped field, map it to null.\n"
                 "5. If a column has NO logical place in the schema, map it to null.\n"
+                "\n\n### TARGET SCHEMA COLUMNS ###\n"
+                "{target_cols}"
+                "{sample_str}"
                 "\n\n### EXAMPLES (FEW-SHOT) ###\n"
                 "- 'SubscriberID' -> 'Customer ID'\n"
                 "- 'Client Name' -> 'Name'\n"
@@ -76,14 +85,15 @@ async def get_column_mapping(csv_columns: List[str]) -> Dict:
             )),
             ("user", (
                 "Input CSV Columns: {csv_cols}\n\n"
-                "Target Schema Columns: {target_cols}"
+                "Please generate the mapping."
             ))
         ])
         
         chain = prompt | llm
         response = await chain.ainvoke({
             "csv_cols": ", ".join(csv_columns),
-            "target_cols": ", ".join(ALL_TARGET_COLUMNS)
+            "target_cols": ", ".join(ALL_TARGET_COLUMNS),
+            "sample_str": sample_text
         })
         
         # Parse JSON response

@@ -46,7 +46,7 @@ export default function DataAgentTab() {
       <AgentHeader
         number="1"
         title="Customer360 Data Agent"
-        subtitle="Unify demographics, location, services, and AI scoring into a single subscriber intelligence view"
+        subtitle="Unify demographics, location, services, and population data into a single subscriber intelligence view"
         color="blue"
         statusLabel="Active"
         statusType="active"
@@ -54,7 +54,7 @@ export default function DataAgentTab() {
 
       <SectionTitle title="Connected Data Sources" color="blue" />
 
-      <div className="panel-grid panel-grid--6 mb-6">
+      <div className="panel-grid panel-grid--5 mb-6">
         {sources.map((s) => (
           <div key={s.key} className={`source-card ${s.active ? "source-card--active" : ""}`} onClick={() => toggleSource(s.key)}>
             {s.active && <div className="source-card__check">✓</div>}

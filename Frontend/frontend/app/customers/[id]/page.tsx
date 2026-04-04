@@ -29,6 +29,7 @@ export default function CustomerPage({ params }: { params: Params }) {
   const riskScore = detail["Churn Score"] / 100;
   const riskColor = riskScore > 0.7 ? "text-red-600" : riskScore > 0.4 ? "text-amber-500" : "text-green-600";
   const riskBg = riskScore > 0.7 ? "bg-red-50" : riskScore > 0.4 ? "bg-amber-50" : "bg-green-50";
+  const ltdRevenue = detail["LTD Revenue"] ?? detail["Total Revenue"];
 
   const StatusBadge = ({ value }: { value: any }) => {
     const isYes = String(value).toLowerCase() === "yes";
@@ -83,8 +84,8 @@ export default function CustomerPage({ params }: { params: Params }) {
                <div className="text-xl font-black text-gray-800">{detail["Tenure in Months"]} Mo</div>
              </div>
              <div className="px-8 text-center border-r border-gray-200">
-               <div className="text-[10px] uppercase font-black text-gray-300 mb-1 tracking-widest">CLTV Value</div>
-               <div className="text-xl font-black text-green-600">${detail.CLTV?.toLocaleString()}</div>
+               <div className="text-[10px] uppercase font-black text-gray-300 mb-1 tracking-widest">LTD Revenue</div>
+               <div className="text-xl font-black text-green-600">${ltdRevenue?.toLocaleString()}</div>
              </div>
              <div className="px-8 text-center border-r border-gray-200">
                <div className="text-[10px] uppercase font-black text-gray-300 mb-1 tracking-widest">Contract</div>
