@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException
 import pandas as pd
 import numpy as np
+from sqlalchemy import text
 from app.database import get_db_engine
 
 router = APIRouter()
@@ -74,9 +75,9 @@ async def get_customer_details(customer_id: str):
         raise HTTPException(status_code=500, detail="Database connection failed")
         
     try:
-        # Query entire row for the detail view
-        query = f"SELECT * FROM merged WHERE \"Customer ID\" = '{customer_id}'"
-        df = pd.read_sql(query, engine)
+        # Query the exact customer row for the detail view.
+        query = text('SELECT * FROM merged WHERE "Customer ID" = :customer_id')
+        df = pd.read_sql(query, engine, params={"customer_id": customer_id})
         
         if df.empty:
             raise HTTPException(status_code=404, detail="Customer not found")

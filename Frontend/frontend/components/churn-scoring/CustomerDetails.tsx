@@ -28,7 +28,18 @@ export default function CustomerDetails({ customerId, onBack }: Props) {
   const riskColor = riskScore > 0.7 ? "text-red-600" : riskScore > 0.4 ? "text-amber-500" : "text-green-600";
   const riskBg = riskScore > 0.7 ? "bg-red-50/50" : riskScore > 0.4 ? "bg-amber-50/50" : "bg-green-50/50";
   const riskBorder = riskScore > 0.7 ? "border-red-100" : riskScore > 0.4 ? "border-amber-100" : "border-green-100";
-  const ltdRevenue = detail["LTD Revenue"] ?? detail["Total Revenue"];
+  const toNumber = (value: any) => {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : 0;
+  };
+  const totalCharges = toNumber(detail["Total Charges"]);
+  const totalRefunds = toNumber(detail["Total Refunds"]);
+  const extraDataCharges = toNumber(detail["Total Extra Data Charges"]);
+  const longDistanceCharges = toNumber(detail["Total Long Distance Charges"]);
+  const ltdRevenue =
+    detail["LTD Revenue"] ??
+    detail["Total Revenue"] ??
+    totalCharges + extraDataCharges + longDistanceCharges - totalRefunds;
 
   const StatusBadge = ({ value }: { value: any }) => {
     const isYes = String(value).toLowerCase() === "yes";
@@ -165,10 +176,11 @@ export default function CustomerDetails({ customerId, onBack }: Props) {
             </div>
             <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-x-8">
               <DataRow label="Monthly Charge" value={`$${detail["Monthly Charge"]}`} color="text-emerald-600" />
-              <DataRow label="Total Charges" value={`$${detail["Total Charges"]}`} />
-              <DataRow label="LTD Revenue" value={`$${detail["Total Revenue"]}`} color="text-emerald-600" />
-              <DataRow label="Total Refunds" value={`$${detail["Total Refunds"] || 0}`} color="text-red-500" />
-              <DataRow label="Overage" value={`$${detail["Total Extra Data Charges"] || 0}`} />
+              <DataRow label="Total Charges" value={`$${totalCharges}`} />
+              <DataRow label="Long Distance" value={`$${longDistanceCharges}`} />
+              <DataRow label="LTD Revenue" value={`$${ltdRevenue}`} color="text-emerald-600" />
+              <DataRow label="Total Refunds" value={`$${totalRefunds}`} color="text-red-500" />
+              <DataRow label="Overage" value={`$${extraDataCharges}`} />
               <DataRow label="Paperless" value={detail["Paperless Billing"]} />
             </div>
          </div>
