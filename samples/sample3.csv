@@ -1,0 +1,3 @@
+Customer ID,Name,email,Gender,Age,Senior Citizen,Married,Dependents,Tenure in Months,Phone Service,Multiple Lines,Internet Service,Online Security,Online Backup,Device Protection Plan,Premium Tech Support,Streaming TV,Streaming Movies,Contract,Paperless Billing,Payment Method,Monthly Charge,Total Charges,City,Zip Code,Latitude,Longitude
+ABC-123,Rahul,rahul@example.com,Male,35,No,Yes,Yes,24,Yes,No,Fiber Optic,Yes,No,Yes,Yes,No,No,One Year,Yes,Bank Withdrawal,85.5,2050.0,Los Angeles,90001,34.0522,-118.2437
+XYZ-987,Aravind,aravind@example.com,Male,33,No,Yes,No,24,Yes,Yes,Fiber Optic,Yes,Yes,Yes,Yes,Yes,Yes,One Year,Yes,Credit Card,85.0,2040.0,Delhi,110003,28.7050,77.1030
