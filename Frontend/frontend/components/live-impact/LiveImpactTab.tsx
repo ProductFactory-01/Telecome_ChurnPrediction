@@ -155,21 +155,11 @@ export default function LiveImpactTab() {
       </div> */}
 
       {/* ══════════════════════════════════════════════════════ */}
-      {/* Section 3: Retention Simulator                        */}
+      {/* 2-Column Dashboard layout via RetentionSimulator        */}
       {/* ══════════════════════════════════════════════════════ */}
-      <SectionTitle title="Retention Simulator" description="Adjust budget & segments to project retention outcomes" color="cyan" />
       <div className="mb-6 animate-in">
         {simulatorData && Object.keys(simulatorData.risk_buckets || {}).length > 0 ? (
-          <RetentionSimulator data={simulatorData} onSimulate={setSimState} />
-        ) : (
-          <div className="card" style={{ padding: "40px", textAlign: "center", color: "var(--text-muted)" }}>
-            {simulatorData ? "No at-risk customers found for simulation" : "Loading simulator data..."}
-          </div>
-        )}
-      </div>
-
-      {/* ══════════════════════════════════════════════════════ */}
-      {/* Section 4: Retention & Churn Impact                   */}
+          <RetentionSimulator data={simulatorData} onSimulate={setSimState}>
       {/* ══════════════════════════════════════════════════════ */}
       <SectionTitle title="Retention & Churn Impact" color="green" />
       <div className="panel-grid panel-grid--2 mb-6">
@@ -183,19 +173,6 @@ export default function LiveImpactTab() {
               ],
             }}
             options={{ ...defaultOptions, indexAxis: "y" as const }}
-          />
-        </ChartCard>
-
-        <ChartCard title="Churn Score Shift" icon="📉">
-          <Bar
-            data={{
-              labels: (displayCh.churn_score_shift || emptyArr).labels,
-              datasets: [
-                { label: "At Campaign", data: (displayCh.churn_score_shift || emptyArr).at_campaign, backgroundColor: COLORS.amberAlpha, borderColor: COLORS.amber, borderWidth: 1, borderRadius: 4 },
-                { label: "Current", data: (displayCh.churn_score_shift || emptyArr).current, backgroundColor: COLORS.cyanAlpha, borderColor: COLORS.cyan, borderWidth: 1, borderRadius: 4 },
-              ],
-            }}
-            options={defaultOptions}
           />
         </ChartCard>
       </div>
@@ -253,8 +230,8 @@ export default function LiveImpactTab() {
       {/* ══════════════════════════════════════════════════════ */}
       {/* Section 7: Campaign Activity Log                      */}
       {/* ══════════════════════════════════════════════════════ */}
-      <SectionTitle title="Campaign Activity Log" color="blue" />
-      <div className="card" style={{ padding: 0, overflow: "hidden" }}>
+      {/* <SectionTitle title="Campaign Activity Log" color="blue" /> */}
+      {/* <div className="card" style={{ padding: 0, overflow: "hidden" }}>
         <div style={{ overflowX: "auto" }}>
           <table className="impact-table">
             <thead>
@@ -307,6 +284,13 @@ export default function LiveImpactTab() {
             </tbody>
           </table>
         </div>
+      </div> */}
+          </RetentionSimulator>
+        ) : (
+          <div className="card" style={{ padding: "40px", textAlign: "center", color: "var(--text-muted)" }}>
+            {simulatorData ? "No at-risk customers found for simulation" : "Loading simulator data..."}
+          </div>
+        )}
       </div>
     </div>
   );
