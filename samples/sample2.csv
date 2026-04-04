@@ -1,0 +1,11 @@
+SubscriberID,Client Name,MailAddress,Sex,CustomerAge,Senior,IsMarried,HasDependents,MonthsTenure,ProvidesPhone,MultiLine,WebType,SecurityService,CloudBackup,ProtectionSelected,SupportService,TVStreaming,MovieStreaming,AgreementType,DigitalBilling,PayType,MonthlyFee,GrandTotal,LocationCity,PostalCode,Lat,Lng,Internet service,Churn Label,Churn Reason
+TEST-MIX-013,Manoj Verma,manoj.v@test.com,Male,33,No,Yes,No,5,Yes,No,DSL,No,No,No,No,No,No,Month-to-Month,Yes,Electronic check,42.0,210.0,Jaipur,302001,26.9124,75.7873,Yes,Yes,Low engagement - no active services
+TEST-MIX-014,Aishwarya Rao,aishwarya.r@test.com,Female,38,No,Yes,Yes,54,Yes,Yes,Fiber Optic,Yes,Yes,Yes,Yes,Yes,Yes,Two Year,No,Credit Card,102.0,5508.0,Bangalore,560002,12.9718,77.5937,Yes,No,
+TEST-MIX-015,Suresh Pillai,suresh.p@test.com,Male,50,Yes,Yes,No,62,Yes,Yes,Fiber Optic,Yes,Yes,Yes,Yes,Yes,Yes,Two Year,Yes,Bank Transfer,108.0,6696.0,Kochi,682002,9.9315,76.2678,Yes,No,
+TEST-MIX-016,Neha Kapoor,neha.k@test.com,Female,28,No,No,No,2,Yes,No,DSL,No,No,No,No,No,No,Month-to-Month,Yes,Electronic check,39.0,78.0,Delhi,110002,28.7045,77.1028,Yes,Yes,Low engagement - short tenure & no usage
+TEST-MIX-017,Ramesh Gupta,,Male,44,No,Yes,Yes,36,Yes,Yes,Fiber Optic,Yes,,Yes,Yes,Yes,Yes,One Year,Yes,Credit Card,92.0,3312.0,Lucknow,226001,26.8467,80.9462,Yes,No,
+TEST-MIX-018,Kavya Nair,kavya.n@test.com,Female,31,No,Yes,No,20,Yes,No,DSL,Yes,Yes,No,No,No,No,One Year,Yes,UPI,58.0,1160.0,Trivandrum,695002,8.5245,76.9370,Yes,No,
+TEST-MIX-019,Aditya Mehta,aditya.m@test.com,Male,26,No,No,No,3,Yes,No,DSL,No,No,No,No,No,No,Month-to-Month,Yes,Electronic check,41.0,123.0,Ahmedabad,380002,23.0230,72.5718,Yes,Yes,Low engagement - no add-ons
+TEST-MIX-020,Pooja Singh,pooja.s@test.com,Female,47,No,Yes,Yes,70,Yes,Yes,Fiber Optic,Yes,Yes,Yes,Yes,Yes,Yes,Two Year,No,Bank Transfer,115.0,8050.0,Mumbai,400002,19.0765,72.8780,Yes,No,
+TEST-MIX-021,Deepak Yadav,deepak.y@test.com,Male,36,No,Yes,No,28,Yes,Yes,Fiber Optic,Yes,Yes,Yes,Yes,Yes,Yes,One Year,Yes,Credit Card,89.0,2492.0,Patna,800001,25.5941,85.1376,Yes,No,
+TEST-MIX-022,Nisha Joshi,nisha.j@test.com,Female,40,No,Yes,No,22,Yes,No,DSL,Yes,Yes,No,No,No,No,One Year,Yes,UPI,60.0,1320.0,Pune,411002,18.5208,73.8572,Yes,No,

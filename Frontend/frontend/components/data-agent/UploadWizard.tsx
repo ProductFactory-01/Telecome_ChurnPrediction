@@ -195,7 +195,7 @@ export default function UploadWizard() {
             {/* Left: CSV Preview */}
             <div className="preview-container">
                 <div className="preview-header">
-                  <span className="preview-title">📊 CSV Preview (First 5 records)</span>
+                  <span className="preview-title">📊 CSV Preview</span>
                   <span className="preview-badge">Read-Only</span>
                 </div>
                 <div className="preview-table-wrapper" style={{ maxHeight: "400px", overflow: "auto", border: "1px solid var(--border-color)", borderRadius: "var(--radius-sm)" }}>
