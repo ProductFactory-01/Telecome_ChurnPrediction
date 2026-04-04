@@ -269,7 +269,7 @@ export default function RetentionSimulator({
                 Retention Simulator
               </h2>
               <p style={{ fontSize: "12px", color: "var(--text-muted)", margin: "2px 0 0" }}>
-                Adjust risk segments on the right and investments below to dynamically project retention outcomes.
+                Adjust risk segments and investments to dynamically project retention outcomes.
               </p>
             </div>
           </div>

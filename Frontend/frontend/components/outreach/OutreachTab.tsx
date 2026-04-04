@@ -59,10 +59,10 @@ export default function OutreachTab() {
     }
 
     // Check for non-supported channels
-    const allowedChannels = ['email', 'whatsapp'];
-    const unsupportedChannels = selectedKeys.filter(k => !allowedChannels.includes(k));
+    const allowedChannels = ['email', 'whatsapp', 'agent'];
+    const unsupportedChannels = selectedKeys.filter(k => !allowedChannels.includes(k.toLowerCase()));
     if (unsupportedChannels.length > 0) {
-      alert("Multichannel support (SMS, Telegram, Live Agent) is coming soon! Currently, only Email and WhatsApp are available for execution.");
+      alert("Multichannel support (SMS, Telegram) is coming soon! Currently, Email, WhatsApp, and Live Agent are available for execution.");
       return;
     }
 
@@ -72,7 +72,7 @@ export default function OutreachTab() {
     try {
       const webhookUrl = process.env.NEXT_PUBLIC_WEBHOOK_URL || "https://api.agents.snsihub.ai/webhook";
       
-      const hasActiveChannel = selectedKeys.includes('email') || selectedKeys.includes('whatsapp');
+      const hasActiveChannel = selectedKeys.some(k => ['email', 'whatsapp', 'agent'].includes(k.toLowerCase()));
       
       if (hasActiveChannel) {
         console.log("Triggering Webhook for channels:", selectedKeys.join(", "));
@@ -134,7 +134,7 @@ export default function OutreachTab() {
       <AgentHeader
         number="4"
         title="Outreach Automation Agent"
-        subtitle="Multi-channel campaign orchestration with smart scheduling"
+        subtitle="Multi-channel campaign orchestration"
         color="purple"
         statusLabel="Ready"
         statusType="active"
@@ -261,7 +261,7 @@ export default function OutreachTab() {
       <SectionTitle title="Channel Execution Plan" color="purple" />
       <div className="panel-grid panel-grid--5 mb-6">
         {channels.map((c) => {
-          const isEnabled = c.key === "email" || c.key.toLowerCase() === "whatsapp";
+          const isEnabled = ["email", "whatsapp", "agent"].includes(c.key.toLowerCase());
           return (
             <div
               key={c.key}

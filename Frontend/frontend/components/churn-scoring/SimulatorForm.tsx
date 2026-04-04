@@ -220,20 +220,20 @@ export default function SimulatorForm({ onPredict, onReset, loading, result }: P
           <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
             {!result ? (
               /* ── Empty State ── */
-              <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, textAlign: "center", border: "1.5px dashed #e2e8f0", borderRadius: 24, padding: "40px 28px", background: "#fcfdfe" }}>
-                <div style={{ width: 80, height: 80, borderRadius: "50%", background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 34, border: "1.5px dashed #e2e8f0", boxShadow: "0 4px 12px rgba(0,0,0,0.03)" }}>🔭</div>
-                <div>
-                  <div style={{ fontSize: 14, fontWeight: 800, color: "#64748b", marginBottom: 8 }}>Awaiting Simulation Data</div>
-                  <div style={{ fontSize: 13, color: "#94a3b8", lineHeight: 1.6, maxWidth: 280, margin: "0 auto" }}>Adjust the subscriber parameters and click <strong style={{ color: "#2563eb" }}>Generate Prediction</strong> to begin real-time risk analysis.</div>
-                </div>
-                {/* Ghost Result Placeholders to lock height visually */}
-                <div style={{ width: "100%", marginTop: 24, display: "flex", flexDirection: "column", gap: 14, opacity: 0.08, pointerEvents: "none" }}>
-                  <div style={{ height: 110, background: "#94a3b8", borderRadius: 20 }} />
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-                    <div style={{ height: 70, background: "#94a3b8", borderRadius: 16 }} />
-                    <div style={{ height: 70, background: "#94a3b8", borderRadius: 16 }} />
+              <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 24, textAlign: "center", border: "1.5px dashed #e2e8f0", borderRadius: 24, padding: "48px 32px", background: "#fcfdfe" }}>
+                <div style={{ 
+                  width: 100, height: 100, borderRadius: "50%", 
+                  background: "linear-gradient(135deg, #fff, #f8fafc)", 
+                  display: "flex", alignItems: "center", justifyContent: "center", 
+                  fontSize: 44, border: "2px dashed #bfdbfe", 
+                  boxShadow: "0 10px 40px rgba(59,130,246,0.06)",
+                  animation: "pulse 3s infinite ease-in-out"
+                }}>🔭</div>
+                <div style={{ maxWidth: 280 }}>
+                  <div style={{ fontSize: 18, fontWeight: 900, color: "#1e293b", marginBottom: 12, letterSpacing: "-0.02em" }}>Simulator Ready</div>
+                  <div style={{ fontSize: 13.5, color: "#64748b", lineHeight: 1.7, fontWeight: 500 }}>
+                    Adjust the subscriber parameters and click <strong style={{ color: "#2563eb" }}>Generate Prediction</strong> to begin real-time risk analysis.
                   </div>
-                  <div style={{ height: 100, background: "#94a3b8", borderRadius: 20 }} />
                 </div>
               </div>
             ) : (
@@ -265,14 +265,21 @@ export default function SimulatorForm({ onPredict, onReset, loading, result }: P
                   ))}
                 </div>
 
-                {/* AI Reasoning */}
-                <div style={{ flex: 1, background: "linear-gradient(145deg, #1e40af, #2563eb)", borderRadius: 26, padding: "26px 28px", position: "relative", overflow: "hidden", minHeight: 160, display: "flex", alignItems: "center" }}>
-                  <div style={{ position: "absolute", top: -15, right: -5, fontSize: 120, color: "rgba(255,255,255,0.07)", fontFamily: "serif", lineHeight: 1, userSelect: "none" }}>"</div>
-                  <div style={{ position: "relative", zIndex: 1 }}>
-                    <div style={{ fontSize: 10, fontWeight: 800, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: "0.22em", marginBottom: 12 }}>AI Diagnosis Insight</div>
-                    <p style={{ fontSize: 14, color: "rgba(255,255,255,1)", fontStyle: "italic", lineHeight: 1.7, margin: 0, fontWeight: 500 }}>
-                      "{result.churn_reason?.reason}"
-                    </p>
+                {/* AI Reasoning - Optimized flex to fill space */}
+                <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+                  <div style={{ 
+                    flex: 1, background: "linear-gradient(145deg, #1e40af, #2563eb)", 
+                    borderRadius: 26, padding: "26px 28px", position: "relative", 
+                    overflow: "hidden", display: "flex", alignItems: "center",
+                    boxShadow: "0 10px 30px rgba(37,99,235,0.15)"
+                  }}>
+                    <div style={{ position: "absolute", top: -15, right: -5, fontSize: 120, color: "rgba(255,255,255,0.07)", fontFamily: "serif", lineHeight: 1, userSelect: "none" }}>"</div>
+                    <div style={{ position: "relative", zIndex: 1, width: "100%" }}>
+                      <div style={{ fontSize: 10, fontWeight: 800, color: "rgba(255,255,255,0.45)", textTransform: "uppercase", letterSpacing: "0.22em", marginBottom: 14 }}>AI Diagnosis Insight</div>
+                      <p style={{ fontSize: 14.5, color: "rgba(255,255,255,1)", fontStyle: "italic", lineHeight: 1.75, margin: 0, fontWeight: 500 }}>
+                        "{result.churn_reason?.reason}"
+                      </p>
+                    </div>
                   </div>
                 </div>
 
