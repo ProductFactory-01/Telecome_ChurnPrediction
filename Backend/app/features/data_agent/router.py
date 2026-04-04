@@ -214,7 +214,9 @@ async def ingest_csv(payload: IngestRequest):
             
             # Aggregate summary
             # We'll need to fetch the risk levels for the newly predicted ones
-            results_df = pd.read_sql(f"SELECT \"Churn Score\" FROM status WHERE \"Customer ID\" IN ({', '.join([f'\'{cid}\'' for cid in new_ids])})", engine)
+            placeholders = ", ".join(["%s"] * len(new_ids))
+            score_query = f'SELECT "Churn Score" FROM status WHERE "Customer ID" IN ({placeholders})'
+            results_df = pd.read_sql(score_query, engine, params=tuple(new_ids))
             for score in results_df["Churn Score"].fillna(0):
                 if score >= 50: prediction_summary["high"] += 1
                 else: prediction_summary["low"] += 1
