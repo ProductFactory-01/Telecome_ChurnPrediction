@@ -88,6 +88,10 @@ def get_overview():
         real_trend_values = trend_group.tolist()
         historical_baseline = [30.5, 29.8, 25.1, 23.4, 18.0, 15.2]
 
+        total_revenue = int(df["Total Revenue"].sum()) if "Total Revenue" in df.columns else 0
+        if "Total Revenue_m" in df.columns: # Fallback if merged only
+             total_revenue = int(df["Total Revenue_m"].sum())
+
         kpis = {
             "subscribers_unified": total,
             "current_churn_rate": churn_rate,
@@ -95,7 +99,7 @@ def get_overview():
             "high_risk_flagged": high_risk_flagged,
             "retention_offers_sent": get_retention_offers_sent(),
             "subscribers_saved": int(get_retention_offers_sent() * 0.4), # Placeholder: 40% conversion
-            "avg_cltv": avg_cltv,
+            "total_revenue": total_revenue,
         }
 
         churn_trend = {

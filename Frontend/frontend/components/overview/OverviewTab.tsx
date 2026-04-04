@@ -28,12 +28,20 @@ export default function OverviewTab() {
       <PipelineFlow steps={data.pipeline} />
 
       <div className="panel-grid panel-grid--5 mb-6 mt-4">
-        <KpiCard label="Subscribers Unified" value={k.subscribers_unified.toLocaleString()} sub="Joined Customer360 Base" color="blue" />
-        <KpiCard label="Current Churn Rate" value={`${k.current_churn_rate}%`} sub={`Target: ${k.target_churn_rate}% with AI agents`} color="red" />
+        <KpiCard label="Total Subscribers" value={k.subscribers_unified.toLocaleString()} sub="Joined Customer360 Base" color="blue" />
+        <KpiCard label="Current Churn Rate" value={`${k.current_churn_rate}%`} sub="Active Portfolio Risk Score" color="red" />
         <KpiCard label="High-Risk Flagged" value={k.high_risk_flagged.toLocaleString()} sub="Scored > 70 by Model" color="amber" />
-        <KpiCard label="Retention Offers Sent" value={k.retention_offers_sent.toLocaleString()} sub="Via Agent 3 + Agent 4" color="green" />
+        <KpiCard label="Retention Offers Sent" value={k.retention_offers_sent.toLocaleString()} sub="Through offers and Campaigns" color="green" />
         {/* <KpiCard label="Subscribers Saved" value={k.subscribers_saved.toLocaleString()} sub="Through AI intervention" color="purple" /> */}
-        <KpiCard label="Average CLTV" value={`$${k.avg_cltv.toLocaleString()}`} sub="Customer Lifetime Value" color="cyan" />
+        <KpiCard 
+          label="Total Revenue" 
+          value={(k.total_revenue || 0) > 1000000 
+            ? `$${((k.total_revenue || 0) / 1000000).toFixed(2)}M` 
+            : `$${(k.total_revenue ?? 0).toLocaleString()}`
+          } 
+          sub="Cumulative Portfolio Value" 
+          color="cyan" 
+        />
       </div>
 
       <div className="mb-6">

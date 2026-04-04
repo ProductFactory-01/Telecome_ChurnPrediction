@@ -6,9 +6,10 @@ interface Props {
   initialMapping: Record<string, string>;
   targetColumns: string[];
   onChange: (mapping: Record<string, string>) => void;
+  nullCounts?: Record<string, number>;
 }
 
-export default function MappingEditor({ csvColumns, initialMapping, targetColumns, onChange }: Props) {
+export default function MappingEditor({ csvColumns, initialMapping, targetColumns, onChange, nullCounts }: Props) {
   const [mapping, setMapping] = useState<Record<string, string>>(initialMapping);
 
   useEffect(() => {
@@ -23,13 +24,14 @@ export default function MappingEditor({ csvColumns, initialMapping, targetColumn
     <div className="mapping-editor">
       <div className="mapping-editor-title">🎯 Review AI Column Mapping</div>
       
-      <div className="mapping-table-container">
+      <div className="mapping-table-container" style={{ maxHeight: "400px", overflowY: "auto" }}>
         <table className="mapping-table">
           <thead>
             <tr>
               <th>CSV Column</th>
               <th style={{ width: "40px", textAlign: "center" }}>→</th>
               <th>Application Field</th>
+              <th style={{ width: "100px", textAlign: "center" }}>Null Count</th>
               <th style={{ width: "100px", textAlign: "center" }}>Status</th>
             </tr>
           </thead>
@@ -37,6 +39,7 @@ export default function MappingEditor({ csvColumns, initialMapping, targetColumn
             {csvColumns.map((col) => {
               const mapped = mapping[col];
               const isMapped = !!mapped;
+              const nullCount = nullCounts?.[col] || 0;
 
               return (
                 <tr key={col} className={isMapped ? "" : "unmapped-row"}>
@@ -55,6 +58,15 @@ export default function MappingEditor({ csvColumns, initialMapping, targetColumn
                         </option>
                       ))}
                     </select>
+                  </td>
+                  <td style={{ textAlign: "center" }}>
+                    {nullCount > 0 ? (
+                      <span style={{ color: "var(--accent-red)", fontWeight: 700, fontSize: "12px" }}>
+                        {nullCount} nulls
+                      </span>
+                    ) : (
+                      <span style={{ color: "var(--accent-green)", fontSize: "12px" }}>0</span>
+                    )}
                   </td>
                   <td style={{ textAlign: "center" }}>
                     {isMapped ? (

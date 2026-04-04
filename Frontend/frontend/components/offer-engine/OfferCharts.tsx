@@ -9,17 +9,20 @@ interface ChartData {
 }
 
 export default function OfferCharts({ data }: { data?: ChartData }) {
+  const filteredEffectiveness = data?.effectiveness?.filter(
+    (item) => item.label !== "Gamification"
+  );
+
   const effectivenessData = {
-    labels: data?.effectiveness?.map(item => item.label) || ["Discount", "Upgrade", "Loyalty Pts", "Gamification", "Bundle"],
+    labels: filteredEffectiveness?.map(item => item.label) || ["Discount", "Upgrade", "Loyalty Pts", "Bundle"],
     datasets: [
       {
         label: "Offer Count",
-        data: data?.effectiveness?.map(item => item.value) || [18, 14, 16, 22, 12],
+        data: filteredEffectiveness?.map(item => item.value) || [18, 14, 16, 12],
         backgroundColor: [
           COLORS.green,
           COLORS.blue,
           COLORS.amber,
-          COLORS.purple,
           COLORS.cyan,
         ],
         borderRadius: 6,

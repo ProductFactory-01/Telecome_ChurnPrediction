@@ -198,8 +198,8 @@ export default function UploadWizard() {
                   <span className="preview-title">📊 CSV Preview (First 5 records)</span>
                   <span className="preview-badge">Read-Only</span>
                 </div>
-                <div className="preview-table-wrapper">
-                    <table>
+                <div className="preview-table-wrapper" style={{ maxHeight: "400px", overflow: "auto", border: "1px solid var(--border-color)", borderRadius: "var(--radius-sm)" }}>
+                    <table style={{ minWidth: "800px" }}>
                         <thead>
                             <tr>
                                 {uploadData.columns.map((col: string) => (
@@ -252,6 +252,7 @@ export default function UploadWizard() {
               initialMapping={uploadData.mapping}
               targetColumns={TARGET_SCHEMA_COLUMNS}
               onChange={(m) => setConfirmedMapping(m)}
+              nullCounts={uploadData.null_counts}
             />
           </div>
 
@@ -294,15 +295,15 @@ export default function UploadWizard() {
               <div className="success-icon">✓</div>
             </div>
             <div className="success-text">
-              <h2 className="success-title">Data Agent Protocol Complete</h2>
-              <p className="success-subtitle">Successfully integrated {ingestResult.summary.inserted} subscribers into intelligence view</p>
+              <h2 className="success-title">{ingestResult.status === "skipped" ? "Ingestion Protocol Finished (Skipped)" : "Data Agent Protocol Complete"}</h2>
+              <p className="success-subtitle">{ingestResult.status === "skipped" ? "All records skipped as they were either already in the database or invalid." : `Successfully integrated ${ingestResult.summary.inserted} subscribers into intelligence view`}</p>
             </div>
           </div>
 
           <div className="panel-grid panel-grid--4 mb-6" style={{ marginTop: "28px" }}>
             <KpiCard label="Records Unified" value={ingestResult.summary.inserted} color="blue" />
             <KpiCard label="High Risk Flagged" value={ingestResult.summary.risk_breakdown.high} color="red" />
-            <KpiCard label="Rejected (Incomplete)" value={ingestResult.summary.rejected} color="amber" />
+            <KpiCard label="Rejected (Dupe/Incomp)" value={ingestResult.summary.rejected} color="amber" />
             <KpiCard label="Low Risk/Stable" value={ingestResult.summary.risk_breakdown.low} color="green" />
           </div>
 
