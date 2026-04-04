@@ -25,11 +25,11 @@ def get_data_agent():
     try:
         # 1. Get Record Counts for each Source Table
         tables = {
-            "demographics": ("👤", "Demographics", "Age, Gender, Name, Email, Dependents"),
-            "location": ("🌍", "Location Info", "City, State, Zip, Lat/Long, Population"),
-            "population": ("👥", "Population Data", "Zip-level localized census and population stats"),
-            "services": ("📡", "Services & Billing", "Plan, Internet, Phone, Charges, Contract"),
-            "status": ("📋", "System Status", "Satisfaction, Label, Status, Reason"),
+            "demographics": ("👤", "Demographics", "Subscriber profiles and details"),
+            "location": ("🌍", "Location Info", "Geographic and population insights"),
+            "population": ("👥", "Population Data", "Localized census"),
+            "services": ("📡", "Services & Billing", "Plans, charges, and contract records"),
+            "status": ("📋", "System Status", "Experience metrics and outcomes"),
         }
 
         sources = []

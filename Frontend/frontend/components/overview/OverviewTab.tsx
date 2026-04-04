@@ -18,7 +18,7 @@ export default function OverviewTab() {
 
   if (!data) return (
     <div className="dashboard-content min-h-[400px] flex items-center justify-center">
-      <Loading message="Assembling Holistic Dashboard Intelligence..." />
+      <Loading message="Assembling Dashboard..." />
     </div>
   );
 

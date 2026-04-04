@@ -276,7 +276,7 @@ export default function LiveImpactTab() {
           </RetentionSimulator>
         ) : (
           <div className="card" style={{ padding: "40px", textAlign: "center", color: "var(--text-muted)" }}>
-            {simulatorData ? "No at-risk customers found for simulation" : "Loading simulator data..."}
+            {simulatorData ? "No at-risk customers found for simulation" : "Loading data..."}
           </div>
         )}
       </div>

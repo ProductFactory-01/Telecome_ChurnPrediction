@@ -134,7 +134,7 @@ export default function OutreachTab() {
       <AgentHeader
         number="4"
         title="Outreach Automation Agent"
-        subtitle="Multi-channel campaign orchestration with smart scheduling"
+        subtitle="Multi-channel campaign orchestration"
         color="purple"
         statusLabel="Ready"
         statusType="active"

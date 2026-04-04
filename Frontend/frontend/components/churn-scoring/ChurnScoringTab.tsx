@@ -43,7 +43,7 @@ export default function ChurnScoringTab() {
       <AgentHeader
         number="2"
         title="Churn Propensity Scoring Agent"
-        subtitle="Daily churn risk scoring using gradient boosting — producing actionable churn risk ranks"
+        subtitle="churn risk scoring — producing actionable churn risk ranks"
         color="amber"
         statusLabel="Scoring Live"
         statusType="scoring"

@@ -7,17 +7,17 @@ import SectionTitle from "../shared/SectionTitle";
 import KpiCard from "../shared/KpiCard";
 
 const TARGET_SCHEMA_COLUMNS = [
-  "Customer ID", "Gender", "Age", "Under 30", "Senior Citizen", "Married", "Dependents", 
-  "Number of Dependents", "Name", "email", "mobile_number", "Location ID", "Country", 
-  "State", "City", "Zip Code", "Lat Long", "Latitude", "Longitude", "Service ID", 
-  "Quarter", "Referred a Friend", "Number of Referrals", "Tenure in Months", "Offer", 
-  "Phone Service", "Avg Monthly Long Distance Charges", "Multiple Lines", "Internet Service", 
-  "Internet Type", "Avg Monthly GB Download", "Online Security", "Online Backup", 
-  "Device Protection Plan", "Premium Tech Support", "Streaming TV", "Streaming Movies", 
-  "Streaming Music", "Unlimited Data", "Contract", "Paperless Billing", "Payment Method", 
-  "Monthly Charge", "Total Charges", "Total Refunds", "Total Extra Data Charges", 
-  "Total Long Distance Charges", "Total Revenue", "Status ID", "Satisfaction Score", 
-  "Customer Status", "Churn Label", "Churn Value", "Churn Score", "CLTV", 
+  "Customer ID", "Gender", "Age", "Under 30", "Senior Citizen", "Married", "Dependents",
+  "Number of Dependents", "Name", "email", "mobile_number", "Location ID", "Country",
+  "State", "City", "Zip Code", "Lat Long", "Latitude", "Longitude", "Service ID",
+  "Quarter", "Referred a Friend", "Number of Referrals", "Tenure in Months", "Offer",
+  "Phone Service", "Avg Monthly Long Distance Charges", "Multiple Lines", "Internet Service",
+  "Internet Type", "Avg Monthly GB Download", "Online Security", "Online Backup",
+  "Device Protection Plan", "Premium Tech Support", "Streaming TV", "Streaming Movies",
+  "Streaming Music", "Unlimited Data", "Contract", "Paperless Billing", "Payment Method",
+  "Monthly Charge", "Total Charges", "Total Refunds", "Total Extra Data Charges",
+  "Total Long Distance Charges", "Total Revenue", "Status ID", "Satisfaction Score",
+  "Customer Status", "Churn Label", "Churn Value", "Churn Score", "CLTV",
   "Churn Category", "Churn Reason"
 ];
 
@@ -121,23 +121,23 @@ export default function UploadWizard() {
       </div>
 
       {step === "idle" && (
-        <div 
+        <div
           className="upload-file-container"
           onDragOver={handleDragOver}
           onDrop={handleDrop}
           onClick={() => fileInputRef.current?.click()}
         >
-          <input 
-            type="file" 
-            className="hidden" 
-            ref={fileInputRef} 
-            accept=".csv" 
-            onChange={handleFileChange} 
+          <input
+            type="file"
+            className="hidden"
+            ref={fileInputRef}
+            accept=".csv"
+            onChange={handleFileChange}
           />
           <div className="upload-animation">
             <span className="file-upload-icon">{file ? "📄" : "📁"}</span>
           </div>
-          
+
           <div className="upload-content">
             {file ? (
               <>
@@ -152,15 +152,15 @@ export default function UploadWizard() {
                 <p className="upload-hint">
                   <span className="click-here">Click here</span> or drag & drop your CSV file
                 </p>
-                <p className="upload-hint" style={{ marginTop: "8px", fontSize: "11px" }}>
+                {/* <p className="upload-hint" style={{ marginTop: "8px", fontSize: "11px" }}>
                   Supports CRM exports, billing dumps, network logs, and NPS data
-                </p>
+                </p> */}
               </>
             )}
           </div>
-          
+
           {file && (
-            <button 
+            <button
               className="button button-primary mt-6"
               onClick={(e) => { e.stopPropagation(); uploadFile(); }}
               disabled={isUploading}
@@ -190,64 +190,64 @@ export default function UploadWizard() {
               <span className="status-badge">Step 2/3</span>
             </div>
           </div>
-          
+
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-4">
             {/* Left: CSV Preview */}
             <div className="preview-container">
-                <div className="preview-header">
-                  <span className="preview-title">📊 CSV Preview</span>
-                  <span className="preview-badge">Read-Only</span>
-                </div>
-                <div className="preview-table-wrapper" style={{ maxHeight: "400px", overflow: "auto", border: "1px solid var(--border-color)", borderRadius: "var(--radius-sm)" }}>
-                    <table style={{ minWidth: "800px" }}>
-                        <thead>
-                            <tr>
-                                {uploadData.columns.map((col: string) => (
-                                    <th key={col}>{col}</th>
-                                ))}
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {uploadData.preview.map((row: any, i: number) => (
-                                <React.Fragment key={i}>
-                                    <tr className={!row.is_valid ? 'invalid-row' : row.is_duplicate ? "duplicate-row" : ""}>
-                                        {uploadData.columns.map((col: string, j: number) => (
-                                            <td key={j}>
-                                                {j === 0 && !row.is_valid && <span style={{ color: "var(--accent-red)", marginRight: "4px", fontWeight: 700 }}>⚠</span>}
-                                                {row.row_data[col] || <span style={{ color: "var(--text-muted)", fontStyle: "italic" }}>null</span>}
-                                            </td>
-                                        ))}
-                                    </tr>
-                                    {!row.is_valid && (
-                                        <tr style={{ background: "rgba(220, 38, 38, 0.05)" }}>
-                                            <td colSpan={uploadData.columns.length} style={{ padding: "8px 12px", color: "var(--accent-red)", fontSize: "11px", fontWeight: 600, fontStyle: "italic" }}>
-                                                Unable to store: {row.rejection_reason}
-                                            </td>
-                                        </tr>
-                                    )}
-                                </React.Fragment>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-                <div className="validation-messages">
-                  {uploadData.preview.some((r: any) => !r.is_valid) && (
-                    <div className="alert alert--warning">
-                      <span className="alert-icon">⚠</span>
-                      <div className="alert-text">Some rows are missing mandatory fields for churn prediction and will be <strong>rejected</strong> during ingestion.</div>
-                    </div>
-                  )}
-                  {uploadData.validation_logs.map((log: any, i: number) => (
-                    <div key={i} className={`alert ${log.tag === 'warn' ? 'alert--warning' : 'alert--success'}`}>
-                      <span className="alert-icon">{log.tag === 'warn' ? '⚠' : '✓'}</span>
-                      <div className="alert-text">{log.message}</div>
-                    </div>
-                  ))}
-                </div>
+              <div className="preview-header">
+                <span className="preview-title">📊 CSV Preview</span>
+                <span className="preview-badge">Read-Only</span>
+              </div>
+              <div className="preview-table-wrapper" style={{ maxHeight: "400px", overflow: "auto", border: "1px solid var(--border-color)", borderRadius: "var(--radius-sm)" }}>
+                <table style={{ minWidth: "800px" }}>
+                  <thead>
+                    <tr>
+                      {uploadData.columns.map((col: string) => (
+                        <th key={col}>{col}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {uploadData.preview.map((row: any, i: number) => (
+                      <React.Fragment key={i}>
+                        <tr className={!row.is_valid ? 'invalid-row' : row.is_duplicate ? "duplicate-row" : ""}>
+                          {uploadData.columns.map((col: string, j: number) => (
+                            <td key={j}>
+                              {j === 0 && !row.is_valid && <span style={{ color: "var(--accent-red)", marginRight: "4px", fontWeight: 700 }}>⚠</span>}
+                              {row.row_data[col] || <span style={{ color: "var(--text-muted)", fontStyle: "italic" }}>null</span>}
+                            </td>
+                          ))}
+                        </tr>
+                        {!row.is_valid && (
+                          <tr style={{ background: "rgba(220, 38, 38, 0.05)" }}>
+                            <td colSpan={uploadData.columns.length} style={{ padding: "8px 12px", color: "var(--accent-red)", fontSize: "11px", fontWeight: 600, fontStyle: "italic" }}>
+                              Unable to store: {row.rejection_reason}
+                            </td>
+                          </tr>
+                        )}
+                      </React.Fragment>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div className="validation-messages">
+                {uploadData.preview.some((r: any) => !r.is_valid) && (
+                  <div className="alert alert--warning">
+                    <span className="alert-icon">⚠</span>
+                    <div className="alert-text">Some rows are missing mandatory fields for churn prediction and will be <strong>rejected</strong> during ingestion.</div>
+                  </div>
+                )}
+                {uploadData.validation_logs.map((log: any, i: number) => (
+                  <div key={i} className={`alert ${log.tag === 'warn' ? 'alert--warning' : 'alert--success'}`}>
+                    <span className="alert-icon">{log.tag === 'warn' ? '⚠' : '✓'}</span>
+                    <div className="alert-text">{log.message}</div>
+                  </div>
+                ))}
+              </div>
             </div>
 
             {/* Right: Mapping Editor */}
-            <MappingEditor 
+            <MappingEditor
               csvColumns={uploadData.columns}
               initialMapping={uploadData.mapping}
               targetColumns={TARGET_SCHEMA_COLUMNS}
@@ -275,12 +275,12 @@ export default function UploadWizard() {
               <p style={{ fontSize: "12px", color: "var(--text-secondary)", marginBottom: "24px" }}>
                 Updating demographics, services, and running churn predictions...
               </p>
-              
+
               <div className="processing-log" style={{ maxWidth: "600px" }}>
                 <AgentLog entries={[
-                  {time: "SYS", tag: "info", message: "Synchronizing database shards..."}, 
-                  {time: "SYS", tag: "info", message: "Initializing LLM reasoning engine..."},
-                  {time: "SYS", tag: "info", message: "Mapping customer demographics..."}
+                  { time: "SYS", tag: "info", message: "Synchronizing database shards..." },
+                  { time: "SYS", tag: "info", message: "Initializing LLM reasoning engine..." },
+                  { time: "SYS", tag: "info", message: "Mapping customer demographics..." }
                 ]} />
               </div>
             </div>
@@ -312,7 +312,7 @@ export default function UploadWizard() {
           </div>
 
           <div className="success-actions">
-            <button 
+            <button
               className="button button-primary"
               onClick={reset}
               style={{
