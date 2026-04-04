@@ -91,6 +91,7 @@ export default function OutreachTab() {
               customer_id: c.customer_id || c["Customer ID"],
               name: c.name || `Customer ${c.customer_id}`,
               email: c.email || `${(c.customer_id || "unknown").toLowerCase()}@client.com`,
+              phone: c.mobile_number || "",
               state: c.state,
               churn_reason: c.churn_reason,
               rationale: c.rationale

@@ -119,13 +119,17 @@ def save_offer_cohort_document(payload: SaveOfferPlanRequest):
             cids = [id for id in cids if id.strip()]
             
             if cids:
-                # Query Postgres 'merged' table for Name and Email
-                query = text("SELECT \"Customer ID\", \"Name\", \"email\" FROM public.\"merged\" WHERE \"Customer ID\" IN :cids")
+                # Query Postgres 'merged' table for Name, Email, and Mobile Number
+                query = text("SELECT \"Customer ID\", \"Name\", \"email\", \"mobile_number\" FROM public.\"merged\" WHERE \"Customer ID\" IN :cids")
                 with engine.connect() as conn:
                     result = conn.execute(query, {"cids": tuple(cids)})
                     for row in result:
                         m = row._mapping
-                        customer_data_map[str(m["Customer ID"])] = {"name": m["Name"], "email": m["email"]}
+                        customer_data_map[str(m["Customer ID"])] = {
+                            "name": m["Name"], 
+                            "email": m["email"],
+                            "mobile_number": m["mobile_number"]
+                        }
         except Exception as e:
             print(f"Postgres Enrichment Error: {e}")
 
@@ -133,10 +137,13 @@ def save_offer_cohort_document(payload: SaveOfferPlanRequest):
     enriched_customers = []
     for c in payload.customers:
         cid = str(c.get("customer_id") or c.get("Customer ID", ""))
+        # Use DB data if found, fallback to existing or defaults
         extra = customer_data_map.get(cid, {
-            "name": c.get("name") or f"Customer {cid}", 
-            "email": c.get("email") or f"{cid.lower()}@client.com"
+            "name": c.get("name") or c.get("Name") or f"Customer {cid}", 
+            "email": c.get("email") or c.get("Email") or f"{cid.lower()}@client.com",
+            "mobile_number": c.get("mobile_number") or c.get("Mobile Number") or ""
         })
+        # Merge all data: 1. Payload data, 2. Enriched DB data
         enriched_customers.append({**c, **extra})
 
     try:
