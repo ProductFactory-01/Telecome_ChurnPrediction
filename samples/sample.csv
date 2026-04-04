@@ -1,0 +1,11 @@
+SubscriberID,Client Name,MailAddress,Sex,CustomerAge,Senior,IsMarried,HasDependents,MonthsTenure,ProvidesPhone,MultiLine,WebType,SecurityService,CloudBackup,ProtectionSelected,SupportService,TVStreaming,MovieStreaming,AgreementType,DigitalBilling,PayType,MonthlyFee,GrandTotal,LocationCity,PostalCode,Lat,Lng,Internet service
+TEST-MIX-023,Harish Kumar,harish.k@test.com,Male,30,No,No,No,4,Yes,No,DSL,No,No,No,No,No,No,Month-to-Month,Yes,Electronic check,42.0,168.0,Chennai,600002,13.0829,80.2710,Yes
+TEST-MIX-024,Swathi Reddy,swathi.r@test.com,Female,35,No,Yes,Yes,48,Yes,Yes,Fiber Optic,Yes,Yes,Yes,Yes,Yes,Yes,Two Year,No,Credit Card,98.0,4704.0,Hyderabad,500002,17.3855,78.4870,Yes
+TEST-MIX-025,Imran Khan,imran.k@test.com,Male,27,No,No,No,2,Yes,No,DSL,No,No,No,No,No,No,Month-to-Month,Yes,Electronic check,39.0,78.0,Mumbai,400003,19.0770,72.8785,Yes
+TEST-MIX-026,Lakshmi Iyer,lakshmi.i@test.com,Female,50,Yes,Yes,No,60,Yes,Yes,Fiber Optic,Yes,Yes,Yes,Yes,Yes,Yes,Two Year,Yes,Bank Transfer,110.0,6600.0,Bangalore,560003,12.9720,77.5940,Yes
+TEST-MIX-027,Arvind Das,,Male,41,No,Yes,Yes,36,Yes,Yes,Fiber Optic,Yes,,Yes,Yes,Yes,Yes,One Year,Yes,Credit Card,90.0,3240.0,Kolkata,700002,22.5730,88.3645,Yes
+TEST-MIX-028,Neeraj Singh,neeraj.s@test.com,Male,33,No,Yes,No,24,Yes,Yes,Fiber Optic,Yes,Yes,Yes,Yes,Yes,Yes,One Year,Yes,Credit Card,85.0,2040.0,Delhi,110003,28.7050,77.1030,Yes
+TEST-MIX-029,Priya Nair,priya.n@test.com,Female,29,No,No,No,6,Yes,No,DSL,No,Yes,No,No,No,No,Month-to-Month,Yes,UPI,50.0,300.0,Kochi,682003,9.9320,76.2685,Yes
+TEST-MIX-030,Rohit Sharma,rohit.s@test.com,Male,38,No,Yes,Yes,72,Yes,Yes,Fiber Optic,Yes,Yes,Yes,Yes,Yes,Yes,Two Year,No,Bank Transfer,115.0,8280.0,Pune,411003,18.5210,73.8580,Yes
+TEST-MIX-031,Anita Verma,anita.v@test.com,Female,44,No,Yes,No,18,Yes,No,DSL,Yes,Yes,No,No,No,No,One Year,Yes,UPI,60.0,1080.0,Jaipur,302002,26.9130,75.7880,Yes
+TEST-MIX-032,Karthik Raj,karthik.r@test.com,Male,26,No,No,No,3,Yes,No,DSL,No,No,No,No,No,No,Month-to-Month,Yes,Electronic check,41.0,123.0,Coimbatore,641001,11.0168,76.9558,Yes
