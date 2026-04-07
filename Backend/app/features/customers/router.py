@@ -22,7 +22,7 @@ async def get_customers(
     try:
         # Load only necessary columns for the list view
         cols = ['"Customer ID"', '"Name"', '"Gender"', '"Tenure in Months"', '"Churn Label"', '"City"']
-        query = f"SELECT {', '.join(cols)} FROM merged"
+        query = f"SELECT {', '.join(cols)} FROM source"
         df = pd.read_sql(query, engine)
         
         # Clean column names (remove double quotes)
@@ -76,7 +76,7 @@ async def get_customer_details(customer_id: str):
         
     try:
         # Query the exact customer row for the detail view.
-        query = text('SELECT * FROM merged WHERE "Customer ID" = :customer_id')
+        query = text('SELECT * FROM source WHERE "Customer ID" = :customer_id')
         df = pd.read_sql(query, engine, params={"customer_id": customer_id})
         
         if df.empty:

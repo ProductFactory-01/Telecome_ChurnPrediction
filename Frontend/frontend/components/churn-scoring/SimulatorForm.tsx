@@ -1,5 +1,6 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import * as h3 from "h3-js";
 
 interface FormData {
   Gender: string; SeniorCitizen: boolean; Partner: boolean; Dependents: boolean;
@@ -8,6 +9,14 @@ interface FormData {
   StreamingTV: boolean; StreamingMovies: boolean; Contract: string; PaperlessBilling: boolean;
   PaymentMethod: string; MonthlyCharges: number; TotalCharges: number;
   Latitude: number; Longitude: number;
+  // Core GenAI Fields
+  Age: number; Married: boolean; NumberOfDependents: number; Under30: boolean;
+  InternetType: string; AvgMonthlyGBDownload: number; UnlimitedData: boolean;
+  SatisfactionScore: number; DroppedCalls: number; Latency: number; SignalStrength: number;
+  StreamingMusic: boolean; Jitter: number; PacketLoss: number; Throughput: number;
+  Complaint: string; ComplaintType: string; ComplaintFrequency: number;
+  PaymentDelay: number; DeviceCapability: string; PlanChangeTracking: number;
+  HexId: string;
 }
 
 interface Props {
@@ -42,6 +51,12 @@ export default function SimulatorForm({ onPredict, onReset, loading, result }: P
     StreamingTV: false, StreamingMovies: false, Contract: "Month-to-month", PaperlessBilling: true,
     PaymentMethod: "Electronic check", MonthlyCharges: 75, TotalCharges: 450,
     Latitude: 13.0827, Longitude: 80.2707,
+    Age: 35, Married: false, NumberOfDependents: 0, Under30: false, InternetType: "Fiber optic",
+    AvgMonthlyGBDownload: 21.0, UnlimitedData: true, SatisfactionScore: 3,
+    DroppedCalls: 0, Latency: 45, SignalStrength: 65, StreamingMusic: false,
+    Jitter: 5.0, PacketLoss: 0.0, Throughput: 100.0, Complaint: "None",
+    ComplaintType: "None", ComplaintFrequency: 0, PaymentDelay: 0,
+    DeviceCapability: "4G", PlanChangeTracking: 0, HexId: h3.latLngToCell(13.0827, 80.2707, 5)
   });
 
   const set = (key: string, val: any) => {
@@ -49,6 +64,13 @@ export default function SimulatorForm({ onPredict, onReset, loading, result }: P
       const next = { ...p, [key]: val };
       if (key === "TenureMonths" || key === "MonthlyCharges") {
         next.TotalCharges = parseFloat((next.TenureMonths * next.MonthlyCharges).toFixed(2));
+      }
+      if (key === "Latitude" || key === "Longitude") {
+        try {
+          next.HexId = h3.latLngToCell(Number(next.Latitude) || 0, Number(next.Longitude) || 0, 5);
+        } catch {
+          next.HexId = "Invalid";
+        }
       }
       return next;
     });
@@ -110,6 +132,7 @@ export default function SimulatorForm({ onPredict, onReset, loading, result }: P
                 </div>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
                   <Toggle label="Senior" field="SeniorCitizen" />
+                  <Toggle label="Under 30" field="Under30" />
                   <Toggle label="Partner" field="Partner" />
                   <Toggle label="Dependents" field="Dependents" />
                   <Toggle label="Paperless" field="PaperlessBilling" />
@@ -122,12 +145,15 @@ export default function SimulatorForm({ onPredict, onReset, loading, result }: P
           <div className="card" style={{ padding: 24 }}>
             <SECTION icon="⚙️" title="Service Selection">
               <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
                   <Field label="Internet">
                     <SelectField field="InternetService" options={["DSL", "Fiber optic", "No"]} />
                   </Field>
+                  <Field label="Type">
+                    <SelectField field="InternetType" options={["Cable", "Fiber optic", "DSL"]} />
+                  </Field>
                   <Field label="Payment">
-                    <SelectField field="PaymentMethod" options={["Electronic check", "Mailed check", "Bank transfer (automatic)", "Credit card (automatic)"]} />
+                    <SelectField field="PaymentMethod" options={["Electronic check", "Mailed check", "Bank transfer", "Credit card"]} />
                   </Field>
                 </div>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
@@ -139,6 +165,7 @@ export default function SimulatorForm({ onPredict, onReset, loading, result }: P
                   <Toggle label="Protection" field="DeviceProtection" />
                   <Toggle label="Streaming TV" field="StreamingTV" />
                   <Toggle label="Movies" field="StreamingMovies" />
+                  <Toggle label="Music" field="StreamingMusic" />
                 </div>
               </div>
             </SECTION>
@@ -146,20 +173,21 @@ export default function SimulatorForm({ onPredict, onReset, loading, result }: P
         </div>
 
         {/* Row 2: Usage & Location Intelligence */}
-        <div className="card" style={{ padding: 24, flex: 1, display: "flex", flexDirection: "column" }}>
+        <div className="card" style={{ padding: 24, display: "flex", flexDirection: "column" }}>
           <SECTION icon="📍" title="Usage & Location Intelligence">
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 32, flex: 1 }} className="max-md:grid-cols-1">
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 32 }} className="max-md:grid-cols-1">
 
               {/* Sliders */}
               <div style={{ display: "flex", flexDirection: "column", gap: 24, justifyContent: "center" }}>
                 {[
                   { label: "Tenure (Months)", field: "TenureMonths" as keyof FormData, min: 0, max: 72, unit: "mo", color: "#2563eb" },
                   { label: "Monthly Charge ($)", field: "MonthlyCharges" as keyof FormData, min: 18, max: 120, unit: "$", color: "#2563eb" },
+                  { label: "Avg Data Usage (GB)", field: "AvgMonthlyGBDownload" as keyof FormData, min: 0, max: 150, unit: "GB", color: "#10b981" },
                 ].map(({ label, field, min, max, unit, color }) => (
                   <div key={field}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
                       <span style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.06em" }}>{label}</span>
-                      <span style={{ fontSize: 14, fontWeight: 800, color, background: "#eff6ff", border: "1.5px solid #bfdbfe", padding: "2px 12px", borderRadius: 8 }}>
+                      <span style={{ fontSize: 14, fontWeight: 800, color, background: "#eff6ff", border: `1.5px solid ${color}40`, padding: "2px 12px", borderRadius: 8 }}>
                         {unit === "$" ? `$${form[field]}` : `${form[field]} ${unit}`}
                       </span>
                     </div>
@@ -185,13 +213,19 @@ export default function SimulatorForm({ onPredict, onReset, loading, result }: P
                       style={{ padding: "10px 12px", borderRadius: 10, border: "1.5px solid #e2e8f0", fontSize: 13, fontWeight: 600, color: "#0f172a", background: "#fff", width: "100%" }} />
                   </Field>
                 </div>
+                
+                {/* Hex ID Preview */}
+                <div style={{ padding: "8px 12px", background: "#f8fafc", borderRadius: 8, border: "1px solid #e2e8f0", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span style={{ fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase" }}>Calculated Hex ID</span>
+                  <span style={{ fontSize: 12, fontWeight: 800, color: "#0f172a", fontFamily: "monospace" }}>{form.HexId}</span>
+                </div>
 
                 {/* Total Charges */}
                 <div style={{ background: "#f8fafc", border: "1.5px solid #e2e8f0", borderRadius: 14, padding: "16px 18px" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
                     <div>
                       <div style={{ fontSize: 10, fontWeight: 800, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 2 }}>Lifetime Revenue</div>
-                      <div style={{ fontSize: 10, color: "#cbd5e1", fontStyle: "italic" }}>Auto-calculated from tenure × monthly</div>
+                      <div style={{ fontSize: 10, color: "#cbd5e1", fontStyle: "italic" }}>Auto-calculated</div>
                     </div>
                     <span style={{ fontSize: 20, fontWeight: 900, color: "#2563eb" }}>${form.TotalCharges.toLocaleString()}</span>
                   </div>
@@ -204,6 +238,88 @@ export default function SimulatorForm({ onPredict, onReset, loading, result }: P
             </div>
           </SECTION>
         </div>
+
+        {/* Row 3: Live Network & Engagement Metrics */}
+        <div className="card" style={{ padding: 24, display: "flex", flexDirection: "column" }}>
+          <SECTION icon="📶" title="Network Health & Engagement (Real-Time)">
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 32 }} className="max-md:grid-cols-1">
+              
+              {/* Sliders: Network & Sat */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                {[
+                  { label: "Satisfaction Score", field: "SatisfactionScore" as keyof FormData, min: 1, max: 5, unit: "⭐", color: "#f59e0b" },
+                  { label: "Latency (ms)", field: "Latency" as keyof FormData, min: 10, max: 200, unit: "ms", color: "#ef4444" },
+                  { label: "Jitter (ms)", field: "Jitter" as keyof FormData, min: 0, max: 100, unit: "ms", color: "#f97316" },
+                  { label: "Packet Loss (%)", field: "PacketLoss" as keyof FormData, min: 0, max: 20, unit: "%", color: "#eab308" },
+                  { label: "Signal Strength", field: "SignalStrength" as keyof FormData, min: 20, max: 100, unit: "%", color: "#10b981" },
+                  { label: "Throughput (Mbps)", field: "Throughput" as keyof FormData, min: 0, max: 1000, unit: "Mbps", color: "#3b82f6" },
+                ].map(({ label, field, min, max, unit, color }) => (
+                  <div key={field}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.06em" }}>{label}</span>
+                      <span style={{ fontSize: 13, fontWeight: 800, color, background: `${color}15`, padding: "2px 10px", borderRadius: 6 }}>
+                        {form[field]} {unit}
+                      </span>
+                    </div>
+                    <input type="range" min={min} max={max} value={form[field] as number} onChange={(e) => set(field, +e.target.value)}
+                      style={{ width: "100%", accentColor: color, height: 6, cursor: "pointer" }} />
+                  </div>
+                ))}
+              </div>
+
+              {/* Extra Counters and Support Logic */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                  <Field label="Age">
+                    <input type="number" value={form.Age} onChange={(e) => set("Age", +e.target.value)}
+                      style={{ padding: "10px 12px", borderRadius: 10, border: "1.5px solid #e2e8f0", fontSize: 13, fontWeight: 600, color: "#0f172a", width: "100%" }} />
+                  </Field>
+                  <Field label="Dependents">
+                    <input type="number" min={0} value={form.NumberOfDependents} onChange={(e) => set("NumberOfDependents", +e.target.value)}
+                      style={{ padding: "10px 12px", borderRadius: 10, border: "1.5px solid #e2e8f0", fontSize: 13, fontWeight: 600, color: "#0f172a", width: "100%" }} />
+                  </Field>
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+                  <Toggle label="Married" field="Married" />
+                  <Toggle label="Unlimited Data" field="UnlimitedData" />
+                </div>
+                
+                <div style={{ padding: "12px", background: "#f8fafc", borderRadius: 12, border: "1.5px dashed #cbd5e1", display: "flex", flexDirection: "column", gap: 12 }}>
+                  <div style={{ fontSize: 10, fontWeight: 800, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.1em" }}>Device & Support History</div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                    <Field label="Device Capability">
+                      <SelectField field="DeviceCapability" options={["3G", "4G", "5G", "VoLTE"]} />
+                    </Field>
+                    <Field label="Complaint Type">
+                      <SelectField field="ComplaintType" options={["None", "Network", "Billing", "Customer Service", "Other"]} />
+                    </Field>
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                    <Field label="Complaint Freq.">
+                      <input type="number" min={0} value={form.ComplaintFrequency} onChange={(e) => set("ComplaintFrequency", +e.target.value)}
+                        style={{ padding: "10px 12px", borderRadius: 10, border: "1.5px solid #e2e8f0", fontSize: 13, fontWeight: 600, color: "#0f172a", width: "100%" }} />
+                    </Field>
+                    <Field label="Payment Delay (Days)">
+                      <input type="number" min={0} value={form.PaymentDelay} onChange={(e) => set("PaymentDelay", +e.target.value)}
+                        style={{ padding: "10px 12px", borderRadius: 10, border: "1.5px solid #e2e8f0", fontSize: 13, fontWeight: 600, color: "#0f172a", width: "100%" }} />
+                    </Field>
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                    <Field label="Dropped Calls">
+                      <input type="number" min={0} value={form.DroppedCalls} onChange={(e) => set("DroppedCalls", +e.target.value)}
+                        style={{ padding: "10px 12px", borderRadius: 10, border: "1.5px solid #e2e8f0", fontSize: 13, fontWeight: 600, color: "#0f172a", width: "100%" }} />
+                    </Field>
+                    <Field label="Plan Changes">
+                      <input type="number" min={0} value={form.PlanChangeTracking} onChange={(e) => set("PlanChangeTracking", +e.target.value)}
+                        style={{ padding: "10px 12px", borderRadius: 10, border: "1.5px solid #e2e8f0", fontSize: 13, fontWeight: 600, color: "#0f172a", width: "100%" }} />
+                    </Field>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </SECTION>
+        </div>
+
       </div>
 
       {/* ── RIGHT: Outcome Panel ── */}

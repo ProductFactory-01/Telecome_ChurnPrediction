@@ -42,12 +42,12 @@ def get_ops_metrics(engine):
             "Status": ["Satisfaction Score", "Customer Status", "Churn Label"]
         }
         health_labels, health_values = [], []
-        total_records = pd.read_sql('SELECT COUNT(*) FROM merged', engine).iloc[0, 0]
+        total_records = pd.read_sql('SELECT COUNT(*) FROM source', engine).iloc[0, 0]
         
         if total_records > 0:
             for domain, cols in domains.items():
                 col_list = ", ".join([f'"{c}"' for c in cols])
-                df_domain = pd.read_sql(f'SELECT {col_list} FROM merged', engine)
+                df_domain = pd.read_sql(f'SELECT {col_list} FROM source', engine)
                 completeness = round((df_domain.notna().sum().sum() / (total_records * len(cols))) * 100, 1)
                 health_labels.append(domain)
                 health_values.append(completeness)
@@ -91,7 +91,7 @@ def get_crm_metrics(engine):
         except: pass
 
     try:
-        df = pd.read_sql('SELECT "Churn Score", "Satisfaction Score" FROM merged', engine)
+        df = pd.read_sql('SELECT "Churn Score", "Satisfaction Score" FROM source', engine)
         high_risk_count = int((df["Churn Score"] > 70).sum())
         avg_sat = round(df["Satisfaction Score"].mean(), 1) if not df.empty else 0
         
@@ -121,14 +121,14 @@ def get_strategy_metrics(engine):
     """Fetch Executive Strategy KPIs: ROI, Revenue at Risk, Overall Churn."""
     labels = ["0-12m", "13-24m", "25-36m", "37-48m", "49-60m", "61m+"]
     try:
-        # Use existing logic from overview and impact
-        df = pd.read_sql('SELECT "CLTV", "Churn Label", "Churn Score", "Total Revenue", "Tenure Months" FROM merged', engine)
+        # Query source table directly
+        df = pd.read_sql('SELECT "CLTV", "Churn Label", "Churn Score", "Total Revenue", "Tenure in Months" FROM source', engine)
         rev_at_risk = f"${int(df[df['Churn Score'] > 70]['CLTV'].sum() / 1000)}K"
         churn_rate = f"{round((df['Churn Label'] == 'Yes').mean() * 100, 1)}%"
         
         # Churn Trend (Real Logic)
         bins = [0, 12, 24, 36, 48, 60, 100]
-        df["TenureBucket"] = pd.cut(df["Tenure Months"], bins=bins, labels=labels, right=True)
+        df["TenureBucket"] = pd.cut(df["Tenure in Months"], bins=bins, labels=labels, right=True)
         real_trend = df.groupby("TenureBucket", observed=False)["Churn Label"].apply(lambda x: (x == "Yes").mean() * 100).fillna(0).round(1).tolist()
         hist_baseline = [30.5, 29.8, 25.1, 23.4, 18.0, 15.2]
 
@@ -136,6 +136,8 @@ def get_strategy_metrics(engine):
         total_rev = df["CLTV"].sum()
         revenue_protected = f"${int((total_rev * 0.08) / 1000)}K" # 8% assumed protection rate for dashboard
     except:
+        import traceback
+        traceback.print_exc()
         rev_at_risk, churn_rate, real_trend, hist_baseline, revenue_protected = "$0K", "0%", [0]*6, [0]*6, "$0K"
 
     return {

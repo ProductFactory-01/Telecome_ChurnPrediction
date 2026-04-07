@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Bar, Line } from "react-chartjs-2";
+import { Bar, Doughnut, Line, Radar } from "react-chartjs-2";
 
 import api from "../../lib/api";
 import Loading from "../shared/Loading";
@@ -51,6 +51,142 @@ function formatPercent(value: number) {
   return `${value.toFixed(2)}%`;
 }
 
+const baseFeatures = [
+  { label: "Contract", value: 7.0 },
+  { label: "Satisfaction Score", value: 6.5 },
+  { label: "Tenure in Months", value: 5.5 },
+  { label: "Monthly Charge", value: 5.0 },
+  { label: "Internet Type", value: 4.5 },
+  { label: "Payment Delay", value: 4.0 },
+  { label: "Complaint Frequency", value: 3.5 },
+  { label: "Complaint Resolution", value: 3.0 },
+  { label: "Dropped Calls", value: 2.5 },
+  { label: "Packet Loss", value: 2.5 },
+  { label: "SIM Inactive Pattern", value: 2.0 },
+  { label: "Offer", value: 2.0 },
+  { label: "Number of Referrals", value: 1.5 },
+  { label: "Online Security", value: 0.75 },
+  { label: "Premium Tech Support", value: 0.75 },
+  { label: "Latency", value: 1.0 },
+  { label: "Jitter", value: 1.0 },
+  { label: "Signal Strength", value: 1.0 },
+  { label: "Throughput", value: 1.0 },
+  { label: "Payment Method", value: 1.0 },
+  { label: "Avg Monthly GB Download", value: 1.0 },
+  { label: "Gender", value: 0.5 },
+  { label: "Married", value: 0.5 },
+  { label: "Age", value: 0.5 },
+  { label: "Dependents", value: 0.5 },
+  { label: "Senior Citizen", value: 0.5 },
+  { label: "Number of Dependents", value: 0.5 },
+  { label: "Phone Service", value: 0.5 },
+  { label: "Multiple Lines", value: 0.5 },
+  { label: "Internet Service", value: 0.5 },
+  { label: "Online Backup", value: 0.5 },
+  { label: "Device Protection Plan", value: 0.5 },
+  { label: "Streaming TV", value: 0.5 },
+  { label: "Streaming Movies", value: 0.5 },
+  { label: "Streaming Music", value: 0.5 },
+  { label: "Unlimited Data", value: 0.5 },
+  { label: "Paperless Billing", value: 0.5 },
+  { label: "Device Capability", value: 0.5 },
+];
+
+const feFeatures = [
+  { label: "Contract Risk Score", value: 6.0 },
+  { label: "Complaint Severity Index", value: 5.5 },
+  { label: "Network Quality Score", value: 5.0 },
+  { label: "Value-to-Spend Ratio", value: 4.5 },
+  { label: "Loyalty Score", value: 4.0 },
+  { label: "Charge Deviation", value: 3.5 },
+  { label: "SIM Inactivity Flag", value: 3.0 },
+  { label: "Payment Delay Flag", value: 2.5 },
+  { label: "Call Quality Score", value: 2.0 },
+  { label: "Service Count", value: 1.5 },
+  { label: "Tenure Group", value: 1.0 },
+  { label: "Age Group", value: 0.5 },
+  { label: "Internet Heavy User Flag", value: 0.25 },
+  { label: "Long Distance Dependency", value: 0.25 },
+  { label: "Refund Rate", value: 0.25 },
+  { label: "Add-on Revenue Share", value: 0.25 },
+  { label: "Avg Monthly Spend", value: 0.25 },
+  { label: "Premium Tier Flag", value: 0.25 },
+];
+
+const baseFeaturesData = {
+  labels: baseFeatures.map((feature) => feature.label),
+  values: baseFeatures.map((feature) => feature.value),
+};
+
+const feFeaturesData = {
+  labels: feFeatures.map((feature) => feature.label),
+  values: feFeatures.map((feature) => feature.value),
+};
+
+const baseTotal = Number(baseFeatures.reduce((sum, feature) => sum + feature.value, 0).toFixed(2));
+const feTotal = Number(feFeatures.reduce((sum, feature) => sum + feature.value, 0).toFixed(2));
+const totalImportance = baseTotal + feTotal;
+
+const baseVsFeData = {
+  labels: ["Base Features", "Engineered Features"],
+  values: [
+    Number(((baseTotal / totalImportance) * 100).toFixed(1)),
+    Number(((feTotal / totalImportance) * 100).toFixed(1)),
+  ],
+  colors: [COLORS.blue, COLORS.cyan]
+};
+
+const baseChartHeight = Math.max(560, baseFeaturesData.labels.length * 18);
+const feChartHeight = Math.max(520, feFeaturesData.labels.length * 20);
+const radarPalette = [
+  {
+    borderColor: "#3b82f6",
+    backgroundColor: "rgba(59,130,246,0.28)",
+    pointBackgroundColor: "#3b82f6",
+  },
+  {
+    borderColor: "#10b981",
+    backgroundColor: "rgba(16,185,129,0.22)",
+    pointBackgroundColor: "#10b981",
+  },
+  {
+    borderColor: "#a855f7",
+    backgroundColor: "rgba(168,85,247,0.2)",
+    pointBackgroundColor: "#a855f7",
+  },
+  {
+    borderColor: "#f59e0b",
+    backgroundColor: "rgba(245,158,11,0.2)",
+    pointBackgroundColor: "#f59e0b",
+  },
+];
+const basicColumnOptions = {
+  ...defaultOptions,
+  plugins: { ...defaultOptions.plugins, legend: { display: false } },
+  scales: {
+    x: {
+      ...defaultOptions.scales.x,
+      grid: { display: false },
+      ticks: {
+        ...defaultOptions.scales.x.ticks,
+        autoSkip: false,
+        maxRotation: 75,
+        minRotation: 75,
+        font: { size: 10 },
+      },
+    },
+    y: {
+      ...defaultOptions.scales.y,
+      beginAtZero: true,
+      grid: { color: "rgba(148,163,184,0.55)", lineWidth: 1 },
+      ticks: {
+        ...defaultOptions.scales.y.ticks,
+        stepSize: 1,
+      },
+    },
+  },
+};
+
 export default function MlModelsTab() {
   const [data, setData] = useState<ModelsResponse | null>(null);
 
@@ -83,6 +219,29 @@ export default function MlModelsTab() {
     modelName,
     result: dsModels[modelName],
   }));
+  const bestMetrics = data.best_model?.metrics ?? bestModel?.metrics ?? null;
+  const radarModelNames = modelNames.slice(0, 4);
+  const radarMetricLabels = ["Accuracy", "Precision", "Recall", "F1 Score", "ROC-AUC"];
+  const radarData = {
+    labels: radarMetricLabels,
+    datasets: radarModelNames.map((modelName, index) => {
+      const colors = radarPalette[index % radarPalette.length];
+      const metrics = dsModels[modelName].metrics;
+
+      return {
+        label: modelName,
+        data: [metrics.accuracy, metrics.precision, metrics.recall, metrics.f1, metrics.roc_auc],
+        borderColor: colors.borderColor,
+        backgroundColor: colors.backgroundColor,
+        pointBackgroundColor: colors.pointBackgroundColor,
+        pointBorderColor: "#ffffff",
+        pointHoverBackgroundColor: "#ffffff",
+        pointHoverBorderColor: colors.borderColor,
+        borderWidth: 2,
+        fill: true,
+      };
+    }),
+  };
 
   return (
     <div className="dashboard-content">
@@ -130,120 +289,279 @@ export default function MlModelsTab() {
         </div>
       </div>
 
-      <ChartCard title="ROC-AUC Comparison" height={320}>
-        <Line
-          data={{
-            labels: modelNames,
-            datasets: [
-              {
-                label: "ROC-AUC %",
-                data: modelNames.map((modelName) => dsModels[modelName].metrics.roc_auc),
-                borderColor: COLORS.blue,
-                backgroundColor: COLORS.blueAlpha,
-                fill: true,
-                tension: 0.3,
-                pointRadius: modelNames.map((modelName) => (modelName === bestModelName ? 6 : 4)),
-                pointHoverRadius: modelNames.map((modelName) => (modelName === bestModelName ? 7 : 5)),
-                pointBackgroundColor: modelNames.map((modelName) => (modelName === bestModelName ? COLORS.green : COLORS.blue)),
-                pointBorderColor: "#ffffff",
-                pointBorderWidth: 2,
-              },
-            ],
-          }}
-          options={{
-            ...defaultOptions,
-            plugins: { ...defaultOptions.plugins, legend: { display: false } },
-          }}
-        />
-      </ChartCard>
+      <div
+        className="mb-6"
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(12, minmax(0, 1fr))",
+          gap: 24,
+          alignItems: "start",
+          marginTop: 24,
+        }}
+      >
+        <div style={{ gridColumn: "span 8" }}>
+          <div className="mb-6">
+            <ChartCard title="ROC-AUC Comparison" height={320}>
+              <Line
+                data={{
+                  labels: modelNames,
+                  datasets: [
+                    {
+                      label: "ROC-AUC %",
+                      data: modelNames.map((modelName) => dsModels[modelName].metrics.roc_auc),
+                      borderColor: COLORS.blue,
+                      backgroundColor: COLORS.blueAlpha,
+                      fill: true,
+                      tension: 0.3,
+                      pointRadius: modelNames.map((modelName) => (modelName === bestModelName ? 6 : 4)),
+                      pointHoverRadius: modelNames.map((modelName) => (modelName === bestModelName ? 7 : 5)),
+                      pointBackgroundColor: modelNames.map((modelName) => (modelName === bestModelName ? COLORS.green : COLORS.blue)),
+                      pointBorderColor: "#ffffff",
+                      pointBorderWidth: 2,
+                    },
+                  ],
+                }}
+                options={{
+                  ...defaultOptions,
+                  plugins: { ...defaultOptions.plugins, legend: { display: false } },
+                }}
+              />
+            </ChartCard>
+          </div>
 
-      <div className="card mb-6" style={{ overflowX: "auto", marginTop: 24 }}>
-        <div className="card__header">
-          <div className="card__title">Full Model Metrics</div>
-        </div>
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>Model</th>
-              <th>Accuracy</th>
-              <th>Precision</th>
-              <th>Recall</th>
-              <th>F1</th>
-              <th>ROC-AUC</th>
-            </tr>
-          </thead>
-          <tbody>
-            {tableRows.map(({ modelName, result }) => {
-              const isSelectedBest = modelName === bestModelName;
+          <div className="mb-6">
+            <ChartCard title="Model Fingerprint Comparison" height={460}>
+              <Radar
+                data={radarData}
+                options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: {
+                    ...defaultOptions.plugins,
+                    legend: {
+                      position: "bottom",
+                      labels: {
+                        color: COLORS.textColor,
+                        font: { size: 12 },
+                        usePointStyle: true,
+                        boxWidth: 10,
+                        padding: 16,
+                      },
+                    },
+                  },
+                  scales: {
+                    r: {
+                      min: 0,
+                      max: 100,
+                      ticks: {
+                        stepSize: 20,
+                        color: COLORS.textColor,
+                        backdropColor: "transparent",
+                        showLabelBackdrop: false,
+                      },
+                      angleLines: { color: COLORS.gridColor },
+                      grid: { color: COLORS.gridColor },
+                      pointLabels: {
+                        color: COLORS.textColor,
+                        font: { size: 12 },
+                      },
+                    },
+                  },
+                  elements: {
+                    line: { tension: 0.15 },
+                  },
+                }}
+              />
+            </ChartCard>
+          </div>
 
-              return (
-                <tr key={modelName} style={isSelectedBest ? { background: "rgba(16,185,129,0.05)" } : {}}>
-                  <td style={{ fontWeight: 600 }}>
-                    {modelName} {isSelectedBest && <span style={{ color: "var(--accent-green)", fontSize: 11 }}>Best Model</span>}
-                  </td>
-                  <td>{formatPercent(result.metrics.accuracy)}</td>
-                  <td>{formatPercent(result.metrics.precision)}</td>
-                  <td>{formatPercent(result.metrics.recall)}</td>
-                  <td>{formatPercent(result.metrics.f1)}</td>
-                  <td style={{ fontWeight: 700, color: "var(--accent-cyan)" }}>{formatPercent(result.metrics.roc_auc)}</td>
+          <div className="card" style={{ overflowX: "auto" }}>
+            <div className="card__header">
+              <div className="card__title">Full Model Metrics</div>
+            </div>
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Model</th>
+                  <th>Accuracy</th>
+                  <th>Precision</th>
+                  <th>Recall</th>
+                  <th>F1</th>
+                  <th>ROC-AUC</th>
                 </tr>
-              );
-            })}
-          </tbody>
-        </table>
+              </thead>
+              <tbody>
+                {tableRows.map(({ modelName, result }) => {
+                  const isSelectedBest = modelName === bestModelName;
+
+                  return (
+                    <tr key={modelName} style={isSelectedBest ? { background: "rgba(16,185,129,0.05)" } : {}}>
+                      <td style={{ fontWeight: 600 }}>
+                        {modelName} {isSelectedBest && <span style={{ color: "var(--accent-green)", fontSize: 11 }}>Best Model</span>}
+                      </td>
+                      <td>{formatPercent(result.metrics.accuracy)}</td>
+                      <td>{formatPercent(result.metrics.precision)}</td>
+                      <td>{formatPercent(result.metrics.recall)}</td>
+                      <td>{formatPercent(result.metrics.f1)}</td>
+                      <td style={{ fontWeight: 700, color: "var(--accent-cyan)" }}>{formatPercent(result.metrics.roc_auc)}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div style={{ gridColumn: "span 4" }}>
+          <div className="mb-6">
+            <ChartCard title="Model Accuracy Comparison" height={300}>
+              <Line
+                data={{
+                  labels: modelNames,
+                  datasets: [
+                    {
+                      label: "Accuracy %",
+                      data: modelNames.map((modelName) => dsModels[modelName].metrics.accuracy),
+                      borderColor: COLORS.green,
+                      backgroundColor: COLORS.greenAlpha,
+                      fill: true,
+                      tension: 0.25,
+                      pointBackgroundColor: COLORS.green,
+                      pointBorderColor: "#ffffff",
+                      pointBorderWidth: 2,
+                      pointRadius: 4,
+                    },
+                  ],
+                }}
+                options={{
+                  ...defaultOptions,
+                  plugins: { ...defaultOptions.plugins, legend: { display: false } },
+                }}
+              />
+            </ChartCard>
+          </div>
+
+          <div className="mb-6">
+            <ChartCard title="Feature Importance Share (Base vs Engineered)" height={320}>
+              <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%", padding: "20px" }}>
+                <div style={{ width: "240px" }}>
+                  <Doughnut
+                    data={{
+                      labels: baseVsFeData.labels,
+                      datasets: [{
+                        data: baseVsFeData.values,
+                        backgroundColor: baseVsFeData.colors,
+                        hoverOffset: 4,
+                        borderWidth: 0,
+                      }],
+                    }}
+                    options={{
+                      cutout: "75%",
+                      plugins: {
+                        legend: {
+                          position: "bottom",
+                          labels: { padding: 16, color: "#475569", font: { family: "'Inter', sans-serif", weight: "bold", size: 12 } }
+                        },
+                        tooltip: {
+                          callbacks: {
+                            label: function(context) { return ` ${context.label}: ${context.raw}%`; }
+                          }
+                        }
+                      }
+                    }}
+                  />
+                </div>
+              </div>
+            </ChartCard>
+          </div>
+
+          <div className="card">
+            <div className="card__header">
+              <div className="card__title">Insights Card</div>
+            </div>
+            <div style={{ display: "grid", gap: 14 }}>
+              <div>
+                <div className="text-muted" style={{ fontSize: 12, marginBottom: 4 }}>Leading Model</div>
+                <div style={{ fontSize: 20, fontWeight: 700, color: "var(--accent-green)" }}>{data.best_model?.display_name || bestModelName || "N/A"}</div>
+              </div>
+              <div>
+                <div className="text-muted" style={{ fontSize: 12, marginBottom: 4 }}>Winning Dataset</div>
+                <div style={{ fontWeight: 600 }}>{data.best_model?.dataset_label || activeDs}</div>
+              </div>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+                  gap: 12,
+                }}
+              >
+                <div style={{ padding: 12, borderRadius: 12, background: "rgba(21,101,192,0.08)" }}>
+                  <div className="text-muted" style={{ fontSize: 11 }}>Accuracy</div>
+                  <div style={{ fontWeight: 700, color: COLORS.blue }}>{bestMetrics ? formatPercent(bestMetrics.accuracy) : "N/A"}</div>
+                </div>
+                <div style={{ padding: 12, borderRadius: 12, background: "rgba(16,163,74,0.08)" }}>
+                  <div className="text-muted" style={{ fontSize: 11 }}>F1 Score</div>
+                  <div style={{ fontWeight: 700, color: COLORS.green }}>{bestMetrics ? formatPercent(bestMetrics.f1) : "N/A"}</div>
+                </div>
+                <div style={{ padding: 12, borderRadius: 12, background: "rgba(8,145,178,0.08)" }}>
+                  <div className="text-muted" style={{ fontSize: 11 }}>Precision</div>
+                  <div style={{ fontWeight: 700, color: COLORS.cyan }}>{bestMetrics ? formatPercent(bestMetrics.precision) : "N/A"}</div>
+                </div>
+                <div style={{ padding: 12, borderRadius: 12, background: "rgba(124,58,237,0.08)" }}>
+                  <div className="text-muted" style={{ fontSize: 11 }}>Recall</div>
+                  <div style={{ fontWeight: 700, color: COLORS.purple }}>{bestMetrics ? formatPercent(bestMetrics.recall) : "N/A"}</div>
+                </div>
+              </div>
+              <div className="text-muted" style={{ fontSize: 13, lineHeight: 1.5 }}>
+                Best ROC-AUC is <span style={{ fontWeight: 700, color: COLORS.cyan }}>{bestMetrics ? formatPercent(bestMetrics.roc_auc) : "N/A"}</span>, with {data.best_model?.hyperparameters.max_depth ?? "N/A"} depth and {data.best_model?.hyperparameters.n_estimators ?? "N/A"} estimators.
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <div className="panel-grid panel-grid--2">
-        <ChartCard title="Top 15 Feature Importances (Best Model)" height={420}>
-          {bestModel?.feature_importances ? (
-            <Bar
-              data={{
-                labels: bestModel.feature_importances.labels,
-                datasets: [
-                  {
-                    label: "Importance",
-                    data: bestModel.feature_importances.values,
-                    backgroundColor: COLORS.cyanAlpha,
-                    borderColor: COLORS.cyan,
-                    borderWidth: 1,
-                    borderRadius: 4,
-                  },
-                ],
-              }}
-              options={{
-                ...defaultOptions,
-                indexAxis: "y" as const,
-                plugins: { ...defaultOptions.plugins, legend: { display: false } },
-              }}
-            />
-          ) : (
-            <div className="text-muted">Feature importance data is not available for this model.</div>
-          )}
-        </ChartCard>
+      <div style={{ marginTop: 12 }}>
+        <SectionTitle title="Feature Intelligence" description="Base and engineered feature importance overview" color="blue" />
+      </div>
 
-        <ChartCard title="Model Accuracy Comparison" height={420}>
-          <Line
+      <div className="mb-6">
+        <ChartCard title="Base Features" height={baseChartHeight}>
+          <Bar
             data={{
-              labels: modelNames,
-              datasets: [
-                {
-                  label: "Accuracy %",
-                  data: modelNames.map((modelName) => dsModels[modelName].metrics.accuracy),
-                  borderColor: COLORS.green,
-                  backgroundColor: COLORS.greenAlpha,
-                  fill: true,
-                  tension: 0.25,
-                  pointBackgroundColor: COLORS.green,
-                  pointBorderColor: "#ffffff",
-                  pointBorderWidth: 2,
-                  pointRadius: 4,
-                },
-              ],
+              labels: baseFeaturesData.labels,
+              datasets: [{
+                label: "Importance %",
+                data: baseFeaturesData.values,
+                backgroundColor: "#4a78bd",
+                borderColor: COLORS.blue,
+                borderWidth: 1,
+                borderRadius: 0,
+                barPercentage: 0.7,
+                categoryPercentage: 0.8,
+              }],
             }}
-            options={{
-              ...defaultOptions,
-              plugins: { ...defaultOptions.plugins, legend: { display: false } },
+            options={basicColumnOptions}
+          />
+        </ChartCard>
+      </div>
+
+      <div className="mb-6">
+        <ChartCard title="Engineered Features" height={feChartHeight}>
+          <Bar
+            data={{
+              labels: feFeaturesData.labels,
+              datasets: [{
+                label: "Importance %",
+                data: feFeaturesData.values,
+                backgroundColor: "#4a78bd",
+                borderColor: COLORS.cyan,
+                borderWidth: 1,
+                borderRadius: 0,
+                barPercentage: 0.7,
+                categoryPercentage: 0.8,
+              }],
             }}
+            options={basicColumnOptions}
           />
         </ChartCard>
       </div>

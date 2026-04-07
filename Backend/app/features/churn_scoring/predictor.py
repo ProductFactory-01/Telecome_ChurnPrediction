@@ -1,134 +1,81 @@
 import os
 import json
-import numpy as np
-import joblib
 from langchain_core.prompts import ChatPromptTemplate
-
-try:
-    import h3
-except ImportError:
-    h3 = None
-
-from service.llm import get_groq_llm, try_groq_json
+from service.llm import get_groq_llm
 from .schemas import CustomerInput
 
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
-# Resolve model path relative to this file
-_BACKEND_ROOT = os.path.join(os.path.dirname(__file__), "..", "..", "..")
-_MODEL_PATH = os.path.join(_BACKEND_ROOT, "model", "churn_model_v1.pkl")
-
-_model = None
-
-def get_model():
-    global _model
-    if _model is not None:
-        return _model
-        
-    try:
-        import joblib
-        model_data = joblib.load(_MODEL_PATH)
-        _model = model_data["model"]
-        print(f"✓ Prediction model loaded from {_MODEL_PATH}")
-    except Exception as e:
-        print(f"⚠ Could not load prediction model: {e}")
-        _model = None
-        
-    return _model
-
-
-def latlng_to_numeric_cell(latitude: float, longitude: float, resolution: int = 5) -> int:
-    if h3 is not None:
-        hex_id = h3.latlng_to_cell(latitude, longitude, resolution)
-        return int(hex_id, 16) % 100000
-    return abs(hash((round(latitude, 6), round(longitude, 6), resolution))) % 100000
-
-
-def get_fallback_reason(prob: float, data: CustomerInput):
-    # Mapping based on user provided table
-    if prob < 0.4:
-        return {"main_category": "Stable", "sub_category": "Loyal", "reason": f"No immediate risk detected given stable {data.TenureMonths}-month tenure."}
+def get_fallback_prediction(data: CustomerInput) -> dict:
+    """Fallback logic if LLM is unavailable or fails."""
+    # Simple heuristic
+    prob = 0.2
+    if data.MonthlyCharges > 85 or data.SatisfactionScore < 3 or data.Latency > 80:
+        prob += 0.4
+    if data.Contract == "Month-to-month" or data.TenureMonths < 12:
+        prob += 0.3
     
-    if data.MonthlyCharges > 80 and data.TenureMonths < 12:
-        return {"main_category": "Price-Sensitive", "sub_category": "Price Issue", "reason": f"High pricing of ${data.MonthlyCharges} combined with early tenure ({data.TenureMonths}mo) creates flight risk."}
-    elif not data.TechSupport and data.InternetService == "Fiber optic":
-        return {"main_category": "Customer Experience Issues", "sub_category": "Support Issue", "reason": f"Premium Fiber users paying ${data.MonthlyCharges} without tech support report lower network satisfaction."}
-    elif data.Contract == "Month-to-month":
-        return {"main_category": "Plan & Product Mismatch", "sub_category": "Competitor", "reason": "Unsecured month-to-month contract provides zero barrier to competitor switching."}
-    return {"main_category": "Low Engagement", "sub_category": "Other", "reason": f"High probability risk detected based on combination of ${data.MonthlyCharges}/mo pricing and {data.TenureMonths}-month history."}
-
-
-def get_llm_churn_reason(prob, data: CustomerInput):
-    # Mapping Table Context for AI
-    mapping_table = """
-    Main Category                | Sub Category
-    -----------------------------|---------------
-    Price-Sensitive              | Price Issue
-    Low Engagement               | Other
-    Plan & Product Mismatch      | Competitor
-    Customer Experience Issues   | Service Issue, Support Issue
-    High-Value Customer Risk     | Other, Personal Reason
-    Demographics                 | Personal Reason
-    Geography                    | Service Issue
-    Behavior                     | Other
-    Billing                      | Price Issue
-    Product Adoption Gap         | Competitor, Other
-    """
-
-    if not GROQ_API_KEY:
-        print("⚠ No GROQ_API_KEY found, using fallback reasons.")
-        return get_fallback_reason(prob, data)
+    prob = min(prob, 0.95)
+    is_churn = 1 if prob > 0.5 else 0
     
-    prompt = {
-        "churn_probability": prob,
+    reason = {"main_category": None, "sub_category": None, "reason": None}
+    
+    if is_churn:
+        if data.SatisfactionScore < 3 or data.Latency > 80:
+            reason = {"main_category": "Customer Experience Issues", "sub_category": "Service Issue", "reason": "High latency and low satisfaction leading to flight risk."}
+        elif data.MonthlyCharges > 85:
+            reason = {"main_category": "Price-Sensitive", "sub_category": "Price Issue", "reason": f"High pricing of ${data.MonthlyCharges} drives competitor seeking."}
+        else:
+            reason = {"main_category": "Low Engagement", "sub_category": "Other", "reason": "Combination of short tenure and contract type indicates risk."}
+
+    return {
+        "churn_probability": round(prob, 4),
+        "churn_prediction": is_churn,
         "risk_level": "High" if prob > 0.7 else "Medium" if prob > 0.4 else "Low",
-        "feature_context": {
-            "TenureMonths_Scale": "0 to 72 months",
-            "MonthlyCharges_Scale": "$18 to $120 ($18 is LOW, >$85 is HIGH)",
-            "TotalCharges_Scale": "Cumulative spend over tenure"
-        },
-        "customer_profile": {
-            "Gender": data.Gender,
-            "SeniorCitizen": data.SeniorCitizen,
-            "Partner": data.Partner,
-            "Dependents": data.Dependents,
-            "TenureMonths": data.TenureMonths,
-            "PhoneService": data.PhoneService,
-            "MultipleLines": data.MultipleLines,
-            "InternetService": data.InternetService,
-            "OnlineSecurity": data.OnlineSecurity,
-            "OnlineBackup": data.OnlineBackup,
-            "DeviceProtection": data.DeviceProtection,
-            "TechSupport": data.TechSupport,
-            "StreamingTV": data.StreamingTV,
-            "StreamingMovies": data.StreamingMovies,
-            "Contract": data.Contract,
-            "PaperlessBilling": data.PaperlessBilling,
-            "PaymentMethod": data.PaymentMethod,
-            "MonthlyCharges": data.MonthlyCharges,
-            "TotalCharges": data.TotalCharges,
-            "Latitude": data.Latitude,
-            "Longitude": data.Longitude
-        },
-        "mapping_rules": {
-            "Plan & Product Mismatch | Competitor": "Use for month-to-month contracts or short tenure where the user can easily leave.",
-            "Price-Sensitive | Price Issue": "Use for MonthlyCharges > $85 or high charges without enough services.",
-            "Geography | Service Issue": "Use if local factors (Latitude/Longitude) are relevant to the diagnosis.",
-            "Customer Experience Issues | Support Issue": "Use if lack of TechSupport or OnlineSecurity is the driver.",
-            "Low Engagement | Other": "Only use if no other specific category applies."
-        },
+        "churn_reason": reason,
+    }
+
+
+def predict_churn(customer: CustomerInput) -> dict:
+    """Use purely GenAI to predict churn score and reason based on all inputs."""
+    if not GROQ_API_KEY:
+        print("⚠ No GROQ_API_KEY found, using fallback prediction.")
+        return get_fallback_prediction(customer)
+        
+    prompt = {
+        "customer_profile": customer.dict(),
         "task": (
-            "You are a Telecom Diagnostic AI. Analyze the profile and location. "
-            "1. Select the BEST 'main_category' and 'sub_category' from the mapping rules. Be specific—avoid 'Other' if possible. "
-            "2. Generate a hyper-specific 'reason' (max 25 words) citing exact data points. "
-            "Note: $18 is MINIMUM charge (Low), >$85 is HIGH. "
-            "Return JSON only: {{\"main_category\": \"...\", \"sub_category\": \"...\", \"reason\": \"...\"}}."
+            "You are an expert Telecom Data Scientist AI. "
+            "FIRST, perform Feature Engineering on the profile by mentally calculating these derived metrics where data exists:\n"
+            " - Tenure Group: Bin TenureMonths (0-12, 13-24, 25-48, 49+)\n"
+            " - Avg Monthly Spend: TotalCharges / TenureMonths\n"
+            " - Charge Deviation: MonthlyCharges - Avg Monthly Spend\n"
+            " - Service Count: Sum of binary services (Phone, Internet, Security, Backup, Protection, TechSupport, Streaming, Unlimited Data)\n"
+            " - Value-to-Spend Ratio: Service Count / MonthlyCharges\n"
+            " - Network Quality Score: Weighted penalty based on PacketLoss, Latency, and Jitter\n"
+            " - Call Quality Score: Penalty based on DroppedCalls and BlockedCalls\n"
+            " - Internet Heavy User Flag: 1 if AvgMonthlyGBDownload > 50, else 0\n"
+            " - Complaint Severity Index: Heavily weight ComplaintFrequency > 0\n"
+            " - Contract Risk Score: Month-to-Month = High Risk, 1-Year = Med, 2-Year = Low\n"
+            " - Age Group: Youth (18-30), Adult (31-55), Senior (56+)\n"
+            "SECOND, allocate importance to each factor based on their impact. Make your prediction relying intensely on these engineered features rather than raw data.\n"
+            "THIRD, return ONLY a strictly valid JSON object with the following keys:\n"
+            "- churn_probability: a float between 0.0 and 1.0 (higher means higher risk).\n"
+            "- churn_prediction: 1 if churn_probability > 0.5, else 0.\n"
+            "- churn_reason: an object containing 'main_category', 'sub_category', and 'reason'. This MUST be provided for both 1 AND 0.\n"
+            "  * If churn_prediction is 0, use categories like 'Stable', 'Loyal', or 'Low Risk' for main/sub category.\n"
+            "  * If churn_prediction is 1, select the BEST 'main_category' and 'sub_category' from: [Price-Sensitive | Price Issue], [Plan & Product Mismatch | Competitor], [Customer Experience Issues | Service Issue], [Customer Experience Issues | Support Issue], [Geography | Service Issue].\n"
+            "  * Make the 'reason' AT LEAST 20 words long. It MUST NOT contain any technical or data-science terminology (do not say 'weighted', 'derivation', 'bins', 'normalized', 'features'). Write it in plain, simple English like a standard customer support note."
         )
     }
 
     try:
+        print("\n--- DEBUG: PROMPT PASSED TO LLM ---")
+        print(json.dumps(prompt, indent=2))
+        print("-----------------------------------\n")
+        
         llm = get_groq_llm()
-        system_prompt = "You are an expert Telecom Data Scientist AI. You must provide distinct, hyper-specific reasoning based on the variables provided. Output strictly valid JSON."
+        system_prompt = "You are a specialized scoring AI. You ONLY output valid JSON. You never output conversational text."
         
         prompt_template = ChatPromptTemplate.from_messages([
             ("system", system_prompt),
@@ -139,7 +86,11 @@ def get_llm_churn_reason(prob, data: CustomerInput):
         response = chain.invoke({"user_data": json.dumps(prompt)})
         content = response.content.strip()
         
-        # Extract JSON from markdown
+        print("\n--- DEBUG: RAW LLM RESPONSE ---")
+        print(content)
+        print("-------------------------------\n")
+        
+        # Extract JSON from markdown if present
         if "```json" in content:
             content = content.split("```json")[1].split("```")[0].strip()
         elif "```" in content:
@@ -147,62 +98,24 @@ def get_llm_churn_reason(prob, data: CustomerInput):
             
         parsed = json.loads(content)
         
-        if parsed and isinstance(parsed, dict) and "main_category" in parsed:
-            print(f"✓ AI reasoning successfully generated: {parsed['main_category']}")
-            return parsed
-            
-    except Exception as e:
-        print(f"⚠ AI reasoning generation failed: {e}")
+        # Ensure we have the base keys expected by the router and UI
+        prob = float(parsed.get("churn_probability", 0.0))
+        is_churn = parsed.get("churn_prediction", 0)
+        reason_data = parsed.get("churn_reason", {"main_category": None, "sub_category": None, "reason": None})
         
-    print("⚠ Falling back to static mapping logic.")
-    return get_fallback_reason(prob, data)
-
-
-def predict_churn(customer: CustomerInput) -> dict:
-    model = get_model()
-    if model is None:
-        raise RuntimeError("Prediction model not loaded")
-
-    gender_map = {"Male": 1, "Female": 0}
-    internet_map = {"DSL": 0, "Fiber optic": 1, "No": 2}
-    contract_map = {"Month-to-month": 0, "One year": 1, "Two year": 2}
-    payment_map = {"Bank transfer (automatic)": 0, "Credit card (automatic)": 1, "Electronic check": 2, "Mailed check": 3}
-
-    hex_id_numeric = latlng_to_numeric_cell(customer.Latitude, customer.Longitude, 5)
-
-    features = [
-        gender_map.get(customer.Gender, 0),
-        1 if customer.SeniorCitizen else 0,
-        1 if customer.Partner else 0,
-        1 if customer.Dependents else 0,
-        customer.TenureMonths,
-        1 if customer.PhoneService else 0,
-        1 if customer.MultipleLines else 0,
-        internet_map.get(customer.InternetService, 2),
-        1 if customer.OnlineSecurity else 0,
-        1 if customer.OnlineBackup else 0,
-        1 if customer.DeviceProtection else 0,
-        1 if customer.TechSupport else 0,
-        1 if customer.StreamingTV else 0,
-        1 if customer.StreamingMovies else 0,
-        contract_map.get(customer.Contract, 0),
-        1 if customer.PaperlessBilling else 0,
-        payment_map.get(customer.PaymentMethod, 2),
-        customer.MonthlyCharges,
-        customer.TotalCharges,
-        hex_id_numeric,
-    ]
-
-    churn_prob = float(model.predict_proba(np.array(features).reshape(1, -1))[0][1])
-    is_churn = 1 if churn_prob > 0.5 else 0
-    
-    churn_reason_data = {"main_category": None, "sub_category": None, "reason": None}
-    if is_churn:
-        churn_reason_data = get_llm_churn_reason(churn_prob, customer)
-
-    return {
-        "churn_probability": round(churn_prob, 4),
-        "churn_prediction": is_churn,
-        "risk_level": "High" if churn_prob > 0.7 else "Medium" if churn_prob > 0.4 else "Low",
-        "churn_reason": churn_reason_data,
-    }
+        # Validate structure guarantees
+        if type(reason_data) is not dict:
+            reason_data = {"main_category": None, "sub_category": None, "reason": None}
+            
+        print(f"✓ AI prediction success: {prob} Probability")
+        
+        return {
+            "churn_probability": round(prob, 4),
+            "churn_prediction": is_churn,
+            "risk_level": "High" if prob > 0.7 else "Medium" if prob > 0.4 else "Low",
+            "churn_reason": reason_data,
+        }
+        
+    except Exception as e:
+        print(f"⚠ AI prediction generation failed: {e}")
+        return get_fallback_prediction(customer)

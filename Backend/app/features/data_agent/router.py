@@ -58,10 +58,10 @@ def get_data_agent():
         for cols in domain_columns.values():
             all_cols.extend(cols)
         columns_quoted = ", ".join([f'"{c}"' for c in all_cols])
-        df_merged = pd.read_sql(f'SELECT "Customer ID", {columns_quoted} FROM merged', engine)
+        df_source = pd.read_sql(f'SELECT "Customer ID", {columns_quoted} FROM source', engine)
         
-        total_rows = len(df_merged)
-        unique_subs = df_merged["Customer ID"].nunique()
+        total_rows = len(df_source)
+        unique_subs = df_source["Customer ID"].nunique()
         
         sources = []
         for table_name, (icon, title, desc) in tables.items():
@@ -71,7 +71,7 @@ def get_data_agent():
             # Calculate completeness for this domain
             cols = domain_columns.get(table_name, [])
             if cols and total_rows > 0:
-                domain_points = df_merged[cols].notna().sum().sum()
+                domain_points = df_source[cols].notna().sum().sum()
                 domain_max = total_rows * len(cols)
                 completeness = round((domain_points / domain_max) * 100, 1)
             else:
@@ -89,7 +89,7 @@ def get_data_agent():
 
         # Global KPIs
         max_points = total_rows * len(all_cols)
-        actual_points = df_merged[all_cols].notna().sum().sum()
+        actual_points = df_source[all_cols].notna().sum().sum()
         completeness_pct = round((actual_points / max_points) * 100, 1) if max_points > 0 else 0
 
         kpis = {
