@@ -18,6 +18,7 @@ app.add_middleware(
 )
 
 # Mount feature routers
+from app.features.auth.router import router as auth_router
 from app.features.overview.router import router as overview_router
 from app.features.data_agent.router import router as data_agent_router
 from app.features.churn_scoring.router import router as churn_scoring_router
@@ -30,6 +31,7 @@ from app.features.ml_models.router import router as ml_models_router
 from app.features.role_views.router import router as role_views_router
 from app.features.milestones.router import router as milestones_router
 
+app.include_router(auth_router, prefix="/api/v1", tags=["Auth"])
 app.include_router(overview_router, prefix="/api/v1", tags=["Overview"])
 app.include_router(data_agent_router, prefix="/api/v1", tags=["Data Agent"])
 app.include_router(churn_scoring_router, prefix="/api/v1", tags=["Churn Scoring"])
