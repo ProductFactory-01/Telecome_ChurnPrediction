@@ -385,6 +385,7 @@ OUTPUT — STRICT JSON ONLY
         prob = float(parsed.get("churn_probability", 0.0))
         is_churn = parsed.get("churn_prediction", 0)
         reason_data = parsed.get("churn_reason", {"main_category": None, "sub_category": None, "reason": None})
+        score_breakdown = parsed.get("score_breakdown", {})
         
         # Validate structure guarantees
         if type(reason_data) is not dict:
@@ -400,6 +401,7 @@ OUTPUT — STRICT JSON ONLY
             "churn_prediction": is_churn,
             "risk_level": risk_label,
             "churn_reason": reason_data,
+            "score_breakdown": score_breakdown,
         }
         
     except Exception as e:

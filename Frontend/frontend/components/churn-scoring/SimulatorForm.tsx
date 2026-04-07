@@ -102,9 +102,10 @@ export default function SimulatorForm({ onPredict, onReset, loading, result }: P
   const prob = result?.churn_probability ?? 0;
   const pct = prob.toFixed(1);
   const risk = result?.risk_level;
-  const riskTheme = prob > 70
+  
+  const riskTheme = risk === "High"
     ? { bg: "#fff1f2", border: "#fecdd3", text: "#dc2626", badge: "#fee2e2", label: "#991b1b" }
-    : prob > 40
+    : risk === "Medium"
     ? { bg: "#fffbeb", border: "#fde68a", text: "#d97706", badge: "#fef3c7", label: "#92400e" }
     : { bg: "#f0fdf4", border: "#bbf7d0", text: "#16a34a", badge: "#dcfce7", label: "#14532d" };
 
@@ -381,21 +382,40 @@ export default function SimulatorForm({ onPredict, onReset, loading, result }: P
                   ))}
                 </div>
 
-                {/* AI Reasoning - Optimized flex to fill space */}
-                <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-                  <div style={{ 
-                    flex: 1, background: "linear-gradient(145deg, #1e40af, #2563eb)", 
-                    borderRadius: 26, padding: "26px 28px", position: "relative", 
-                    overflow: "hidden", display: "flex", alignItems: "center",
-                    boxShadow: "0 10px 30px rgba(37,99,235,0.15)"
-                  }}>
-                    <div style={{ position: "absolute", top: -15, right: -5, fontSize: 120, color: "rgba(255,255,255,0.07)", fontFamily: "serif", lineHeight: 1, userSelect: "none" }}>"</div>
-                    <div style={{ position: "relative", zIndex: 1, width: "100%" }}>
-                      <div style={{ fontSize: 10, fontWeight: 800, color: "rgba(255,255,255,0.45)", textTransform: "uppercase", letterSpacing: "0.22em", marginBottom: 14 }}>AI Diagnosis Insight</div>
-                      <p style={{ fontSize: 14.5, color: "rgba(255,255,255,1)", fontStyle: "italic", lineHeight: 1.75, margin: 0, fontWeight: 500 }}>
-                        "{result.churn_reason?.reason}"
-                      </p>
+                {/* Score Breakdown (Criteria) */}
+                {result.score_breakdown && result.score_breakdown.adjustments && (
+                  <div style={{ background: "#f8fafc", border: "1.5px solid #e2e8f0", borderRadius: 18, padding: "16px 18px" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                      <div style={{ fontSize: 10, fontWeight: 800, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.12em" }}>Predictive Breakdown</div>
                     </div>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 8 }}>
+                      {Object.entries(result.score_breakdown.adjustments)
+                        .filter(([k, v]: [string, any]) => v !== 0 && typeof v === "number" && k.toLowerCase() !== "final_score" && k.toLowerCase() !== "base_score")
+                        .sort((a: any, b: any) => Math.abs(b[1]) - Math.abs(a[1]))
+                        .slice(0, 7)
+                        .map(([key, value]: [string, any]) => (
+                          <div key={key} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 13, fontWeight: 700, padding: "8px 12px", background: "#fff", borderRadius: 8, border: "1px solid #e2e8f0" }}>
+                            <span style={{ color: "#475569", textTransform: "capitalize", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", marginRight: 8 }} title={key.replace(/_/g, " ")}>{key.replace(/_/g, " ")}</span>
+                            <span style={{ color: value > 0 ? "#ef4444" : "#10b981", fontWeight: 900 }}>{value > 0 ? `+${value}` : value}</span>
+                          </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* AI Reasoning */}
+                <div style={{ 
+                  background: "linear-gradient(145deg, #1e40af, #2563eb)", 
+                  borderRadius: 22, padding: "20px 24px", position: "relative", 
+                  overflow: "hidden",
+                  boxShadow: "0 10px 30px rgba(37,99,235,0.15)"
+                }}>
+                  <div style={{ position: "absolute", top: -15, right: -5, fontSize: 120, color: "rgba(255,255,255,0.07)", fontFamily: "serif", lineHeight: 1, userSelect: "none" }}>"</div>
+                  <div style={{ position: "relative", zIndex: 1, width: "100%" }}>
+                    <div style={{ fontSize: 10, fontWeight: 800, color: "rgba(255,255,255,0.45)", textTransform: "uppercase", letterSpacing: "0.22em", marginBottom: 12 }}>AI Diagnosis Insight</div>
+                    <p style={{ fontSize: 13.5, color: "rgba(255,255,255,1)", fontStyle: "italic", lineHeight: 1.6, margin: 0, fontWeight: 500 }}>
+                      "{result.churn_reason?.reason}"
+                    </p>
                   </div>
                 </div>
 

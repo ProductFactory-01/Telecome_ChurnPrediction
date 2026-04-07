@@ -298,8 +298,8 @@ export default function CustomerDetails({ customerId, onBack }: Props) {
                 <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] mb-5 pb-2 border-b border-slate-50">Geospatial Data</h3>
                 <div className="space-y-1">
                   <DataRow label="Zipcode" value={detail["Zip Code"]} />
-                  <DataRow label="Pop. Size" value={detail.population || detail.Population} />
-                  <DataRow label="Coord." value={`${toNumber(detail.Latitude).toFixed(2)} / ${toNumber(detail.Longitude).toFixed(2)}`} />
+                  <DataRow label="Population Size" value={detail.population || detail.Population} />
+                  <DataRow label="Coordinates" value={`${toNumber(detail.Latitude).toFixed(2)} / ${toNumber(detail.Longitude).toFixed(2)}`} />
                 </div>
               </div>
             )}
@@ -320,7 +320,7 @@ export default function CustomerDetails({ customerId, onBack }: Props) {
         {/* Full Provisioning Matrix */}
         <div className={`${(hasGeo || hasDemogs) ? 'lg:col-span-3' : 'lg:col-span-4'} bg-white rounded-[40px] border border-slate-100 shadow-sm p-10`}>
           <h3 className="text-[13px] font-black text-slate-900 uppercase tracking-widest mb-8 flex items-center gap-3">
-            <span className="w-2.5 h-2.5 bg-indigo-600 rounded-full animate-pulse shadow-[0_0_10px_rgba(79,70,229,0.5)]" /> Provisioning Matrix Hub
+            <span className="w-2.5 h-2.5 bg-indigo-600 rounded-full animate-pulse shadow-[0_0_10px_rgba(79,70,229,0.5)]" /> Additional Services
           </h3>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6 gap-5">
             <ServiceBadge label="Phone" active={detail["Phone Service"]} />

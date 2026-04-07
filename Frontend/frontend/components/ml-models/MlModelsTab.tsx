@@ -160,29 +160,20 @@ const radarPalette = [
     pointBackgroundColor: "#f59e0b",
   },
 ];
-const basicColumnOptions = {
+const horizontalBarOptions: any = {
   ...defaultOptions,
+  indexAxis: 'y',
+  maintainAspectRatio: false,
   plugins: { ...defaultOptions.plugins, legend: { display: false } },
   scales: {
     x: {
-      ...defaultOptions.scales.x,
-      grid: { display: false },
-      ticks: {
-        ...defaultOptions.scales.x.ticks,
-        autoSkip: false,
-        maxRotation: 75,
-        minRotation: 75,
-        font: { size: 10 },
-      },
+      beginAtZero: true,
+      grid: { color: "rgba(148,163,184,0.3)", lineWidth: 1 },
+      ticks: { stepSize: 1, color: COLORS.textColor },
     },
     y: {
-      ...defaultOptions.scales.y,
-      beginAtZero: true,
-      grid: { color: "rgba(148,163,184,0.55)", lineWidth: 1 },
-      ticks: {
-        ...defaultOptions.scales.y.ticks,
-        stepSize: 1,
-      },
+      grid: { display: false },
+      ticks: { autoSkip: false, font: { size: 10 }, color: COLORS.textColor },
     },
   },
 };
@@ -289,91 +280,111 @@ export default function MlModelsTab() {
         </div>
       </div>
 
-      <div
-        className="mb-6"
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(12, minmax(0, 1fr))",
-          gap: 24,
-          alignItems: "start",
-          marginTop: 24,
-        }}
-      >
+      {/* Row 1 */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(12, minmax(0, 1fr))", gap: 24, marginBottom: 24, marginTop: 24 }} className="max-lg:grid-cols-1 max-lg:flex max-lg:flex-col">
         <div style={{ gridColumn: "span 8" }}>
-          <div className="mb-6">
-            <ChartCard title="ROC-AUC Comparison" height={320}>
-              <Line
-                data={{
-                  labels: modelNames,
-                  datasets: [
-                    {
-                      label: "ROC-AUC %",
-                      data: modelNames.map((modelName) => dsModels[modelName].metrics.roc_auc),
-                      borderColor: COLORS.blue,
-                      backgroundColor: COLORS.blueAlpha,
-                      fill: true,
-                      tension: 0.3,
-                      pointRadius: modelNames.map((modelName) => (modelName === bestModelName ? 6 : 4)),
-                      pointHoverRadius: modelNames.map((modelName) => (modelName === bestModelName ? 7 : 5)),
-                      pointBackgroundColor: modelNames.map((modelName) => (modelName === bestModelName ? COLORS.green : COLORS.blue)),
-                      pointBorderColor: "#ffffff",
-                      pointBorderWidth: 2,
-                    },
-                  ],
-                }}
-                options={{
-                  ...defaultOptions,
-                  plugins: { ...defaultOptions.plugins, legend: { display: false } },
-                }}
-              />
-            </ChartCard>
-          </div>
+          <ChartCard title="ROC-AUC Comparison" height={320}>
+            <Line
+              data={{
+                labels: modelNames,
+                datasets: [
+                  {
+                    label: "ROC-AUC %",
+                    data: modelNames.map((modelName) => dsModels[modelName].metrics.roc_auc),
+                    borderColor: COLORS.blue,
+                    backgroundColor: COLORS.blueAlpha,
+                    fill: true,
+                    tension: 0.3,
+                    pointRadius: modelNames.map((modelName) => (modelName === bestModelName ? 6 : 4)),
+                    pointHoverRadius: modelNames.map((modelName) => (modelName === bestModelName ? 7 : 5)),
+                    pointBackgroundColor: modelNames.map((modelName) => (modelName === bestModelName ? COLORS.green : COLORS.blue)),
+                    pointBorderColor: "#ffffff",
+                    pointBorderWidth: 2,
+                  },
+                ],
+              }}
+              options={{
+                ...defaultOptions,
+                plugins: { ...defaultOptions.plugins, legend: { display: false } },
+              }}
+            />
+          </ChartCard>
+        </div>
+        <div style={{ gridColumn: "span 4" }}>
+          <ChartCard title="Model Accuracy Comparison" height={320}>
+            <Line
+              data={{
+                labels: modelNames,
+                datasets: [
+                  {
+                    label: "Accuracy %",
+                    data: modelNames.map((modelName) => dsModels[modelName].metrics.accuracy),
+                    borderColor: COLORS.green,
+                    backgroundColor: COLORS.greenAlpha,
+                    fill: true,
+                    tension: 0.25,
+                    pointBackgroundColor: COLORS.green,
+                    pointBorderColor: "#ffffff",
+                    pointBorderWidth: 2,
+                    pointRadius: 4,
+                  },
+                ],
+              }}
+              options={{
+                ...defaultOptions,
+                plugins: { ...defaultOptions.plugins, legend: { display: false } },
+              }}
+            />
+          </ChartCard>
+        </div>
+      </div>
 
-          <div className="mb-6">
-            <ChartCard title="Model Fingerprint Comparison" height={460}>
-              <Radar
-                data={radarData}
-                options={{
-                  responsive: true,
-                  maintainAspectRatio: false,
-                  plugins: {
-                    ...defaultOptions.plugins,
-                    legend: {
-                      position: "bottom",
-                      labels: {
-                        color: COLORS.textColor,
-                        font: { size: 12 },
-                        usePointStyle: true,
-                        boxWidth: 10,
-                        padding: 16,
-                      },
+      {/* Row 2 */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(12, minmax(0, 1fr))", gap: 24, marginBottom: 24 }} className="max-lg:grid-cols-1 max-lg:flex max-lg:flex-col">
+        <div style={{ gridColumn: "span 8", display: "flex", flexDirection: "column", gap: 24 }}>
+          <ChartCard title="Model Fingerprint Comparison" height={460}>
+            <Radar
+              data={radarData}
+              options={{
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                  ...defaultOptions.plugins,
+                  legend: {
+                    position: "bottom",
+                    labels: {
+                      color: COLORS.textColor,
+                      font: { size: 12 },
+                      usePointStyle: true,
+                      boxWidth: 10,
+                      padding: 16,
                     },
                   },
-                  scales: {
-                    r: {
-                      min: 0,
-                      max: 100,
-                      ticks: {
-                        stepSize: 20,
-                        color: COLORS.textColor,
-                        backdropColor: "transparent",
-                        showLabelBackdrop: false,
-                      },
-                      angleLines: { color: COLORS.gridColor },
-                      grid: { color: COLORS.gridColor },
-                      pointLabels: {
-                        color: COLORS.textColor,
-                        font: { size: 12 },
-                      },
+                },
+                scales: {
+                  r: {
+                    min: 0,
+                    max: 100,
+                    ticks: {
+                      stepSize: 20,
+                      color: COLORS.textColor,
+                      backdropColor: "transparent",
+                      showLabelBackdrop: false,
+                    },
+                    angleLines: { color: COLORS.gridColor },
+                    grid: { color: COLORS.gridColor },
+                    pointLabels: {
+                      color: COLORS.textColor,
+                      font: { size: 12 },
                     },
                   },
-                  elements: {
-                    line: { tension: 0.15 },
-                  },
-                }}
-              />
-            </ChartCard>
-          </div>
+                },
+                elements: {
+                  line: { tension: 0.15 },
+                },
+              }}
+            />
+          </ChartCard>
 
           <div className="card" style={{ overflowX: "auto" }}>
             <div className="card__header">
@@ -412,70 +423,40 @@ export default function MlModelsTab() {
           </div>
         </div>
 
-        <div style={{ gridColumn: "span 4" }}>
-          <div className="mb-6">
-            <ChartCard title="Model Accuracy Comparison" height={300}>
-              <Line
-                data={{
-                  labels: modelNames,
-                  datasets: [
-                    {
-                      label: "Accuracy %",
-                      data: modelNames.map((modelName) => dsModels[modelName].metrics.accuracy),
-                      borderColor: COLORS.green,
-                      backgroundColor: COLORS.greenAlpha,
-                      fill: true,
-                      tension: 0.25,
-                      pointBackgroundColor: COLORS.green,
-                      pointBorderColor: "#ffffff",
-                      pointBorderWidth: 2,
-                      pointRadius: 4,
-                    },
-                  ],
-                }}
-                options={{
-                  ...defaultOptions,
-                  plugins: { ...defaultOptions.plugins, legend: { display: false } },
-                }}
-              />
-            </ChartCard>
-          </div>
-
-          <div className="mb-6">
-            <ChartCard title="Feature Importance Share (Base vs Engineered)" height={320}>
-              <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%", padding: "20px" }}>
-                <div style={{ width: "240px" }}>
-                  <Doughnut
-                    data={{
-                      labels: baseVsFeData.labels,
-                      datasets: [{
-                        data: baseVsFeData.values,
-                        backgroundColor: baseVsFeData.colors,
-                        hoverOffset: 4,
-                        borderWidth: 0,
-                      }],
-                    }}
-                    options={{
-                      cutout: "75%",
-                      plugins: {
-                        legend: {
-                          position: "bottom",
-                          labels: { padding: 16, color: "#475569", font: { family: "'Inter', sans-serif", weight: "bold", size: 12 } }
-                        },
-                        tooltip: {
-                          callbacks: {
-                            label: function(context) { return ` ${context.label}: ${context.raw}%`; }
-                          }
+        <div style={{ gridColumn: "span 4", display: "flex", flexDirection: "column", gap: 24 }}>
+          <ChartCard title="Feature Importance Share (Base vs Engineered)" height={320}>
+            <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%", padding: "20px" }}>
+              <div style={{ width: "240px" }}>
+                <Doughnut
+                  data={{
+                    labels: baseVsFeData.labels,
+                    datasets: [{
+                      data: baseVsFeData.values,
+                      backgroundColor: baseVsFeData.colors,
+                      hoverOffset: 4,
+                      borderWidth: 0,
+                    }],
+                  }}
+                  options={{
+                    cutout: "75%",
+                    plugins: {
+                      legend: {
+                        position: "bottom",
+                        labels: { padding: 16, color: "#475569", font: { family: "'Inter', sans-serif", weight: "bold", size: 12 } }
+                      },
+                      tooltip: {
+                        callbacks: {
+                          label: function(context) { return ` ${context.label}: ${context.raw}%`; }
                         }
                       }
-                    }}
-                  />
-                </div>
+                    }
+                  }}
+                />
               </div>
-            </ChartCard>
-          </div>
+            </div>
+          </ChartCard>
 
-          <div className="card">
+          <div className="card" style={{ flex: 1, display: "flex", flexDirection: "column" }}>
             <div className="card__header">
               <div className="card__title">Insights Card</div>
             </div>
@@ -524,7 +505,7 @@ export default function MlModelsTab() {
         <SectionTitle title="Feature Intelligence" description="Base and engineered feature importance overview" color="blue" />
       </div>
 
-      <div className="mb-6">
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24, marginBottom: 24 }} className="max-lg:grid-cols-1">
         <ChartCard title="Base Features" height={baseChartHeight}>
           <Bar
             data={{
@@ -540,12 +521,10 @@ export default function MlModelsTab() {
                 categoryPercentage: 0.8,
               }],
             }}
-            options={basicColumnOptions}
+            options={horizontalBarOptions}
           />
         </ChartCard>
-      </div>
 
-      <div className="mb-6">
         <ChartCard title="Engineered Features" height={feChartHeight}>
           <Bar
             data={{
@@ -561,7 +540,7 @@ export default function MlModelsTab() {
                 categoryPercentage: 0.8,
               }],
             }}
-            options={basicColumnOptions}
+            options={horizontalBarOptions}
           />
         </ChartCard>
       </div>
