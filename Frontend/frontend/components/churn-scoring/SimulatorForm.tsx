@@ -100,11 +100,11 @@ export default function SimulatorForm({ onPredict, onReset, loading, result }: P
   );
 
   const prob = result?.churn_probability ?? 0;
-  const pct = (prob * 100).toFixed(1);
+  const pct = prob.toFixed(1);
   const risk = result?.risk_level;
-  const riskTheme = prob > 0.7
+  const riskTheme = prob > 70
     ? { bg: "#fff1f2", border: "#fecdd3", text: "#dc2626", badge: "#fee2e2", label: "#991b1b" }
-    : prob > 0.4
+    : prob > 40
     ? { bg: "#fffbeb", border: "#fde68a", text: "#d97706", badge: "#fef3c7", label: "#92400e" }
     : { bg: "#f0fdf4", border: "#bbf7d0", text: "#16a34a", badge: "#dcfce7", label: "#14532d" };
 

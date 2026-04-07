@@ -35,12 +35,6 @@ export default function CustomerDetailView({ customerId, onClose }: Props) {
     return Number.isFinite(parsed) ? parsed : 0;
   };
 
-  const totalCharges = toNumber(detail["Total Charges"]);
-  const totalRefunds = toNumber(detail["Total Refunds"]);
-  const extraDataCharges = toNumber(detail["Total Extra Data Charges"]);
-  const longDistanceCharges = toNumber(detail["Total Long Distance Charges"]);
-  const ltdRevenue = detail["Total Revenue"] || (totalCharges + extraDataCharges + longDistanceCharges - totalRefunds);
-
   const isVal = (v: any) => v !== null && v !== undefined && v !== "" && v !== "N/A" && v !== "n/a";
 
   const StatBox = ({ label, value, color = "blue" }: { label: string; value: any; color?: string }) => {
@@ -115,9 +109,6 @@ export default function CustomerDetailView({ customerId, onClose }: Props) {
               <div className="flex flex-col">
                 <div className="flex items-center gap-4 mb-2">
                   <h2 className="text-4xl font-black text-gray-900 tracking-tight leading-none">{detail.Name || detail["Customer ID"]}</h2>
-                  <div className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.15em] shadow-sm border ${detail["Customer Status"] === "Stayed" ? "bg-green-100 text-green-700 border-green-200" : "bg-red-100 text-red-700 border-red-200"}`}>
-                    {detail["Customer Status"]}
-                  </div>
                 </div>
                 <div className="flex items-center gap-2 mb-4">
                   <span className="text-xs text-gray-400 font-mono font-bold tracking-widest uppercase">{detail["Customer ID"]}</span>
@@ -138,14 +129,11 @@ export default function CustomerDetailView({ customerId, onClose }: Props) {
           </div>
 
           <div className="w-full lg:w-auto grid grid-cols-2 sm:grid-cols-4 bg-gray-50/50 p-6 rounded-[32px] border border-gray-100/50 shadow-inner gap-y-6 gap-x-2">
-            <StatBox label="CLTV Score" value={`$${detail.CLTV?.toLocaleString()}`} color="green" />
-            <StatBox label="Life Tenure" value={`${detail["Tenure in Months"]} Mo`} />
+            <StatBox label="Tenure (Mo)" value={detail["Tenure in Months"]} />
             <StatBox label="Risk index" value={detail["Churn Score"]} color={detail["Churn Score"] > 70 ? "red" : "blue"} />
-            <StatBox label="Mo. Charge" value={`$${detail["Monthly Charge"]}`} color="green" />
-            <StatBox label="Net Revenue" value={`$${ltdRevenue?.toLocaleString()}`} color="green" />
-            <StatBox label="Retention" value={detail.Contract} />
-            <StatBox label="CSAT / 5" value={detail["Satisfaction Score"]} color={detail["Satisfaction Score"] < 3 ? "red" : "green"} />
-            <StatBox label="Active Offer" value={detail.Offer} />
+            <StatBox label="Monthly Charge" value={`$${detail["Monthly Charge"]}`} color="green" />
+            <StatBox label="Contract" value={detail.Contract} />
+            <StatBox label="Satisfaction Score" value={detail["Satisfaction Score"]} color={detail["Satisfaction Score"] < 3 ? "red" : "green"} />
           </div>
         </div>
 

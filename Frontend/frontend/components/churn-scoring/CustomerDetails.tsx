@@ -120,9 +120,9 @@ export default function CustomerDetails({ customerId, onBack }: Props) {
             <div className="flex flex-col">
               <div className="flex items-center gap-4 mb-2">
                 <h1 className="text-4xl font-black text-slate-900 tracking-tight leading-none">{detail.Name || detail["Customer ID"]}</h1>
-                <div className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.15em] shadow-sm border ${detail["Customer Status"] === "Stayed" ? "bg-emerald-100 text-emerald-700 border-emerald-200" : "bg-red-100 text-red-700 border-red-200"}`}>
+                {/* <div className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.15em] shadow-sm border ${detail["Customer Status"] === "Stayed" ? "bg-emerald-100 text-emerald-700 border-emerald-200" : "bg-red-100 text-red-700 border-red-200"}`}>
                   {detail["Customer Status"]}
-                </div>
+                </div> */}
               </div>
               <div className="flex items-center gap-2 mb-6">
                 <span className="text-xs text-slate-400 font-mono font-bold tracking-widest uppercase">{detail["Customer ID"]}</span>
@@ -141,15 +141,15 @@ export default function CustomerDetails({ customerId, onBack }: Props) {
             </div>
           </div>
 
-          <div className="w-full xl:w-auto grid grid-cols-2 md:grid-cols-4 bg-slate-50/50 p-8 rounded-[38px] border border-slate-100 shadow-inner gap-x-2 gap-y-8">
-            <StatBox label="CLTV Score" value={`$${detail.CLTV?.toLocaleString()}`} color="green" />
+          <div className="w-full xl:w-auto grid grid-cols-2 md:grid-cols-2 bg-slate-50/50 p-8 rounded-[38px] border border-slate-100 shadow-inner gap-x-2 gap-y-8">
+            {/* <StatBox label="CLTV Score" value={`$${detail.CLTV?.toLocaleString()}`} color="green" /> */}
             <StatBox label="Tenure (Mo)" value={detail["Tenure in Months"]} />
-            <StatBox label="Risk Index" value={detail["Churn Score"]} color={toNumber(detail["Churn Score"]) > 70 ? "red" : "blue"} />
-            <StatBox label="Mo. Charge" value={`$${detail["Monthly Charge"]}`} color="green" />
-            <StatBox label="Net Revenue" value={`$${ltdRevenue?.toLocaleString()}`} color="green" />
-            <StatBox label="Retention" value={detail.Contract} />
+            {/* <StatBox label="Risk Index" value={detail["Churn Score"]} color={toNumber(detail["Churn Score"]) > 70 ? "red" : "blue"} /> */}
+            <StatBox label="Monthly Charge" value={`$${detail["Monthly Charge"]}`} color="green" />
+            {/* <StatBox label="Net Revenue" value={`$${ltdRevenue?.toLocaleString()}`} color="green" /> */}
+            <StatBox label="Contract Type" value={detail.Contract} />
             <StatBox label="CSAT / 5" value={detail["Satisfaction Score"]} color={toNumber(detail["Satisfaction Score"]) < 3 ? "red" : "green"} />
-            <StatBox label="Active Offer" value={detail.Offer} />
+            {/* <StatBox label="Active Offer" value={detail.Offer} /> */}
           </div>
         </div>
       </div>
@@ -189,7 +189,7 @@ export default function CustomerDetails({ customerId, onBack }: Props) {
           <div className="xl:col-span-2 bg-white rounded-[40px] border-l-[14px] border-indigo-600 shadow-xl shadow-slate-200/40 p-10 border border-slate-100 overflow-hidden group">
             <div className="flex items-center gap-4 mb-10">
               <span className="p-3.5 bg-indigo-50 rounded-[18px] text-2xl shadow-sm group-hover:scale-110 transition-transform">🧠</span>
-              <h3 className="text-[18px] font-black text-slate-800 uppercase tracking-tight">AI Generated Intelligence (Engineered Features)</h3>
+              <h3 className="text-[18px] font-black text-slate-800 uppercase tracking-tight">Featured Data</h3>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-5 mb-10">
               <InsightBadge label="Loyalty index" value={detail["Loyalty Score"]} />
