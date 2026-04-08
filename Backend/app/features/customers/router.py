@@ -20,14 +20,13 @@ async def get_customers(
         raise HTTPException(status_code=500, detail="Database connection failed")
         
     try:
-        # Load only necessary columns for the list view
+        # Load only necessary columns from 'merged' for the list view
         cols = ['"Customer ID"', '"Name"', '"Gender"', '"Tenure in Months"', '"Churn Label"', '"City"']
         query = f"SELECT {', '.join(cols)} FROM merged"
         df = pd.read_sql(query, engine)
         
         # Clean column names (remove double quotes)
         df.columns = [c.replace('"', '').replace(' ', '_').lower() for c in df.columns]
-        # Resulting cols: customer_id, name, gender, tenure_in_months, churn_label, city
         
         # Apply Search
         if search:
@@ -75,14 +74,41 @@ async def get_customer_details(customer_id: str):
         raise HTTPException(status_code=500, detail="Database connection failed")
         
     try:
-        # Query the exact customer row for the detail view.
-        query = text('SELECT * FROM merged WHERE "Customer ID" = :customer_id')
-        df = pd.read_sql(query, engine, params={"customer_id": customer_id})
+        # Hybrid Join: Merged (Business) + Source (Extended Technical/AI)
+        # We join on "Customer ID" to get ALL 88+ columns.
+        query = text("""
+            SELECT m.*, s.*
+            FROM merged m
+            LEFT JOIN source s ON m."Customer ID" = s."Customer ID"
+            WHERE m."Customer ID" = :customer_id
+        """)
         
-        if df.empty:
-            raise HTTPException(status_code=404, detail="Customer not found")
+        with engine.connect() as conn:
+            result = conn.execute(query, {"customer_id": customer_id})
+            row = result.fetchone()
             
-        return df.iloc[0].to_dict()
+            if not row:
+                 raise HTTPException(status_code=404, detail="Customer not found")
+            
+            # Map Row to dict, handling potential duplicate column names from the * join
+            data = {}
+            for key, value in row._mapping.items():
+                if key not in data or data[key] is None:
+                    data[key] = value
+            
+            # Post-processing for JSON compatibility
+            def clean_val(v):
+                if isinstance(v, (np.integer, np.int64)): return int(v)
+                if isinstance(v, (np.floating, np.float64)): return float(v)
+                if pd.isna(v): return None
+                return v
+
+            return {k: clean_val(v) for k, v in data.items()}
+
+    except HTTPException:
+        raise
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         print(f"Error fetching detail: {e}")
         raise HTTPException(status_code=500, detail=str(e))

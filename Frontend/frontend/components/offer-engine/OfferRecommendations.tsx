@@ -1,3 +1,4 @@
+import { useState } from "react";
 import styles from "./OfferEngine.module.css";
 
 export interface Recommendation {
@@ -14,6 +15,7 @@ interface OfferRecommendationsProps {
   recommendations: Recommendation[];
   selectedId: string;
   onSelect: (id: string) => void;
+  onUpdateSummary: (id: string, summary: string) => void;
   isLoading: boolean;
 }
 
@@ -21,8 +23,21 @@ export default function OfferRecommendations({
   recommendations,
   selectedId,
   onSelect,
+  onUpdateSummary,
   isLoading,
 }: OfferRecommendationsProps) {
+  const [editingId, setEditingId] = useState<string | null>(null);
+
+  const handleEditClick = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    setEditingId(id);
+  };
+
+  const handleSaveClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditingId(null);
+  };
+
   return (
     <div className={styles.offerPreview}>
       <h3>AI Offer Recommendations</h3>
@@ -48,8 +63,19 @@ export default function OfferRecommendations({
                 selectedId === rec.plan_id ? styles.recommendationCardActive : ""
               }`}
               onClick={() => onSelect(rec.plan_id)}
+              style={{ position: "relative" }}
             >
-              <h4>{rec.offer_type || rec.title}</h4>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                <h4>{rec.offer_type || rec.title}</h4>
+                <button
+                  className="btn btn--secondary btn--sm"
+                  onClick={(e) => (editingId !== null && editingId === rec.plan_id) ? handleSaveClick(e) : handleEditClick(e, rec.plan_id)}
+                  style={{ padding: "4px 8px", fontSize: "12px" }}
+                >
+                  {(editingId !== null && editingId === rec.plan_id) ? "Save" : "Edit"}
+                </button>
+              </div>
+              
               <div className={styles.recommendationMeta}>
                 <span className={styles.recommendationPill}>
                   {rec.offer_type || rec.title}
@@ -61,9 +87,22 @@ export default function OfferRecommendations({
                   {rec.projected_reduction_pct}% potential reduction
                 </span>
               </div>
-              <div className={styles.recommendationSummary}>
-                {rec.offer_summary}
-              </div>
+
+              {editingId === rec.plan_id ? (
+                <textarea
+                  className="dashboard-input"
+                  value={rec.offer_summary}
+                  onChange={(e) => onUpdateSummary(rec.plan_id, e.target.value)}
+                  onClick={(e) => e.stopPropagation()}
+                  rows={3}
+                  style={{ width: "100%", marginTop: "12px", background: "rgba(255,255,255,0.05)", border: "1px solid var(--color-green-light)" }}
+                />
+              ) : (
+                <div className={styles.recommendationSummary}>
+                  {rec.offer_summary}
+                </div>
+              )}
+              
               <div className={styles.recommendationNote}>{rec.why_it_fits}</div>
             </div>
           ))

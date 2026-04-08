@@ -44,7 +44,7 @@ def check_duplicates(df: pd.DataFrame, mapping: Dict, engine) -> Tuple[pd.DataFr
         
     # Query existing IDs
     placeholders = ", ".join(["%s"] * len(customer_ids))
-    query = f'SELECT "Customer ID" FROM merged WHERE "Customer ID" IN ({placeholders})'
+    query = f'SELECT "Customer ID" FROM source WHERE "Customer ID" IN ({placeholders})'
     try:
         existing_ids = pd.read_sql(query, engine, params=tuple(customer_ids))["Customer ID"].tolist()
     except Exception as e:

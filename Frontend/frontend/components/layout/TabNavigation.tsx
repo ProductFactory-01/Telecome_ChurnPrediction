@@ -20,41 +20,43 @@ interface Props {
 
 export default function TabNavigation({ activeTab, onTabChange }: Props) {
   return (
-    <div className="w-full bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 border-b border-slate-700/60 shadow-lg">
-      <nav 
-        className="flex overflow-x-auto hide-scrollbar max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8" 
-        id="tab-navigation"
-      >
-        {TABS.map((t) => {
-          const isActive = activeTab === t.key;
-          return (
-            <button
-              key={t.key}
-              id={`tab-${t.key}`}
-              className={`
-                group relative min-w-max flex items-center gap-2.5 py-4 px-4 text-[13px] font-semibold tracking-wider transition-all duration-300
-                ${isActive 
-                  ? "text-white border-b-3 border-white/90 bg-white/5" 
-                  : "text-slate-400 hover:text-slate-50 hover:bg-white/5 border-b-3 border-transparent"}
-              `}
-              onClick={() => onTabChange(t.key)}
-            >
-              {t.label}
-              
-              {t.badge && (
-                <span className={`
-                  flex items-center justify-center w-6 h-6 text-[10px] font-bold rounded-full ring-1 transition-all duration-300
+    <div className="w-full px-6 lg:px-10 pt-8 pb-2 flex justify-center">
+      <div className="max-w-[1440px] w-full flex justify-center">
+        <nav 
+          className="inline-flex items-center p-1.5 bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 border-b border-slate-700/60 shadow-lg rounded-[24px] shadow-[0_25px_50px_-12px_rgba(0,0,0,0.4)] overflow-x-auto hide-scrollbar ring-1 ring-white/10" 
+          id="tab-navigation"
+        >
+          {TABS.map((t) => {
+            const isActive = activeTab === t.key;
+            return (
+              <button
+                key={t.key}
+                id={`tab-${t.key}`}
+                onClick={() => onTabChange(t.key)}
+                className={`
+                  group relative flex items-center gap-2.5 px-6 py-2.5 rounded-[20px] text-[13px] font-bold tracking-tight transition-all duration-300 whitespace-nowrap
                   ${isActive 
-                    ? "bg-gradient-to-br from-amber-500 to-orange-600 text-white ring-amber-400/50 shadow-lg shadow-amber-500/20" 
-                    : "bg-slate-700/60 text-slate-300 ring-slate-600/50 group-hover:bg-slate-600/60 group-hover:text-slate-100"}
-                `}>
-                  {t.badge}
-                </span>
-              )}
-            </button>
-          );
-        })}
-      </nav>
+                    ? "bg-white text-indigo-950 shadow-xl scale-100" 
+                    : "text-slate-300 hover:text-white hover:bg-white/5 scale-95 hover:scale-100"}
+                `}
+              >
+                {t.label}
+                
+                {t.badge && (
+                  <span className={`
+                    flex items-center justify-center w-5 h-5 text-[9px] font-black rounded-full transition-all duration-300
+                    ${isActive 
+                      ? "bg-indigo-600 text-white shadow-indigo-200/20" 
+                      : "bg-slate-700/80 text-slate-400 group-hover:bg-slate-600 group-hover:text-slate-100"}
+                  `}>
+                    {t.badge}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </nav>
+      </div>
     </div>
   );
 }

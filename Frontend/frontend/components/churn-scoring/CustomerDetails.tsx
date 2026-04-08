@@ -24,208 +24,291 @@ export default function CustomerDetails({ customerId, onBack }: Props) {
     return <Loading message={`Retrieving Intelligence for ${customerId}...`} />;
   }
 
-  const riskScore = detail["Churn Score"] / 100;
-  const riskColor = riskScore > 0.7 ? "text-red-600" : riskScore > 0.4 ? "text-amber-500" : "text-green-600";
-  const riskBg = riskScore > 0.7 ? "bg-red-50/50" : riskScore > 0.4 ? "bg-amber-50/50" : "bg-green-50/50";
-  const riskBorder = riskScore > 0.7 ? "border-red-100" : riskScore > 0.4 ? "border-amber-100" : "border-green-100";
   const toNumber = (value: any) => {
     const parsed = Number(value);
     return Number.isFinite(parsed) ? parsed : 0;
   };
+
   const totalCharges = toNumber(detail["Total Charges"]);
   const totalRefunds = toNumber(detail["Total Refunds"]);
   const extraDataCharges = toNumber(detail["Total Extra Data Charges"]);
   const longDistanceCharges = toNumber(detail["Total Long Distance Charges"]);
-  const ltdRevenue =
-    detail["LTD Revenue"] ??
-    detail["Total Revenue"] ??
-    totalCharges + extraDataCharges + longDistanceCharges - totalRefunds;
+  const ltdRevenue = detail["Total Revenue"] || (totalCharges + extraDataCharges + longDistanceCharges - totalRefunds);
 
-  const StatusBadge = ({ value }: { value: any }) => {
-    const isYes = String(value).toLowerCase() === "yes";
+  const isVal = (v: any) => v !== null && v !== undefined && v !== "" && v !== "N/A" && v !== "n/a";
+
+  const StatBox = ({ label, value, color = "blue" }: { label: string; value: any; color?: string }) => {
+    if (!isVal(value)) return null;
     return (
-      <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-tight border ${isYes ? "bg-green-50 text-green-700 border-green-100" : "bg-slate-50 text-slate-400 border-slate-100"}`}>
-        {value}
-      </span>
+      <div className="text-center px-6 border-r border-slate-100 last:border-0 grow">
+        <div className="text-[10px] uppercase tracking-widest text-slate-400 font-black mb-1">{label}</div>
+        <div className={`text-[16px] font-black ${color === "green" ? "text-emerald-600" : color === "red" ? "text-red-600" : "text-slate-900"}`}>{value}</div>
+      </div>
     );
   };
 
-  const DataRow = ({ label, value, color }: { label: string; value: any; color?: string }) => (
-    <div className="flex justify-between items-center py-3 border-b border-slate-50 last:border-0">
-      <span className="text-[12px] uppercase font-bold text-slate-500 tracking-tight">{label}:</span>
-      {String(value).toLowerCase() === "yes" || String(value).toLowerCase() === "no" ? (
-         <StatusBadge value={value} />
-      ) : (
-        <span className={`text-[14px] font-black ${color ? color : "text-slate-800"}`}>
-          {value}
+  const DataRow = ({ label, value, color, suffix = "" }: { label: string; value: any; color?: string; suffix?: string }) => {
+    if (!isVal(value)) return null;
+    return (
+      <div className="flex justify-between items-center py-2.5 border-b border-slate-50 last:border-0 hover:bg-slate-50/50 transition-colors px-1">
+        <span className="text-[11px] text-slate-500 font-bold uppercase tracking-tight">{label}:</span>
+        <span className={`text-[13px] font-black ${color === "red" ? "text-red-600 bg-red-50/50 px-2 py-0.5 rounded" : color === "green" ? "text-emerald-600" : color === "blue" ? "text-indigo-600" : "text-slate-800"}`}>
+          {value}{suffix}
         </span>
-      )}
-    </div>
-  );
+      </div>
+    );
+  };
+
+  const ServiceBadge = ({ label, active }: { label: string; active: boolean | string }) => {
+    const isActive = active === true || active === "Yes" || active === "1";
+    return (
+      <div className={`flex items-center gap-2 px-3 py-3 rounded-xl border transition-all ${isActive ? "bg-indigo-50 border-indigo-100 text-indigo-700 shadow-sm" : "bg-slate-50 border-slate-100 text-slate-400 opacity-40 shadow-none"}`}>
+        <span className="text-lg leading-none">{isActive ? "✅" : "❌"}</span>
+        <span className="text-[11px] font-black uppercase tracking-tighter truncate">{label}</span>
+      </div>
+    );
+  };
+
+
+
+  // Section Visibility Logic
+  const hasNetwork = isVal(detail.SignalStrength) || isVal(detail.Throughput) || isVal(detail.Latency) || isVal(detail.PacketLoss) || isVal(detail.Jitter) || isVal(detail.DroppedCalls) || isVal(detail.BlockedCalls) || isVal(detail.SIMInactivePattern);
+  const hasSentiment = isVal(detail.ComplaintType) || isVal(detail.ComplaintResolution) || isVal(detail.ComplaintFrequency) || isVal(detail.ComplaintMedium) || isVal(detail.PaymentDelay) || isVal(detail.PlanChangeTracking) || isVal(detail.DeviceCapability) || isVal(detail.Complaint);
+  const hasSpending = isVal(detail["Avg Monthly Spend"]) || isVal(detail["Avg Monthly GB Download"]) || isVal(detail["Value-to-Spend Ratio"]) || isVal(detail["Total Extra Data Charges"]) || isVal(detail["Total Long Distance Charges"]) || isVal(detail["Total Refunds"]) || isVal(detail["Paperless Billing"]);
+  const hasGeo = isVal(detail["Zip Code"]) || isVal(detail.population) || isVal(detail.Population) || isVal(detail.Latitude) || isVal(detail.Longitude);
+  const hasDemogs = isVal(detail["Under 30"]) || isVal(detail["Senior Citizen"]) || isVal(detail.Married) || isVal(detail.Dependents);
+
+  const numSecondaryCards = [hasNetwork, hasSentiment, hasSpending].filter(Boolean).length;
 
   return (
-    <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
-      {/* Back Header */}
-      <div className="flex items-center justify-between mb-6">
-        <button 
+    <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 bg-[#f8fafc] -m-6 p-10 min-h-screen">
+
+      {/* Top Navigation */}
+      <div className="flex items-center justify-between mb-8">
+        <button
           onClick={onBack}
-          className="inline-flex items-center gap-2 bg-white border border-slate-200 px-4 py-2 rounded-xl text-[11px] font-bold text-slate-600 hover:bg-slate-50 hover:border-slate-300 transition-all active:scale-95 shadow-sm"
+          className="inline-flex items-center gap-2.5 bg-white border border-slate-200 px-6 py-2.5 rounded-2xl text-[11px] font-black text-slate-600 hover:bg-slate-900 hover:text-white hover:border-slate-900 transition-all active:scale-95 shadow-xl shadow-slate-200/50 group"
         >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
-          BACK TO DIRECTORY
+          <span className="group-hover:-translate-x-1 transition-transform">←</span> BACK TO DIRECTORY
         </button>
-        
-        <div className="flex items-center gap-2 bg-indigo-50 px-3 py-1.5 rounded-full border border-indigo-100">
-           <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse"></div>
-           <span className="text-[10px] font-bold text-indigo-600 uppercase tracking-wider">Active Intelligence View</span>
+
+        <div className="flex items-center gap-3 bg-indigo-50 px-4 py-2 rounded-full border border-indigo-100 shadow-inner">
+          <div className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></div>
+          <span className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.2em]">Active Intelligence View</span>
         </div>
       </div>
 
-      {/* Hero Summary Card */}
-      <div className="card mb-8 p-0 overflow-hidden">
-        <div className="p-8 flex flex-col lg:flex-row items-center justify-between gap-8 bg-gradient-to-r from-slate-50/50 to-transparent">
-           <div className="flex-1">
-              <div className="flex items-center gap-3 mb-2">
-                <h1 className="text-3xl font-black text-slate-900 tracking-tight">{detail.Name || detail["Customer ID"]}</h1>
-                <span className="px-2 py-0.5 bg-slate-100 rounded text-[9px] font-mono font-bold text-slate-500 uppercase tracking-widest">{detail["Customer ID"]}</span>
-              </div>
-              <div className="flex flex-wrap gap-x-6 gap-y-2">
-                <span className="text-xs text-indigo-600 font-bold hover:underline cursor-pointer flex items-center gap-1.5">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
-                  {detail.email}
-                </span>
-                <span className="text-xs text-slate-500 font-bold uppercase tracking-tight flex items-center gap-1.5">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-                  {detail.mobile_number || "NO RECORD"}
-                </span>
-                <span className="text-xs text-slate-500 font-bold flex items-center gap-1.5">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
-                  {detail.City}, {detail.State}
-                </span>
-              </div>
-           </div>
+      {/* Hero Header Card */}
+      <div className="bg-white rounded-[40px] shadow-[0_32px_64px_-12px_rgba(15,23,42,0.08)] border border-white p-0 overflow-hidden mb-10 relative">
+        <div className="absolute top-0 left-0 w-full h-[4px] bg-gradient-to-r from-indigo-600 via-blue-600 to-emerald-500" />
 
-           <div className="flex flex-wrap items-center bg-white border border-slate-100 p-2 rounded-2xl shadow-sm">
-             {[
-               { label: "Tenure", value: `${detail["Tenure in Months"]} MO` },
-               { label: "LTD Revenue", value: `$${ltdRevenue?.toLocaleString()}`, color: "text-emerald-600" },
-               { label: "Contract", value: detail.Contract, color: "text-indigo-600" },
-               { label: "Payment", value: detail.PaymentMethod || detail["Payment Method"] }
-             ].map((item, idx) => (
-               <div key={idx} className="px-6 py-3 text-center border-r last:border-0 border-slate-50 min-w-[110px]">
-                 <div className="text-[11px] uppercase font-bold text-slate-400 mb-1 tracking-widest">{item.label}</div>
-                 <div className={`text-xl font-black tracking-tight ${item.color || "text-slate-800"}`}>{item.value}</div>
-               </div>
-             ))}
-           </div>
+        <div className="p-10 flex flex-col xl:flex-row items-center justify-between gap-10">
+          <div className="flex items-center gap-10 w-full xl:w-auto">
+            <div className="w-28 h-28 bg-gradient-to-br from-indigo-600 via-blue-700 to-indigo-900 rounded-[38px] flex items-center justify-center text-white text-5xl font-black shadow-2xl ring-[12px] ring-indigo-50/50">
+              {(detail.Name || detail["Customer ID"]).charAt(0)}
+            </div>
+            <div className="flex flex-col">
+              <div className="flex items-center gap-4 mb-2">
+                <h1 className="text-4xl font-black text-slate-900 tracking-tight leading-none">{detail.Name || detail["Customer ID"]}</h1>
+                {/* <div className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.15em] shadow-sm border ${detail["Customer Status"] === "Stayed" ? "bg-emerald-100 text-emerald-700 border-emerald-200" : "bg-red-100 text-red-700 border-red-200"}`}>
+                  {detail["Customer Status"]}
+                </div> */}
+              </div>
+              <div className="flex items-center gap-2 mb-6">
+                <span className="text-xs text-slate-400 font-mono font-bold tracking-widest uppercase">{detail["Customer ID"]}</span>
+              </div>
+              <div className="flex flex-wrap gap-x-10 gap-y-4">
+                <span className="text-[14px] text-indigo-600 font-black flex items-center gap-3 hover:opacity-70 transition-opacity cursor-pointer">
+                  <span className="w-8 h-8 bg-indigo-50 rounded-xl flex items-center justify-center shadow-sm">📧</span> {detail.email}
+                </span>
+                <span className="text-[14px] text-slate-700 font-black flex items-center gap-3">
+                  <span className="w-8 h-8 bg-slate-50 rounded-xl flex items-center justify-center shadow-sm">📞</span> {detail.mobile_number || "NO RECORD"}
+                </span>
+                <span className="text-[14px] text-slate-500 font-black flex items-center gap-3">
+                  <span className="w-8 h-8 bg-slate-50 rounded-xl flex items-center justify-center shadow-sm">📍</span> {detail.City}, {detail.State}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="w-full xl:w-auto grid grid-cols-2 md:grid-cols-2 bg-slate-50/50 p-8 rounded-[38px] border border-slate-100 shadow-inner gap-x-2 gap-y-8">
+            {/* <StatBox label="CLTV Score" value={`$${detail.CLTV?.toLocaleString()}`} color="green" /> */}
+            <StatBox label="Tenure (Mo)" value={detail["Tenure in Months"]} />
+            {/* <StatBox label="Risk Index" value={detail["Churn Score"]} color={toNumber(detail["Churn Score"]) > 70 ? "red" : "blue"} /> */}
+            <StatBox label="Monthly Charge" value={`$${detail["Monthly Charge"]}`} color="green" />
+            {/* <StatBox label="Net Revenue" value={`$${ltdRevenue?.toLocaleString()}`} color="green" /> */}
+            <StatBox label="Contract Type" value={detail.Contract} />
+            <StatBox label="CSAT / 5" value={detail["Satisfaction Score"]} color={toNumber(detail["Satisfaction Score"]) < 3 ? "red" : "green"} />
+            {/* <StatBox label="Active Offer" value={detail.Offer} /> */}
+          </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-         {/* Churn Risk Factor */}
-         <div className="card overflow-hidden border-l-[6px] border-red-500 p-0">
-            <div className="px-6 py-4 border-b flex items-center justify-between bg-slate-50/30">
-               <div className="flex items-center gap-2">
-                 <span className="text-lg">🎯</span>
-                 <h3 className="font-bold text-slate-800 text-[12px] uppercase tracking-widest">Churn Risk Index</h3>
-               </div>
-               <div className={`${riskBg} px-3 py-1 rounded-full border ${riskBorder} ${riskColor}`}>
-                  <span className="text-[9px] uppercase font-black">AI Calculated Risk</span>
-               </div>
-            </div>
-             <div className="p-6">
-              <div className="flex justify-between items-end mb-6">
-                 <div>
-                    <span className="text-[11px] text-slate-400 font-bold uppercase tracking-widest mb-1 block">Risk Label</span>
-                    <span className={`text-3xl font-black ${detail["Churn Label"] === "Yes" ? "text-red-600" : "text-emerald-600"}`}>{detail["Churn Label"]}</span>
-                 </div>
-                 <div className="text-right">
-                    <span className="text-[11px] text-slate-400 font-bold uppercase tracking-widest mb-1 block">Probability Score</span>
-                    <div className={`text-5xl font-black leading-none ${riskColor}`}>{riskScore.toFixed(2)}</div>
-                 </div>
+      {/* Analytics Matrix Grid */}
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-10 mb-10">
+
+        {/* Churn Diagnostic Card spans full width */}
+        <div className="xl:col-span-3 bg-white rounded-[40px] border-l-[14px] border-indigo-600 shadow-xl shadow-slate-200/40 p-10 border border-slate-100 flex flex-col group transition-all duration-500">
+          <div className="flex items-center gap-4 mb-10">
+            <span className="p-3.5 bg-indigo-50 rounded-[18px] text-2xl shadow-sm group-hover:scale-110 transition-transform">🎯</span>
+            <h3 className="text-[18px] font-black text-slate-800 uppercase tracking-tight">Churn Diagnostic Hub</h3>
+          </div>
+          
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* LEFT: Major Metrics */}
+            <div className={`flex items-center justify-between p-10 bg-gradient-to-br rounded-[32px] border shadow-inner transition-all duration-700 min-h-[200px] ${detail["Churn Label"] === "Yes" ? "from-red-50/60 to-white border-red-100/50" : "from-emerald-50/60 to-white border-emerald-100/50"}`}>
+              <div className="flex flex-col">
+                <span className={`text-[12px] font-black uppercase tracking-[0.2em] mb-4 ${detail["Churn Label"] === "Yes" ? "text-red-500" : "text-emerald-500"}`}>Churn Probability</span>
+                <span className={`font-black text-6xl tracking-tighter uppercase ${detail["Churn Label"] === "Yes" ? "text-red-700" : "text-emerald-700"}`}>{detail["Churn Label"]}</span>
               </div>
-              <DataRow label="Segment Category" value={detail["Churn Category"] || "Standard Base"} color={riskColor} />
-              <div className="mt-4 p-4 bg-slate-50 rounded-xl relative border border-slate-100 group">
-                <div className="absolute -top-2 left-3 bg-white px-1.5 text-[8px] font-black text-slate-300 uppercase tracking-tighter transition-all group-hover:text-indigo-400">Reasoning Agent</div>
-                <p className="text-[12px] leading-relaxed text-slate-600 italic font-medium">"{detail["Churn Reason"] || "No active signals of customer attrition detected in current billing cycle."}"</p>
+              <div className="flex flex-col items-end">
+                <span className={`text-[12px] font-black uppercase tracking-[0.2em] mb-4 ${detail["Churn Label"] === "Yes" ? "text-red-500" : "text-emerald-500"}`}>Risk Magnitude</span>
+                <span className={`font-black text-8xl leading-none tracking-tighter ${detail["Churn Label"] === "Yes" ? "text-red-800" : "text-emerald-800"}`}>{detail["Churn Score"]}</span>
               </div>
             </div>
-         </div>
 
-         {/* Profile Intelligence */}
-         <div className="card overflow-hidden border-l-[6px] border-indigo-500 p-0">
-            <div className="px-6 py-4 border-b flex items-center gap-2 bg-slate-50/30">
-              <span className="text-lg">👤</span>
-              <h3 className="font-bold text-slate-800 text-[12px] uppercase tracking-widest">Profile Intelligence</h3>
-            </div>
-            <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-x-8">
-              <DataRow label="Gender" value={detail.Gender || detail.gender} />
-              <DataRow label="Age" value={detail.Age} />
-              <DataRow label="Senior Citizen" value={detail["Senior Citizen"]} />
-              <DataRow label="Marital Status" value={detail.Married} />
-              <DataRow label="Dependents" value={detail.Dependents} />
-              <DataRow label="No. Dependents" value={detail["Number of Dependents"] || 0} />
-            </div>
-         </div>
+            {/* RIGHT: Agent Reasoning */}
+            <div className={`relative p-10 rounded-[32px] border transition-all duration-700 flex flex-col justify-center min-h-[200px] ${detail["Churn Label"] === "Yes" ? "bg-red-50/20 border-red-100/50" : "bg-emerald-50/20 border-emerald-100/50"}`}>
+               <div className="absolute -top-3 left-10 bg-white px-4 py-1 rounded-full border border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Diagnostic Reasoning Agent</div>
+               
+               <div className="mb-6 flex items-center justify-between border-b border-slate-100 pb-4">
+                  <span className="text-[11px] text-slate-400 font-bold uppercase tracking-widest">Global Risk Alert:</span>
+                  <span className={`text-[13px] font-black px-3 py-0.5 rounded-lg border ${detail["Churn Label"] === "Yes" ? "text-red-600 bg-red-100/50 border-red-200" : "text-emerald-600 bg-emerald-100/50 border-emerald-200"}`}>
+                    {detail["Churn Category"] || "None"}
+                  </span>
+               </div>
 
-         {/* Billing & Revenue */}
-         <div className="card overflow-hidden border-l-[6px] border-emerald-500 p-0">
-            <div className="px-6 py-4 border-b flex items-center gap-2 bg-slate-50/30">
-              <span className="text-lg">💳</span>
-              <h3 className="font-bold text-slate-800 text-[12px] uppercase tracking-widest">Revenue & Billing</h3>
+               <p className="text-[18px] text-slate-700 font-bold leading-relaxed italic font-serif">
+                 "{detail["Churn Reason"] || "Baseline analysis suggests no immediate risk; monitoring secondary retention signals across all managed shads."}"
+               </p>
             </div>
-            <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-x-8">
-              <DataRow label="Monthly Charge" value={`$${detail["Monthly Charge"]}`} color="text-emerald-600" />
-              <DataRow label="Total Charges" value={`$${totalCharges}`} />
-              <DataRow label="Long Distance" value={`$${longDistanceCharges}`} />
-              <DataRow label="LTD Revenue" value={`$${ltdRevenue}`} color="text-emerald-600" />
-              <DataRow label="Total Refunds" value={`$${totalRefunds}`} color="text-red-500" />
-              <DataRow label="Overage" value={`$${extraDataCharges}`} />
-              <DataRow label="Paperless" value={detail["Paperless Billing"]} />
-            </div>
-         </div>
-
-         {/* Usage Behavior */}
-         <div className="card overflow-hidden border-l-[6px] border-orange-500 p-0">
-            <div className="px-6 py-4 border-b flex items-center gap-2 bg-slate-50/30">
-              <span className="text-lg">📊</span>
-              <h3 className="font-bold text-slate-800 text-[12px] uppercase tracking-widest">Usage Behavior</h3>
-            </div>
-            <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-x-8">
-              <DataRow label="Avg Download" value={`${detail["Avg Monthly GB Download"] || 0} GB`} />
-              <DataRow label="Unlimited" value={detail["Unlimited Data"] || "No"} />
-              <DataRow label="Voice" value={detail["Phone Service"]} />
-              <DataRow label="Lines" value={detail["Multiple Lines"]} />
-              <DataRow label="Service" value={detail["Internet Service"]} />
-              <DataRow label="Type" value={detail["Internet Type"]} />
-            </div>
-         </div>
+          </div>
+        </div>
       </div>
 
-      {/* Service Provisioning */}
-      <div className="card p-0 overflow-hidden border-t-2 border-slate-50">
-         <div className="px-6 py-4 border-b bg-slate-50/20 flex items-center gap-2">
-           <span className="text-lg">🛠️</span>
-           <h3 className="font-bold text-slate-800 text-[12px] uppercase tracking-widest">Active Services</h3>
-         </div>
-         <div className="p-8 grid grid-cols-2 md:grid-cols-4 gap-6">
-           {[
-             { label: "Security", active: detail["Online Security"] === "Yes", icon: "🛡️" },
-             { label: "Backup", active: detail["Online Backup"] === "Yes", icon: "☁️" },
-             { label: "Protection", active: detail["Device Protection Plan"] === "Yes", icon: "📱" },
-             { label: "Support", active: detail["Premium Tech Support"] === "Yes", icon: "👨‍💻" },
-             { label: "TV", active: detail["Streaming TV"] === "Yes", icon: "📺" },
-             { label: "Movies", active: detail["Streaming Movies"] === "Yes", icon: "🎞️" },
-             { label: "Music", active: detail["Streaming Music"] === "Yes", icon: "🎵" }
-           ].map((s, idx) => (
-             <div key={idx} className="flex items-center gap-2">
-               <span className={`text-lg ${s.active ? "" : "opacity-60 grayscale"}`}>{s.icon}</span>
-               <span className={`text-[12px] font-bold ${s.active ? "text-slate-600" : "text-slate-400 line-through"}`}>{s.label}:</span>
-               <span className={`text-[12px] font-black ${s.active ? "text-slate-900" : "text-slate-400"}`}>{s.active ? "Yes" : "No"}</span>
-             </div>
-           ))}
-         </div>
+      <div className={`grid grid-cols-1 ${numSecondaryCards >= 3 ? 'lg:grid-cols-3' : numSecondaryCards === 2 ? 'lg:grid-cols-2' : 'lg:grid-cols-1'} gap-10 mb-10`}>
+
+        {/* Technical Health Matrix */}
+        {hasNetwork && (
+          <div className="bg-white rounded-[40px] border border-slate-100 shadow-xl shadow-slate-200/20 p-10 hover:shadow-2xl transition-all group">
+            <div className="flex items-center gap-4 mb-8">
+              <span className="p-3 bg-orange-50 rounded-[16px] text-2xl group-hover:rotate-12 transition-transform">📶</span>
+              <h3 className="text-[16px] font-black text-slate-800 uppercase tracking-tight">Network Intelligence</h3>
+            </div>
+            <div className="space-y-1">
+              <DataRow label="Signal Strength" value={detail.SignalStrength} suffix=" dBm" />
+              <DataRow label="Throughput" value={detail.Throughput} suffix=" Mbps" color="green" />
+              <DataRow label="Latency (ms)" value={detail.Latency} suffix=" ms" color={toNumber(detail.Latency) > 80 ? "red" : "green"} />
+              <DataRow label="Packet Drop" value={detail.PacketLoss} suffix=" %" color={toNumber(detail.PacketLoss) > 1 ? "red" : "green"} />
+              <DataRow label="Jittering" value={detail.Jitter} suffix=" ms" />
+              <div className="h-4" />
+              <DataRow label="Dropped Calls" value={detail.DroppedCalls} color={toNumber(detail.DroppedCalls) > 5 ? "red" : ""} />
+              <DataRow label="Blocked Calls" value={detail.BlockedCalls} />
+              <DataRow label="Dormant Pattern" value={detail.SIMInactivePattern} />
+            </div>
+          </div>
+        )}
+
+        {/* Support & Relationship Card */}
+        {hasSentiment && (
+          <div className="bg-white rounded-[40px] border border-slate-100 shadow-xl shadow-slate-200/20 p-10 hover:shadow-2xl transition-all group">
+            <div className="flex items-center gap-4 mb-8">
+              <span className="p-3 bg-blue-50 rounded-[16px] text-2xl group-hover:rotate-12 transition-transform">🗳️</span>
+              <h3 className="text-[16px] font-black text-slate-800 uppercase tracking-tight">Service Sentiment</h3>
+            </div>
+            <div className="space-y-1">
+              <DataRow label="Support Issue" value={detail.ComplaintType} color="blue" />
+              <DataRow label="Status" value={detail.ComplaintResolution} />
+              <DataRow label="Freq. Count" value={detail.ComplaintFrequency} color={toNumber(detail.ComplaintFrequency) > 1 ? "red" : ""} />
+              <DataRow label="Channel" value={detail.ComplaintMedium} />
+              <div className="h-4" />
+              <DataRow label="Payment Delay" value={detail.PaymentDelay} suffix=" Days" color={toNumber(detail.PaymentDelay) > 0 ? "red" : "green"} />
+              <DataRow label="Plan Chg Index" value={detail.PlanChangeTracking} />
+              <DataRow label="Handset Cap." value={detail.DeviceCapability} />
+              <div className="h-4" />
+              {isVal(detail.Complaint) && (
+                <div className="mt-2 p-5 bg-slate-50 rounded-[20px] border border-slate-100 italic text-[13px] text-slate-600 font-medium">
+                  "{detail.Complaint}"
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Global Consumption Hub */}
+        {hasSpending && (
+          <div className="bg-white rounded-[40px] border border-slate-100 shadow-xl shadow-slate-200/20 p-10 hover:shadow-2xl transition-all group">
+            <div className="flex items-center gap-4 mb-8">
+              <span className="p-3 bg-emerald-50 rounded-[16px] text-2xl group-hover:rotate-12 transition-transform">💎</span>
+              <h3 className="text-[16px] font-black text-slate-800 uppercase tracking-tight">Spending Profile</h3>
+            </div>
+            <div className="space-y-1">
+              <DataRow label="Average Check" value={detail["Avg Monthly Spend"]} suffix=" /mo" color="green" />
+              <DataRow label="Bandwidth DL" value={detail["Avg Monthly GB Download"]} suffix=" GB" />
+              <DataRow label="Value Ratios" value={detail["Value-to-Spend Ratio"]} color="blue" />
+              <DataRow label="Extra Data" value={isVal(detail["Total Extra Data Charges"]) ? `$${detail["Total Extra Data Charges"]}` : null} />
+              <DataRow label="Long Distance" value={isVal(detail["Total Long Distance Charges"]) ? `$${detail["Total Long Distance Charges"]}` : null} />
+              <div className="h-4" />
+              <DataRow label="Lifetime Rev" value={`$${ltdRevenue?.toLocaleString()}`} color="green" />
+              <DataRow label="Refund Total" value={isVal(detail["Total Refunds"]) ? `$${detail["Total Refunds"]}` : null} color={toNumber(detail["Total Refunds"]) > 0 ? "red" : ""} />
+              <DataRow label="Paperless bill" value={detail["Paperless Billing"]} />
+            </div>
+          </div>
+        )}
       </div>
+
+      {/* Infrastructure Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-10 pb-10">
+
+        {/* Demographic & Location Matrix */}
+        {(hasGeo || hasDemogs) && (
+          <div className="bg-white rounded-[40px] border border-slate-100 shadow-sm p-8 flex flex-col gap-8">
+            {hasGeo && (
+              <div>
+                <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] mb-5 pb-2 border-b border-slate-50">Geospatial Data</h3>
+                <div className="space-y-1">
+                  <DataRow label="Zipcode" value={detail["Zip Code"]} />
+                  <DataRow label="Population Size" value={detail.population || detail.Population} />
+                  <DataRow label="Coordinates" value={`${toNumber(detail.Latitude).toFixed(2)} / ${toNumber(detail.Longitude).toFixed(2)}`} />
+                </div>
+              </div>
+            )}
+            {hasDemogs && (
+              <div>
+                <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] mb-5 pb-2 border-b border-slate-50">Demographics</h3>
+                <div className="space-y-1">
+                  <DataRow label="Under 30" value={detail["Under 30"]} />
+                  <DataRow label="Senior" value={detail["Senior Citizen"]} />
+                  <DataRow label="Married" value={detail.Married} />
+                  <DataRow label="Dependents" value={detail.Dependents} />
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Full Provisioning Matrix */}
+        <div className={`${(hasGeo || hasDemogs) ? 'lg:col-span-3' : 'lg:col-span-4'} bg-white rounded-[40px] border border-slate-100 shadow-sm p-10`}>
+          <h3 className="text-[13px] font-black text-slate-900 uppercase tracking-widest mb-8 flex items-center gap-3">
+            <span className="w-2.5 h-2.5 bg-indigo-600 rounded-full animate-pulse shadow-[0_0_10px_rgba(79,70,229,0.5)]" /> Additional Services
+          </h3>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6 gap-5">
+            <ServiceBadge label="Phone" active={detail["Phone Service"]} />
+            <ServiceBadge label="Internet" active={detail["Internet Service"]} />
+            <ServiceBadge label="Multi-Line" active={detail["Multiple Lines"]} />
+            <ServiceBadge label="Unlimited" active={detail["Unlimited Data"]} />
+            <ServiceBadge label="Security" active={detail["Online Security"]} />
+            <ServiceBadge label="Backup" active={detail["Online Backup"]} />
+            <ServiceBadge label="Support" active={detail["Premium Tech Support"]} />
+            <ServiceBadge label="Protection" active={detail["Device Protection"]} />
+            <ServiceBadge label="Stream TV" active={detail["Streaming TV"]} />
+            <ServiceBadge label="Movie Hub" active={detail["Streaming Movies"]} />
+            <ServiceBadge label="Music Hub" active={detail["Streaming Music"]} />
+            <ServiceBadge label="Paperless" active={detail["Paperless Billing"]} />
+          </div>
+        </div>
+      </div>
+
     </div>
   );
 }

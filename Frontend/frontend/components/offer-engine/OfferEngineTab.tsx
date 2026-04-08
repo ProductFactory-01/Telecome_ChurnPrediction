@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import api from "../../lib/api";
 import AgentHeader from "../shared/AgentHeader";
 import OfferKPIs from "./OfferKPIs";
@@ -11,6 +12,7 @@ import styles from "./OfferEngine.module.css";
 import Loading from "../shared/Loading";
 
 export default function OfferEngineTab() {
+  const router = useRouter();
   // --- State ---
   const [allCustomers, setAllCustomers] = useState<any[]>([]);
   const [matchedCustomers, setMatchedCustomers] = useState<any[]>([]);
@@ -188,6 +190,11 @@ export default function OfferEngineTab() {
       const summaryResp = await api.get("/offer-engine");
       setSummaryData(summaryResp.data);
 
+      // Navigate to Outreach with params
+      setTimeout(() => {
+        router.push(`/?tab=outreach&main=${encodeURIComponent(mainCat)}&sub=${encodeURIComponent(subCat)}&risk=${encodeURIComponent(riskLevel)}`);
+      }, 1500);
+
     } catch (e: any) {
       setStatusMsg(`Campaign save failed: ${e.response?.data?.detail || "Error"}`);
     } finally {
@@ -231,6 +238,10 @@ export default function OfferEngineTab() {
     setStatusMsg(`Selected "${rec?.offer_type || rec?.title}". You can now generate and save the offer cohort document.`);
   };
 
+  const handleUpdateSummary = (id: string, newSummary: string) => {
+    setRecommendations(prev => prev.map(r => r.plan_id === id ? { ...r, offer_summary: newSummary } : r));
+  };
+
   return (
     <div className="dashboard-content">
       <AgentHeader
@@ -260,6 +271,7 @@ export default function OfferEngineTab() {
           recommendations={recommendations}
           selectedId={selectedRecId}
           onSelect={handleRecSelect}
+          onUpdateSummary={handleUpdateSummary}
           isLoading={isLoading}
         />
       </div>

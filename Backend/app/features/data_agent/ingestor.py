@@ -153,23 +153,23 @@ def ingest_data(df: pd.DataFrame, mapping: Dict[str, str], engine) -> Dict[str, 
         "rejected_duplicate": int(rejected_duplicate)
     }
 
-def update_merged_table(customer_ids: List[str], engine):
+def update_source_table(customer_ids: List[str], engine):
     """
-    Synchronizes the 'merged' table for the given set of Customer IDs.
+    Synchronizes the 'source' table for the given set of Customer IDs.
     This usually involves a complex JOIN or a REFRESH if it's a view.
-    Since we are told all tables combined into 'merged', we will perform a SQL script to sync.
+    Since we are told all tables combined into 'source', we will perform a SQL script to sync.
     """
-    # Simple strategy: Delete from merged and re-insert by joining all tables
+    # Simple strategy: Delete from source and re-insert by joining all tables
     # Note: Double quotes are needed for table names with spaces or cases
     id_list = ", ".join([f"'{cid}'" for cid in customer_ids])
     
     with engine.begin() as conn:
-        # Delete existing entries from merged for these customers
-        conn.execute(text(f"DELETE FROM merged WHERE \"Customer ID\" IN ({id_list})"))
+        # Delete existing entries from source for these customers
+        conn.execute(text(f"DELETE FROM source WHERE \"Customer ID\" IN ({id_list})"))
         
         # Insert joined records
         join_query = f"""
-        INSERT INTO merged ("Customer ID", "Gender", "Age", "Under 30", "Senior Citizen", "Married", "Dependents", "Number of Dependents", "Name", "email", "mobile_number", "Country", "State", "City", "Zip Code", "Latitude", "Longitude", "population", "Quarter", "Referred a Friend", "Number of Referrals", "Tenure in Months", "Offer", "Phone Service", "Avg Monthly Long Distance Charges", "Multiple Lines", "Internet Service", "Internet Type", "Avg Monthly GB Download", "Online Security", "Online Backup", "Device Protection Plan", "Premium Tech Support", "Streaming TV", "Streaming Movies", "Streaming Music", "Unlimited Data", "Contract", "Paperless Billing", "Payment Method", "Monthly Charge", "Total Charges", "Total Refunds", "Total Extra Data Charges", "Total Long Distance Charges", "Total Revenue", "Satisfaction Score", "Customer Status", "Churn Label", "Churn Value", "Churn Score", "CLTV", "Churn Category", "Churn Reason")
+        INSERT INTO source ("Customer ID", "Gender", "Age", "Under 30", "Senior Citizen", "Married", "Dependents", "Number of Dependents", "Name", "email", "mobile_number", "Country", "State", "City", "Zip Code", "Latitude", "Longitude", "population", "Quarter", "Referred a Friend", "Number of Referrals", "Tenure in Months", "Offer", "Phone Service", "Avg Monthly Long Distance Charges", "Multiple Lines", "Internet Service", "Internet Type", "Avg Monthly GB Download", "Online Security", "Online Backup", "Device Protection Plan", "Premium Tech Support", "Streaming TV", "Streaming Movies", "Streaming Music", "Unlimited Data", "Contract", "Paperless Billing", "Payment Method", "Monthly Charge", "Total Charges", "Total Refunds", "Total Extra Data Charges", "Total Long Distance Charges", "Total Revenue", "Satisfaction Score", "Customer Status", "Churn Label", "Churn Value", "Churn Score", "CLTV", "Churn Category", "Churn Reason")
         SELECT 
             d."Customer ID", d."Gender", d."Age", d."Under 30", d."Senior Citizen", d."Married", d."Dependents", d."Number of Dependents", d."Name", d."email", d."mobile_number", 
             l."Country", l."State", l."City", l."Zip Code", l."Latitude", l."Longitude", 
@@ -192,11 +192,11 @@ def run_churn_predictions(customer_ids: List[str], engine):
     if not customer_ids:
         return []
         
-    # CRITICAL: Sync merged table FIRST so we can query unified data for prediction
-    update_merged_table(customer_ids, engine)
+    # CRITICAL: Sync source table FIRST so we can query unified data for prediction
+    update_source_table(customer_ids, engine)
     
     id_list = ", ".join([f"'{cid}'" for cid in customer_ids])
-    query = f"SELECT * FROM merged WHERE \"Customer ID\" IN ({id_list})"
+    query = f"SELECT * FROM source WHERE \"Customer ID\" IN ({id_list})"
     df = pd.read_sql(query, engine)
     
     results = []
@@ -256,7 +256,7 @@ def run_churn_predictions(customer_ids: List[str], engine):
                 
                 # Update Churn_New table
                 # Ensure existing row or insert
-                conn.execute(text(f"DELETE FROM \"Churn_New\" WHERE \"CustomerID\" = :cid"), {"cid": row["Customer ID"]})
+                conn.execute(text(f"DELETE FROM \"source\" WHERE \"CustomerID\" = :cid"), {"cid": row["Customer ID"]})
                 
                 # Map columns for Churn_New based on user provided 7. Churn_new
                 churn_new_data = {
@@ -309,6 +309,6 @@ def run_churn_predictions(customer_ids: List[str], engine):
             print(f"Error predicting for {row['Customer ID']}: {e}")
             results.append({"customer_id": row["Customer ID"], "status": "error", "message": str(e)})
             
-    # Final sync to merged after updating status & Churn_New
-    update_merged_table(customer_ids, engine)
+    # Final sync to source after updating status & Churn_New
+    update_source_table(customer_ids, engine)
     return results
