@@ -5,39 +5,14 @@ import api from "../../lib/api";
 import AgentHeader from "../shared/AgentHeader";
 import SectionTitle from "../shared/SectionTitle";
 import ChartCard from "../shared/ChartCard";
+import KpiCard from "../shared/KpiCard";
 import Loading from "../shared/Loading";
 import { Bar, Line } from "react-chartjs-2";
 import "../../lib/chartSetup";
 import { COLORS, defaultOptions } from "../../lib/chartSetup";
 import { TAXONOMY, RISK_LEVELS } from "../offer-engine/OfferTaxonomy";
 
-function StatCard({ label, value, sub, icon, color }: { label: string; value: string | number; sub: string; icon: string; color: "purple" | "blue" | "cyan" }) {
-  const colorMap = {
-    purple: "text-purple-600 bg-purple-50 border-purple-100 shadow-purple-100/50",
-    blue: "text-blue-600 bg-blue-50 border-blue-100 shadow-blue-100/50",
-    cyan: "text-cyan-600 bg-cyan-50 border-cyan-100 shadow-cyan-100/50"
-  };
 
-  return (
-    <div className="bg-white p-8 rounded-[32px] border border-slate-200/60 shadow-xl shadow-slate-200/20 group hover:-translate-y-1 transition-all duration-500 relative overflow-hidden">
-      <div className="flex items-start justify-between">
-        <div className="space-y-4">
-          <div className="flex flex-col">
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">{label}</span>
-            <span className="text-3xl font-black text-slate-900 tracking-tighter">{value}</span>
-          </div>
-          <p className="text-[11px] font-bold text-slate-400 tracking-tight flex items-center gap-1.5 grayscale group-hover:grayscale-0 transition-all">
-            <span className={`w-1.5 h-1.5 rounded-full ${color === 'purple' ? 'bg-purple-500' : color === 'blue' ? 'bg-blue-500' : 'bg-cyan-500'} animate-pulse`} />
-            {sub}
-          </p>
-        </div>
-        <div className={`text-2xl p-4 rounded-2xl border transition-all duration-500 group-hover:scale-110 group-hover:rotate-6 ${colorMap[color]}`}>
-          {icon}
-        </div>
-      </div>
-    </div>
-  );
-}
 
 export default function OutreachTab() {
   const searchParams = useSearchParams();
@@ -175,7 +150,7 @@ export default function OutreachTab() {
     setChannels((prev) => prev.map((c) => c.key === key ? { ...c, selected: !c.selected } : c));
   };
 
-  if (!data) return <div className="flex items-center justify-center min-h-[500px]"><Loading message="Synchronising Outreach Intelligence..." /></div>;
+  if (!data) return <div className="flex items-center justify-center min-h-[500px]"><Loading message="Loading Outreach Intelligence..." /></div>;
 
   const k = data.kpis;
 
@@ -189,9 +164,9 @@ export default function OutreachTab() {
       />
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <StatCard label="Campaigns Active" value={k.campaigns_triggered} sub="Execution Persistence" icon="🚀" color="purple" />
-        <StatCard label="Messages Transmitted" value={k.messages_sent.toLocaleString()} sub="Direct Connectivity" icon="✉️" color="blue" />
-        <StatCard label="Operational Cost" value={`$${k.total_contact_cost}`} sub="Outreach Expenditure" icon="💰" color="cyan" />
+        <KpiCard label="Campaigns Active" value={k.campaigns_triggered} sub="Execution Persistence" color="purple" />
+        <KpiCard label="Messages Transmitted" value={k.messages_sent.toLocaleString()} sub="Direct Connectivity" color="blue" />
+        <KpiCard label="Operational Cost" value={`$${k.total_contact_cost}`} sub="Outreach Expenditure" color="cyan" />
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 items-start">
@@ -334,7 +309,7 @@ export default function OutreachTab() {
 
       <div className="flex justify-end pt-4">
         <button
-          className="group relative px-10 py-5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-[24px] text-[13px] font-black uppercase tracking-[0.2em] shadow-2xl shadow-purple-200 hover:shadow-indigo-300 transition-all hover:-translate-y-1 active:scale-95 disabled:opacity-50 disabled:grayscale disabled:translate-y-0"
+          className="group relative px-10 py-5 bg-slate-900 text-white rounded-[24px] text-[13px] font-black uppercase tracking-[0.2em] shadow-2xl shadow-slate-200 hover:bg-black hover:shadow-slate-300 transition-all hover:-translate-y-1 active:scale-95 disabled:opacity-50 disabled:grayscale disabled:translate-y-0"
           onClick={handleTriggerCampaign}
           disabled={!activeStrategy || isTriggering}
         >
@@ -353,7 +328,7 @@ export default function OutreachTab() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <ChartCard title="Channel Performance" icon="📊" height={450}>
+        <ChartCard title="Channel Performance" icon="📊" height={380}>
           <div className="p-4 h-full">
             <Bar data={{
               labels: data.charts.channel_performance.labels,
@@ -388,7 +363,7 @@ export default function OutreachTab() {
           </div>
         </ChartCard>
         
-        <ChartCard title="Daily Outreach Timeline" icon="📈" height={450}>
+        <ChartCard title="Daily Outreach Timeline" icon="📈" height={380}>
           <div className="p-4 h-full">
             <Line data={{
               labels: data.charts.timeline.labels,

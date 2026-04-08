@@ -1,7 +1,6 @@
-"use client";
 import { Bar, Line } from "react-chartjs-2";
 import { COLORS, defaultOptions } from "../../lib/chartSetup";
-import styles from "./OfferEngine.module.css";
+import ChartCard from "../shared/ChartCard";
 
 interface ChartData {
   effectiveness: { label: string; value: number }[];
@@ -46,54 +45,48 @@ export default function OfferCharts({ data }: { data?: ChartData }) {
   };
 
   return (
-    <div className={styles.chartGrid}>
-      <div className={styles.chartCard}>
-        <h3>Offer Type Effectiveness</h3>
-        <div className={styles.chartWrap}>
-          <Bar
-            data={effectivenessData}
-            options={{
-              ...defaultOptions,
-              plugins: {
-                ...defaultOptions.plugins,
-                legend: { display: false },
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <ChartCard title="Offer Type Effectiveness" icon="📊" height={350}>
+        <Bar
+          data={effectivenessData}
+          options={{
+            ...defaultOptions,
+            maintainAspectRatio: false,
+            plugins: {
+              ...defaultOptions.plugins,
+              legend: { display: false },
+            },
+            scales: {
+              ...defaultOptions.scales,
+              y: {
+                ...defaultOptions.scales?.y,
+                beginAtZero: true,
               },
-              scales: {
-                ...defaultOptions.scales,
-                y: {
-                  ...defaultOptions.scales?.y,
-                  beginAtZero: true,
-                  title: { display: true, text: "Count of Offers" },
-                },
-              },
-            }}
-          />
-        </div>
-      </div>
+            },
+          }}
+        />
+      </ChartCard>
 
-      <div className={styles.chartCard}>
-        <h3>Offer Generation Timeline</h3>
-        <div className={styles.chartWrap}>
-          <Line
-            data={timelineData}
-            options={{
-              ...defaultOptions,
-              plugins: {
-                ...defaultOptions.plugins,
-                legend: { position: "bottom" },
+      <ChartCard title="Offer Generation Timeline" icon="📉" height={350}>
+        <Line
+          data={timelineData}
+          options={{
+            ...defaultOptions,
+            maintainAspectRatio: false,
+            plugins: {
+              ...defaultOptions.plugins,
+              legend: { position: "bottom" },
+            },
+            scales: {
+              ...defaultOptions.scales,
+              y: {
+                ...defaultOptions.scales?.y,
+                beginAtZero: true,
               },
-              scales: {
-                ...defaultOptions.scales,
-                y: {
-                  ...defaultOptions.scales?.y,
-                  beginAtZero: true,
-                  title: { display: true, text: "Customers Bound" },
-                },
-              },
-            }}
-          />
-        </div>
-      </div>
+            },
+          }}
+        />
+      </ChartCard>
     </div>
   );
 }
