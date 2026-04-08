@@ -5,7 +5,7 @@ interface Props {
   fullPage?: boolean;
 }
 
-export default function Loading({ message = "Synchronizing Intelligence...", fullPage = false }: Props) {
+export default function Loading({ message = "Fetching Intelligence...", fullPage = false }: Props) {
   return (
     <div className={`flex flex-col items-center justify-center p-12 transition-all duration-500 animate-in fade-in zoom-in-95 ${fullPage ? "fixed inset-0 bg-white/80 backdrop-blur-md z-50" : "flex-1 min-h-[60vh] w-full"}`}>
       <div className="relative mb-6">
@@ -23,7 +23,7 @@ export default function Loading({ message = "Synchronizing Intelligence...", ful
         <div className="text-sm font-bold text-slate-600 tracking-tight">
           {message}
         </div>
-                <div className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.2em] mb-1 animate-pulse">
+                <div className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.2em] mb-1 animate-pulse mt-3">
            Gathering Data, It may take Few seconds
         </div>
       </div>

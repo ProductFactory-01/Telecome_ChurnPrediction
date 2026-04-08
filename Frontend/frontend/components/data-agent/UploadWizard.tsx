@@ -235,7 +235,7 @@ export default function UploadWizard() {
            
            <div className="w-full max-w-xl">
              <AgentLog entries={[
-                { time: "SYS", tag: "info", message: "Synchronizing database shards..." },
+                { time: "SYS", tag: "info", message: "Fetching database shards..." },
                 { time: "SYS", tag: "info", message: "Initializing LLM reasoning engine..." },
                 { time: "SYS", tag: "info", message: "Mapping customer demographics..." }
               ]} />

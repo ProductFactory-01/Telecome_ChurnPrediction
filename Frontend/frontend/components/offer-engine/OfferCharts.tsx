@@ -10,7 +10,7 @@ interface ChartData {
 
 export default function OfferCharts({ data }: { data?: ChartData }) {
   const filteredEffectiveness = data?.effectiveness?.filter(
-    (item) => item.label !== "Gamification"
+    (item) => item.label !== "Gamification" && item.label !== "Test Offer"
   );
 
   const effectivenessData = {

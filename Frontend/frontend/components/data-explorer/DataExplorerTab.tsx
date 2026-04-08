@@ -119,7 +119,7 @@ export default function DataExplorerTab() {
     api.get("/eda").then((r) => setData(r.data)).catch(console.error);
   }, []);
 
-  if (!data) return <Loading message="Exploring Subscriber Data Domains..." />;
+  if (!data) return <Loading message="Creating Dashboards..." />;
 
   const renderCrmBilling = () => {
     const d = data.crm_billing;

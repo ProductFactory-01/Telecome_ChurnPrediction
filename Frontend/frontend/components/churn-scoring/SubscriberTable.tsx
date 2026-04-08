@@ -122,7 +122,7 @@ export default function SubscriberTable({ onViewDetail }: Props) {
       <div className="relative min-h-[500px]">
         {loading && (
           <div className="absolute inset-0 bg-white/70 backdrop-blur-sm z-30 flex items-center justify-center transition-opacity">
-            <Loading message="Fetching Subscriber Delta..." />
+            <Loading message="Fetching Subscriber Data..." />
           </div>
         )}
 

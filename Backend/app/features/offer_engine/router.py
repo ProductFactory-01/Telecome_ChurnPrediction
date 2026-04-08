@@ -198,7 +198,7 @@ def get_offer_engine_data():
         
         # Process Offer Type Effectiveness (Title counts)
         # Ensure all required labels are present even with 0 counts
-        required_labels = ["Discount", "Custom Bundle", "Loyalty Points", "Gamification", "Plan Upgrade"]
+        required_labels = ["Discount", "Custom Bundle", "Loyalty Points", "Plan Upgrade"]
         effectiveness_map = {label: 0 for label in required_labels}
         
         for c in all_campaigns:

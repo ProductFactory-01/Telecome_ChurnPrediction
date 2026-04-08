@@ -32,7 +32,7 @@ export default function DataAgentTab() {
   if (!data) {
     return (
       <div className="flex items-center justify-center min-h-[500px]">
-        <Loading message="Synchronizing Data Sources..." />
+        <Loading message="Fetching Data Sources..." />
       </div>
     );
   }

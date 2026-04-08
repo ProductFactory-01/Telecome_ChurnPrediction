@@ -44,7 +44,7 @@ export default function LiveImpactTab() {
   }, []);
 
   if (error) return <div className="dashboard-content text-muted">Failed to load impact data.</div>;
-  if (!data) return <Loading message="Analyzing Live Retention Impact..." />;
+  if (!data) return <Loading message="Loading Live Retention Impact..." />;
 
   const hero = data.hero_kpis || { churn_rate_reduction: 0, offer_acceptance_rate: 0, clv_increase: 0, outreach_cost_reduction: 0 };
   const sec = data.secondary_kpis || {

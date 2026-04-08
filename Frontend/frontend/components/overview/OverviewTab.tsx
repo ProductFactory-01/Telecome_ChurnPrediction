@@ -17,7 +17,7 @@ export default function OverviewTab() {
 
   if (!data) return (
     <div className="flex items-center justify-center min-h-[500px]">
-      <Loading message="Assembling Dashboard..." />
+      <Loading message="Loading Dashboard..." />
     </div>
   );
 

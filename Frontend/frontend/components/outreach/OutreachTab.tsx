@@ -167,8 +167,8 @@ export default function OutreachTab() {
         title="Outreach Automation Agent"
         subtitle="Multi-channel campaign orchestration"
         color="purple"
-        statusLabel="Ready"
-        statusType="active"
+        // statusLabel="Ready"
+        // statusType="active"
       />
 
       <div className="panel-grid panel-grid--3 mb-6">
