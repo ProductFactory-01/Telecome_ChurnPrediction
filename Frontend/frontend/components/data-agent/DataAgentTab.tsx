@@ -64,31 +64,41 @@ export default function DataAgentTab() {
           {sources.map((s) => (
             <div
               key={s.key}
-              className="group relative bg-white p-6 rounded-[28px] border border-slate-200/80 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-500 overflow-hidden"
+              className={`group relative p-6 rounded-[28px] border border-slate-200/60 transition-all duration-500 overflow-hidden ${
+                s.active ? "bg-white shadow-sm hover:shadow-xl hover:-translate-y-1" : "bg-slate-50 opacity-60"
+              }`}
             >
               {/* Corner accent */}
               <div className="absolute -right-4 -top-4 w-16 h-16 bg-blue-500 opacity-0 group-hover:opacity-[0.05] rounded-full transition-all duration-700 group-hover:scale-150" />
               
               <div className="relative z-10">
-                <div className="text-3xl mb-4 transform transition-transform duration-500 group-hover:scale-110 group-hover:rotate-6 origin-left">
+                <div className={`text-3xl mb-4 transform transition-transform duration-500 group-hover:scale-110 group-hover:rotate-6 origin-left ${!s.active && "grayscale opacity-50"}`}>
                   {s.icon}
                 </div>
-                <h3 className="text-[15px] font-black text-slate-800 tracking-tight leading-tight mb-2">
+                <h3 className={`text-[15px] font-black tracking-tight leading-tight mb-2 ${s.active ? "text-slate-800" : "text-slate-400"}`}>
                   {s.title}
                 </h3>
                 <p className="text-[11px] font-bold text-slate-500 leading-relaxed mb-4 line-clamp-2">
                   {s.description}
                 </p>
-                <div className="text-[12px] font-black text-indigo-600 tracking-tight">
+                <div className={`text-[12px] font-black tracking-tight ${s.active ? "text-indigo-600" : "text-slate-400"}`}>
                   {s.records.toLocaleString()} <span className="text-slate-400 font-bold uppercase text-[9px] tracking-widest ml-1">Records</span>
                 </div>
               </div>
 
-              {/* Status Indicator */}
-              <div className="absolute top-4 right-4 flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-40"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-              </div>
+              {/* Verified Status Indicator (Non-selectable) */}
+              {s.active && (
+                <div className="absolute top-4 right-4 animate-in fade-in duration-700">
+                  <div className="relative flex items-center justify-center">
+                    <div className="absolute inset-0 bg-emerald-400 opacity-20 blur-md rounded-full animate-pulse" />
+                    <div className="bg-emerald-500/10 border border-emerald-500/20 p-1.5 rounded-full flex items-center justify-center">
+                      <svg width="10" height="10" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M10 3L4.5 8.5L2 6" stroke="#10b981" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           ))}
         </div>

@@ -186,7 +186,7 @@ export default function MlModelsTab() {
   }, []);
 
   if (!data) {
-    return <Loading message="Querying AI Model Intelligence..." />;
+    return <Loading message="Loading Model Intelligence..." />;
   }
 
   if (!data.ds_names.length) {

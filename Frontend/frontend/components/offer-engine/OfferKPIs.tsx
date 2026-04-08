@@ -1,29 +1,31 @@
-import styles from "./OfferEngine.module.css";
+import KpiCard from "../shared/KpiCard";
 
 interface OfferKPIsProps {
   generatedCount: number;
   totalCustomers: number;
-  gamificationActive?: boolean; // make optional
-  revenueProtected?: number;  // make optional
+  gamificationActive?: boolean; 
+  revenueProtected?: number;  
 }
 
 export default function OfferKPIs({
   generatedCount = 0,
   totalCustomers = 0,
-  gamificationActive = true,
-  revenueProtected = 12500
 }: OfferKPIsProps) {
   return (
-    <div className={styles.kpiRow}>
-      <div className={`${styles.kpiCard} ${styles.kpiCardGreen}`}>
-        <div className={styles.kpiLabel}>Offers Generated</div>
-        <div className={styles.kpiValue}>{(generatedCount || 0).toLocaleString()}</div>
-      </div>
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+      <KpiCard 
+        label="Offers Generated" 
+        value={(generatedCount || 0).toLocaleString()} 
+        sub="Personalized Retention Protocols"
+        color="green" 
+      />
       
-      <div className={`${styles.kpiCard} ${styles.kpiCardAmber}`}>
-        <div className={styles.kpiLabel}>Total Customers</div>
-        <div className={styles.kpiValue}>{(totalCustomers || 0).toLocaleString()}</div>
-      </div>
+      <KpiCard 
+        label="Total Customers" 
+        value={(totalCustomers || 0).toLocaleString()} 
+        sub="Eligible for Retention Strategy"
+        color="amber" 
+      />
     </div>
   );
 }

@@ -217,7 +217,7 @@ export default function CustomerDetails({ customerId, onBack }: Props) {
 
         {/* Churn Diagnostic Hub */}
         {/* Churn Diagnostic Hub */}
-        <CollapsibleSection id="churn" icon="🎯" title="Churn Diagnostic Hub (Primary Risk)" hasData={true} badge={detail["Churn Label"]}>
+        <CollapsibleSection id="churn" icon="🎯" title="Churn Diagnostic Hub" hasData={true} badge={detail["Churn Label"]}>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 pt-4">
             
             {/* Left Column: Core Churn Metrics */}
@@ -246,13 +246,13 @@ export default function CustomerDetails({ customerId, onBack }: Props) {
                <div className="flex items-center justify-between mb-8 relative z-10">
                  <div className="flex items-center gap-3">
                     <span className="p-2.5 bg-indigo-50 rounded-xl text-xl">🤖</span>
-                    <h4 className="text-[13px] font-black text-slate-800 uppercase tracking-widest">Diagnostic Reasoning Agent</h4>
+                    <h4 className="text-[13px] font-black text-slate-800 uppercase tracking-widest">Diagnosed Reason</h4>
                  </div>
-                 {detail.ai_reason && (
+                 {/* {detail.ai_reason && (
                     <span className={`text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest border italic ${detail["Churn Label"] === "Yes" ? "text-red-600 bg-red-50 border-red-100" : "text-emerald-600 bg-emerald-50 border-emerald-100"}`}>
                       {detail["Churn Category"] || "Risk Alert"}
                     </span>
-                 )}
+                 )} */}
                </div>
 
                <div className="flex-1 relative z-10 divide-y divide-slate-50">
