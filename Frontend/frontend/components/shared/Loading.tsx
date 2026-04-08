@@ -5,7 +5,7 @@ interface Props {
   fullPage?: boolean;
 }
 
-export default function Loading({ message = "Synchronizing Intelligence...", fullPage = false }: Props) {
+export default function Loading({ message = "Fetching Intelligence...", fullPage = false }: Props) {
   return (
     <div className={`flex flex-col items-center justify-center p-12 transition-all duration-500 animate-in fade-in zoom-in-95 ${fullPage ? "fixed inset-0 bg-white/80 backdrop-blur-md z-50" : "flex-1 min-h-[60vh] w-full"}`}>
       <div className="relative mb-6">

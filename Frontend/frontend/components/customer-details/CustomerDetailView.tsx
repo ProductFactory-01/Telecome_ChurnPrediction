@@ -24,7 +24,7 @@ export default function CustomerDetailView({ customerId, onClose }: Props) {
       <div className="fixed inset-0 z-[100] flex bg-black/40 backdrop-blur-sm animate-in fade-in duration-300">
         <div className="m-auto bg-white rounded-2xl p-12 shadow-2xl flex flex-col items-center">
           <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4" />
-          <div className="text-gray-500 font-medium tracking-tight font-sans">Synchronizing Customer Profile...</div>
+          <div className="text-gray-500 font-medium tracking-tight font-sans">Fetching Customer Profile...</div>
         </div>
       </div>
     );
