@@ -23,7 +23,7 @@ export default function Loading({ message = "Fetching Intelligence...", fullPage
         <div className="text-sm font-bold text-slate-600 tracking-tight">
           {message}
         </div>
-                <div className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.2em] mb-1 animate-pulse">
+                <div className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.2em] mb-1 animate-pulse mt-3">
            Gathering Data, It may take Few seconds
         </div>
       </div>
