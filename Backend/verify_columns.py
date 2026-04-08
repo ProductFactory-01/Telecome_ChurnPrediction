@@ -7,8 +7,8 @@ def check_merged_columns():
         print("Engine failed")
         return
     try:
-        df = pd.read_sql('SELECT * FROM merged LIMIT 1', engine)
-        print("Columns in merged:", df.columns.tolist())
+        df = pd.read_sql('SELECT * FROM source LIMIT 1', engine)
+        print("Columns in source:", df.columns.tolist())
     except Exception as e:
         print("Error:", e)
 

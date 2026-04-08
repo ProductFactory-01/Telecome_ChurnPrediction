@@ -43,9 +43,10 @@ def check_duplicates(df: pd.DataFrame, mapping: Dict, engine) -> Tuple[pd.DataFr
         return df, [{"time": "INFO", "tag": "info", "message": "No Customer IDs found in CSV."}]
         
     # Query existing IDs
-    query = f"SELECT \"Customer ID\" FROM merged WHERE \"Customer ID\" IN ({', '.join([f'\'{cid}\'' for cid in customer_ids])})"
+    placeholders = ", ".join(["%s"] * len(customer_ids))
+    query = f'SELECT "Customer ID" FROM source WHERE "Customer ID" IN ({placeholders})'
     try:
-        existing_ids = pd.read_sql(query, engine)["Customer ID"].tolist()
+        existing_ids = pd.read_sql(query, engine, params=tuple(customer_ids))["Customer ID"].tolist()
     except Exception as e:
         print(f"Error checking duplicates: {e}")
         existing_ids = []

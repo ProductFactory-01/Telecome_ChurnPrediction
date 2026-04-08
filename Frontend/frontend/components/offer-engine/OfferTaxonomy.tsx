@@ -119,7 +119,7 @@ export default function OfferTaxonomy({
           onClick={onViewCustomers}
           disabled={!canViewCustomers || isLoading}
         >
-          🔍 View Customers
+          View Customers
         </button>
         <button
           className={`btn btn--primary ${
@@ -128,7 +128,7 @@ export default function OfferTaxonomy({
           onClick={onGenerateAI}
           disabled={!canGenerateAI || isLoading}
         >
-          🤖 Generate Offer
+          Generate Offer
         </button>
       </div>
 

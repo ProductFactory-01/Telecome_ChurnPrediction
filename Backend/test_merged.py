@@ -4,7 +4,7 @@ from sqlalchemy import text
 try:
     engine = get_db_engine()
     with engine.connect() as conn:
-        res = conn.execute(text('SELECT "Customer ID", "Name", "email" FROM public."merged" LIMIT 1'))
+        res = conn.execute(text('SELECT "Customer ID", "Name", "email" FROM public."source" LIMIT 1'))
         row = res.fetchone()
         if hasattr(row, '_mapping'):
             print(dict(row._mapping))

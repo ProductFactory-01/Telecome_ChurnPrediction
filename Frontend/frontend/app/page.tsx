@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import Header from "../components/layout/Header";
 import TabNavigation from "../components/layout/TabNavigation";
 import OverviewTab from "../components/overview/OverviewTab";
@@ -17,11 +17,19 @@ import MilestonesTab from "../components/milestones/MilestonesTab";
 function DashboardContent() {
   const [activeTab, setActiveTab] = useState("overview");
   const searchParams = useSearchParams();
+  const router = useRouter();
 
   useEffect(() => {
+    // Auth Check
+    const token = typeof window !== 'undefined' ? localStorage.getItem("authToken") : null;
+    if (!token) {
+      router.push("/login");
+      return;
+    }
+
     const tab = searchParams.get("tab");
     if (tab) setActiveTab(tab);
-  }, [searchParams]);
+  }, [searchParams, router]);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100">

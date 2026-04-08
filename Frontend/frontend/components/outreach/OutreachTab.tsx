@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import api from "../../lib/api";
 import AgentHeader from "../shared/AgentHeader";
 import SectionTitle from "../shared/SectionTitle";
@@ -12,6 +13,7 @@ import { TAXONOMY, RISK_LEVELS } from "../offer-engine/OfferTaxonomy";
 import styles from "../offer-engine/OfferEngine.module.css";
 
 export default function OutreachTab() {
+  const searchParams = useSearchParams();
   const [data, setData] = useState<any>(null);
   const [channels, setChannels] = useState<any[]>([]);
   const [msgTemplate, setMsgTemplate] = useState("");
@@ -28,8 +30,37 @@ export default function OutreachTab() {
     api.get("/outreach").then((r) => {
       setData(r.data);
       setChannels(r.data.channels);
+      
+      // Auto-select based on search params
+      const main = searchParams.get("main");
+      const sub = searchParams.get("sub");
+      const risk = searchParams.get("risk");
+      
+      if (main) setSelectedMain(main);
+      if (sub) setSelectedSub(sub);
+      if (risk) setSelectedRisk(risk);
+      
+      if (main && sub && risk) {
+        // We need a slight delay to ensure selections are processed
+        setTimeout(() => {
+          setIsFetchingStrategy(true);
+          api.post("/outreach/active-campaign", {
+            main_category: main,
+            sub_category: sub,
+            risk_level: risk
+          })
+            .then((res) => {
+              setActiveStrategy(res.data.active_strategy);
+              if (res.data.active_strategy?.recommendation) {
+                setMsgTemplate(`Hi {{name}}, we noticed you've been with us for {{tenure}} months! As a valued customer, we'd like to offer you a special ${res.data.active_strategy.recommendation.offer_type}. Reply YES to accept.`);
+              }
+            })
+            .catch(console.error)
+            .finally(() => setIsFetchingStrategy(false));
+        }, 500);
+      }
     }).catch(console.error);
-  }, []);
+  }, [searchParams]);
 
   const fetchStrategy = () => {
     setIsFetchingStrategy(true);
@@ -201,7 +232,7 @@ export default function OutreachTab() {
             disabled={isFetchingStrategy}
             style={{ marginTop: "16px", width: "100%" }}
           >
-            {isFetchingStrategy ? "🔄 Loading..." : "🔍 Load Strategy"}
+            {isFetchingStrategy ? "Loading..." : "Load Strategy"}
           </button>
         </div>
 
@@ -216,26 +247,11 @@ export default function OutreachTab() {
 
           {isFetchingStrategy ? (
             <div className="text-muted" style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <span style={{ fontSize: "20px" }}>🔄</span>
               <span style={{ marginLeft: "12px" }}>Analyzing cohort data...</span>
             </div>
           ) : activeStrategy ? (
             <div style={{ display: "flex", flexDirection: "column", gap: "16px", flex: 1 }}>
               <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                <div style={{
-                  width: "48px",
-                  height: "48px",
-                  borderRadius: "12px",
-                  background: "rgba(124,58,237,0.1)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: "24px"
-                }}>
-                  {activeStrategy.recommendation.offer_type === "Discount" ? "🏷️" :
-                    activeStrategy.recommendation.offer_type === "Loyalty Points" ? "✨" :
-                      activeStrategy.recommendation.offer_type === "Custom Bundle" ? "🎁" : "🚀"}
-                </div>
                 <div>
                   <div style={{ fontSize: "12px", color: "var(--color-purple)", fontWeight: "bold", textTransform: "uppercase", letterSpacing: "0.5px" }}>
                     {activeStrategy.recommendation.offer_type.toLowerCase() === activeStrategy.recommendation.title.toLowerCase()
@@ -282,7 +298,9 @@ export default function OutreachTab() {
                     position: "absolute",
                     top: "8px",
                     right: "8px",
-                    fontSize: "12px",
+                    fontSize: "10px",
+                    color: "#64748b",
+                    fontWeight: "bold"
                   }}
                 >
                   🔒
@@ -304,12 +322,12 @@ export default function OutreachTab() {
           onClick={handleTriggerCampaign}
           disabled={!activeStrategy || isTriggering}
         >
-          {isTriggering ? "🚀 Launching..." : `🚀 Execute Campaign for ${activeStrategy?.customer_count || 0} Customers`}
+          {isTriggering ? "Launching..." : `Execute Campaign for ${activeStrategy?.customer_count || 0} Customers`}
         </button>
       </div>
 
       <div className="panel-grid panel-grid--2">
-        <ChartCard title="Channel Performance" icon="📊">
+        <ChartCard title="Channel Performance" icon="">
           <Bar data={{
             labels: data.charts.channel_performance.labels,
             datasets: [
@@ -355,7 +373,7 @@ export default function OutreachTab() {
             }
           }} />
         </ChartCard>
-        <ChartCard title="Daily Outreach Timeline" icon="📉">
+        <ChartCard title="Daily Outreach Timeline" icon="">
           <Line data={{
             labels: data.charts.timeline.labels,
             datasets: [{ label: "Customers Notified", data: data.charts.timeline.messages_sent, borderColor: COLORS.purple, backgroundColor: "rgba(124,58,237,0.1)", tension: 0.3, fill: true }],
