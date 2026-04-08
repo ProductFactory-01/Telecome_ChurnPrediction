@@ -9,8 +9,8 @@ const TABS = [
   { key: "live-impact",    label: "Live Impact",    badge: null },
   { key: "data-explorer",  label: "Data Explorer",  badge: null },
   { key: "ml-models",      label: "ML Models",      badge: null },
-  { key: "role-views",     label: "Role Views",     badge: null },
-  { key: "milestones",     label: "Milestones",     badge: null },
+  // { key: "role-views",     label: "Role Views",     badge: null },
+  // { key: "milestones",     label: "Milestones",     badge: null },
 ];
 
 interface Props {

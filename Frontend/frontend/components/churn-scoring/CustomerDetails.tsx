@@ -11,6 +11,23 @@ interface Props {
 export default function CustomerDetails({ customerId, onBack }: Props) {
   const [detail, setDetail] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [predicting, setPredicting] = useState(false);
+
+  const handlePredictReason = async () => {
+    setPredicting(true);
+    try {
+      const resp = await api.post(`/customers/${customerId}/predict-reason`);
+      if (resp.data && resp.data.ai_reason) {
+        setDetail((prev: any) => ({ ...prev, ai_reason: resp.data.ai_reason }));
+      }
+    } catch (err) {
+      console.error("Failed to predict reason:", err);
+      // Fallback update to let user know it failed without crashing
+      setDetail((prev: any) => ({ ...prev, ai_reason: "AI System temporary offline. Could not generate predictive analysis." }));
+    } finally {
+        setPredicting(false);
+    }
+  };
 
   useEffect(() => {
     setLoading(true);
@@ -163,24 +180,56 @@ export default function CustomerDetails({ customerId, onBack }: Props) {
               </div>
               <div className="flex flex-col items-end">
                 <span className={`text-[12px] font-black uppercase tracking-[0.2em] mb-4 ${detail["Churn Label"] === "Yes" ? "text-red-500" : "text-emerald-500"}`}>Risk Magnitude</span>
-                <span className={`font-black text-8xl leading-none tracking-tighter ${detail["Churn Label"] === "Yes" ? "text-red-800" : "text-emerald-800"}`}>{detail["Churn Score"]}</span>
+                <span className={`font-black text-8xl leading-none tracking-tighter ${detail["Churn Label"] === "Yes" ? "text-red-800" : "text-emerald-800"}`}>{detail["Churn Score"]}%</span>
               </div>
             </div>
 
             {/* RIGHT: Agent Reasoning */}
             <div className={`relative p-10 rounded-[32px] border transition-all duration-700 flex flex-col justify-center min-h-[200px] ${detail["Churn Label"] === "Yes" ? "bg-red-50/20 border-red-100/50" : "bg-emerald-50/20 border-emerald-100/50"}`}>
-               <div className="absolute -top-3 left-10 bg-white px-4 py-1 rounded-full border border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Diagnostic Reasoning Agent</div>
+               <div className="absolute -top-3 left-10 bg-white px-4 py-1 rounded-full border border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                 Diagnostic Reasoning Agent
+                 {detail.ai_reason && <span className="w-2 h-2 bg-indigo-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(99,102,241,0.8)]" title="AI Generated"></span>}
+               </div>
                
-               <div className="mb-6 flex items-center justify-between border-b border-slate-100 pb-4">
-                  <span className="text-[11px] text-slate-400 font-bold uppercase tracking-widest">Global Risk Alert:</span>
-                  <span className={`text-[13px] font-black px-3 py-0.5 rounded-lg border ${detail["Churn Label"] === "Yes" ? "text-red-600 bg-red-100/50 border-red-200" : "text-emerald-600 bg-emerald-100/50 border-emerald-200"}`}>
-                    {detail["Churn Category"] || "None"}
-                  </span>
+               <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-100 pb-4 gap-4">
+                  <div className="flex items-center gap-3">
+                    <span className="text-[11px] text-slate-400 font-bold uppercase tracking-widest">Global Risk Alert:</span>
+                    <span className={`text-[13px] font-black px-3 py-0.5 rounded-lg border ${detail["Churn Label"] === "Yes" ? "text-red-600 bg-red-100/50 border-red-200" : "text-emerald-600 bg-emerald-100/50 border-emerald-200"}`}>
+                      {detail["Churn Category"] || "None"}
+                    </span>
+                  </div>
+                  
+                  {!detail.ai_reason && (
+                    <button
+                      onClick={handlePredictReason}
+                      disabled={predicting}
+                      className={`px-4 py-2 rounded-xl text-[11px] font-black uppercase tracking-[0.15em] transition-all flex items-center justify-center gap-2 ${
+                        predicting 
+                          ? "bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed" 
+                          : "bg-indigo-600 text-white border border-indigo-700 hover:bg-indigo-700 hover:shadow-lg shadow-indigo-200 hover:-translate-y-0.5 active:scale-95"
+                      }`}
+                    >
+                      {predicting ? (
+                        <>
+                          <div className="w-3 h-3 border-2 border-slate-400 border-t-transparent rounded-full animate-spin" />
+                          Analyzing...
+                        </>
+                      ) : (
+                        "✨ Predict AI Reason"
+                      )}
+                    </button>
+                  )}
                </div>
 
-               <p className="text-[18px] text-slate-700 font-bold leading-relaxed italic font-serif">
-                 "{detail["Churn Reason"] || "Baseline analysis suggests no immediate risk; monitoring secondary retention signals across all managed shads."}"
-               </p>
+               {detail.ai_reason ? (
+                 <p className="text-[18px] font-bold leading-relaxed italic font-serif text-indigo-900">
+                   "{detail.ai_reason}"
+                 </p>
+               ) : (
+                 <div className="flex items-center justify-center py-6">
+                    <p className="text-[13px] text-slate-400 font-bold tracking-widest uppercase opacity-60">Insight Not Generated</p>
+                 </div>
+               )}
             </div>
           </div>
         </div>
