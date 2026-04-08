@@ -1,7 +1,7 @@
+"use client";
 import { useEffect, useState } from "react";
 import api from "../../lib/api";
 import AgentHeader from "../shared/AgentHeader";
-import SectionTitle from "../shared/SectionTitle";
 import SimulatorForm from "./SimulatorForm";
 import SubscriberTable from "./SubscriberTable";
 import CustomerDetails from "./CustomerDetails";
@@ -26,10 +26,9 @@ export default function ChurnScoringTab() {
 
   const handleReset = () => setPrediction(null);
 
-  // If a customer is selected, show the details view instead of the tabs
   if (selectedCustomerId) {
     return (
-      <div className="dashboard-content">
+      <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20 mt-6 lg:mt-10">
         <CustomerDetails 
           customerId={selectedCustomerId} 
           onBack={() => setSelectedCustomerId(null)} 
@@ -39,38 +38,49 @@ export default function ChurnScoringTab() {
   }
 
   return (
-    <div className="dashboard-content space-y-6">
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20 mt-6 lg:mt-10">
+      
+      {/* 1. Agent Branding */}
       <AgentHeader
         number="2"
-        title="Churn Propensity Scoring Agent"
-        subtitle="churn risk scoring — producing actionable churn risk ranks"
+        title="Predictive Churn Scoring Agent"
+        subtitle="Ranked propensity scoring engine"
         color="amber"
-        statusLabel="Scoring Live"
-        statusType="scoring"
       />
 
-      <div className="flex gap-4 border-b border-slate-100 pb-1">
-        <button
-          className={`pb-3 px-6 text-[13px] font-bold transition-all relative ${activeTab === "simulator" ? "text-amber-600" : "text-slate-400 hover:text-slate-600"}`}
-          onClick={() => setActiveTab("simulator")}
-        >
-          Simulator Prediction
-          {activeTab === "simulator" && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-amber-500 rounded-full animate-in fade-in zoom-in duration-300"></div>}
-        </button>
-        <button
-          className={`pb-3 px-6 text-[13px] font-bold transition-all relative ${activeTab === "intelligence" ? "text-amber-600" : "text-slate-400 hover:text-slate-600"}`}
-          onClick={() => setActiveTab("intelligence")}
-        >
-          Customer 360
-          {activeTab === "intelligence" && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-amber-500 rounded-full animate-in fade-in zoom-in duration-300"></div>}
-        </button>
+      {/* 2. Management Switcher - Segmented Control */}
+      <div className="flex justify-center">
+        <div className="inline-flex p-1.5 bg-slate-100/80 backdrop-blur-md rounded-[20px] shadow-sm border border-slate-200/50">
+          <button
+            onClick={() => setActiveTab("simulator")}
+            className={`flex items-center gap-2.5 px-6 py-2.5 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all duration-300
+              ${activeTab === "simulator" 
+                ? "bg-white text-amber-600 shadow-xl shadow-amber-600/10" 
+                : "text-slate-400 hover:text-slate-600"}`}
+          >
+            <div className={`w-1.5 h-1.5 rounded-full ${activeTab === "simulator" ? "bg-amber-500 animate-pulse" : "bg-slate-300"}`} />
+            Simulator Prediction
+          </button>
+          
+          <button
+            onClick={() => setActiveTab("intelligence")}
+            className={`flex items-center gap-2.5 px-6 py-2.5 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all duration-300
+              ${activeTab === "intelligence" 
+                ? "bg-white text-indigo-600 shadow-xl shadow-indigo-600/10" 
+                : "text-slate-400 hover:text-slate-600"}`}
+          >
+            <div className={`w-1.5 h-1.5 rounded-full ${activeTab === "intelligence" ? "bg-indigo-500 animate-pulse" : "bg-slate-300"}`} />
+            Customer 360 Intel
+          </button>
+        </div>
       </div>
 
-      <div className="animate-in fade-in-50 duration-500">
+      {/* 3. Main Workspace */}
+      <div className="animate-in fade-in zoom-in-95 duration-500 pt-2">
         {activeTab === "simulator" ? (
           <SimulatorForm onPredict={handlePredict} onReset={handleReset} loading={loading} result={prediction} />
         ) : (
-          <div className="space-y-4">
+          <div className="bg-white rounded-[32px] border border-slate-200/60 p-1 shadow-sm overflow-hidden">
             <SubscriberTable onViewDetail={(id) => setSelectedCustomerId(id)} />
           </div>
         )}

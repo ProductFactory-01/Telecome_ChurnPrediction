@@ -465,10 +465,10 @@ export default function MlModelsTab() {
                 <div className="text-muted" style={{ fontSize: 12, marginBottom: 4 }}>Leading Model</div>
                 <div style={{ fontSize: 20, fontWeight: 700, color: "var(--accent-green)" }}>{data.best_model?.display_name || bestModelName || "N/A"}</div>
               </div>
-              <div>
+              {/* <div>
                 <div className="text-muted" style={{ fontSize: 12, marginBottom: 4 }}>Winning Dataset</div>
                 <div style={{ fontWeight: 600 }}>{data.best_model?.dataset_label || activeDs}</div>
-              </div>
+              </div> */}
               <div
                 style={{
                   display: "grid",

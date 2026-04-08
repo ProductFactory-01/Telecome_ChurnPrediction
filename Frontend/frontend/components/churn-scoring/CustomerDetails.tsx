@@ -69,19 +69,9 @@ export default function CustomerDetails({ customerId, onBack }: Props) {
     );
   };
 
-  const InsightBadge = ({ label, value, color = "purple" }: { label: string; value: any; color?: string }) => {
-    if (!isVal(value)) return null;
-    return (
-      <div className={`p-4 rounded-[20px] border ring-1 ring-inset ${color === "purple" ? "bg-purple-50/40 border-purple-100/50 ring-purple-100/30" : "bg-indigo-50/40 border-indigo-100/50 ring-indigo-100/30"} flex flex-col group hover:shadow-md transition-all`}>
-        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 group-hover:text-slate-500">{label}</span>
-        <span className={`text-sm font-black tracking-tight ${color === "purple" ? "text-purple-700" : "text-indigo-700"}`}>{value}</span>
-      </div>
-    );
-  };
+
 
   // Section Visibility Logic
-  const hasAIFeatures = isVal(detail["Loyalty Score"]) || isVal(detail["Contract Risk Score"]) || isVal(detail["Network Quality Score"]) || isVal(detail["Call Quality Score"]) || isVal(detail["Value-to-Spend Ratio"]) || isVal(detail["Charge Deviation"]) || isVal(detail["Complaint Severity Index"]) || isVal(detail["Refund Rate"]);
-  const hasAIStats = isVal(detail["Tenure Group"]) || isVal(detail["Age Group"]) || isVal(detail["Service Count"]) || isVal(detail["Avg Monthly Spend"]) || isVal(detail["Add-on Revenue Share"]);
   const hasNetwork = isVal(detail.SignalStrength) || isVal(detail.Throughput) || isVal(detail.Latency) || isVal(detail.PacketLoss) || isVal(detail.Jitter) || isVal(detail.DroppedCalls) || isVal(detail.BlockedCalls) || isVal(detail.SIMInactivePattern);
   const hasSentiment = isVal(detail.ComplaintType) || isVal(detail.ComplaintResolution) || isVal(detail.ComplaintFrequency) || isVal(detail.ComplaintMedium) || isVal(detail.PaymentDelay) || isVal(detail.PlanChangeTracking) || isVal(detail.DeviceCapability) || isVal(detail.Complaint);
   const hasSpending = isVal(detail["Avg Monthly Spend"]) || isVal(detail["Avg Monthly GB Download"]) || isVal(detail["Value-to-Spend Ratio"]) || isVal(detail["Total Extra Data Charges"]) || isVal(detail["Total Long Distance Charges"]) || isVal(detail["Total Refunds"]) || isVal(detail["Paperless Billing"]);
@@ -157,63 +147,43 @@ export default function CustomerDetails({ customerId, onBack }: Props) {
       {/* Analytics Matrix Grid */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-10 mb-10">
 
-        {/* Churn Diagnostic Card */}
-        <div className="bg-white rounded-[40px] border-l-[14px] border-red-500 shadow-xl shadow-slate-200/40 p-10 border border-slate-100 flex flex-col group">
+        {/* Churn Diagnostic Card spans full width */}
+        <div className="xl:col-span-3 bg-white rounded-[40px] border-l-[14px] border-indigo-600 shadow-xl shadow-slate-200/40 p-10 border border-slate-100 flex flex-col group transition-all duration-500">
           <div className="flex items-center gap-4 mb-10">
-            <span className="p-3.5 bg-red-50 rounded-[18px] text-2xl shadow-sm group-hover:scale-110 transition-transform">🎯</span>
+            <span className="p-3.5 bg-indigo-50 rounded-[18px] text-2xl shadow-sm group-hover:scale-110 transition-transform">🎯</span>
             <h3 className="text-[18px] font-black text-slate-800 uppercase tracking-tight">Churn Diagnostic Hub</h3>
           </div>
-          <div className="space-y-8 flex-1">
-            <div className="flex items-center justify-between p-8 bg-gradient-to-br from-red-50/60 to-white rounded-[32px] border border-red-100/50 shadow-inner">
+          
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* LEFT: Major Metrics */}
+            <div className={`flex items-center justify-between p-10 bg-gradient-to-br rounded-[32px] border shadow-inner transition-all duration-700 min-h-[200px] ${detail["Churn Label"] === "Yes" ? "from-red-50/60 to-white border-red-100/50" : "from-emerald-50/60 to-white border-emerald-100/50"}`}>
               <div className="flex flex-col">
-                <span className="text-[12px] text-red-400 font-black uppercase tracking-[0.15em] mb-2">Churn Probability</span>
-                <span className="text-red-600 font-black text-4xl tracking-tighter uppercase">{detail["Churn Label"]}</span>
+                <span className={`text-[12px] font-black uppercase tracking-[0.2em] mb-4 ${detail["Churn Label"] === "Yes" ? "text-red-500" : "text-emerald-500"}`}>Churn Probability</span>
+                <span className={`font-black text-6xl tracking-tighter uppercase ${detail["Churn Label"] === "Yes" ? "text-red-700" : "text-emerald-700"}`}>{detail["Churn Label"]}</span>
               </div>
               <div className="flex flex-col items-end">
-                <span className="text-[12px] text-red-400 font-black uppercase tracking-[0.15em] mb-2">Score</span>
-                <span className="text-red-700 font-black text-7xl leading-none tracking-tighter">{detail["Churn Score"]}</span>
+                <span className={`text-[12px] font-black uppercase tracking-[0.2em] mb-4 ${detail["Churn Label"] === "Yes" ? "text-red-500" : "text-emerald-500"}`}>Risk Magnitude</span>
+                <span className={`font-black text-8xl leading-none tracking-tighter ${detail["Churn Label"] === "Yes" ? "text-red-800" : "text-emerald-800"}`}>{detail["Churn Score"]}</span>
               </div>
             </div>
-            <div className="space-y-3">
-              <DataRow label="Churn Category" value={detail["Churn Category"]} color="red" />
-              <div className="mt-8 p-8 bg-slate-50/80 rounded-[30px] border border-dashed border-slate-200 group-hover:border-red-200 transition-colors relative">
-                <div className="absolute -top-3 left-6 bg-white px-3 py-0.5 rounded-full border border-slate-100 text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Diagnostic Reasoning Agent</div>
-                <span className="text-[15px] text-slate-700 font-bold leading-relaxed italic block font-serif">"{detail["Churn Reason"] || "Baseline analysis suggests no immediate risk; monitoring retention signals."}"</span>
-              </div>
+
+            {/* RIGHT: Agent Reasoning */}
+            <div className={`relative p-10 rounded-[32px] border transition-all duration-700 flex flex-col justify-center min-h-[200px] ${detail["Churn Label"] === "Yes" ? "bg-red-50/20 border-red-100/50" : "bg-emerald-50/20 border-emerald-100/50"}`}>
+               <div className="absolute -top-3 left-10 bg-white px-4 py-1 rounded-full border border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Diagnostic Reasoning Agent</div>
+               
+               <div className="mb-6 flex items-center justify-between border-b border-slate-100 pb-4">
+                  <span className="text-[11px] text-slate-400 font-bold uppercase tracking-widest">Global Risk Alert:</span>
+                  <span className={`text-[13px] font-black px-3 py-0.5 rounded-lg border ${detail["Churn Label"] === "Yes" ? "text-red-600 bg-red-100/50 border-red-200" : "text-emerald-600 bg-emerald-100/50 border-emerald-200"}`}>
+                    {detail["Churn Category"] || "None"}
+                  </span>
+               </div>
+
+               <p className="text-[18px] text-slate-700 font-bold leading-relaxed italic font-serif">
+                 "{detail["Churn Reason"] || "Baseline analysis suggests no immediate risk; monitoring secondary retention signals across all managed shads."}"
+               </p>
             </div>
           </div>
         </div>
-
-        {/* AI Engineered Profile (Secret Sauce) */}
-        {(hasAIFeatures || hasAIStats) && (
-          <div className="xl:col-span-2 bg-white rounded-[40px] border-l-[14px] border-indigo-600 shadow-xl shadow-slate-200/40 p-10 border border-slate-100 overflow-hidden group">
-            <div className="flex items-center gap-4 mb-10">
-              <span className="p-3.5 bg-indigo-50 rounded-[18px] text-2xl shadow-sm group-hover:scale-110 transition-transform">🧠</span>
-              <h3 className="text-[18px] font-black text-slate-800 uppercase tracking-tight">Featured Data</h3>
-            </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-5 mb-10">
-              <InsightBadge label="Loyalty index" value={detail["Loyalty Score"]} />
-              <InsightBadge label="Contract Risk" value={detail["Contract Risk Score"]} />
-              <InsightBadge label="Network Qu." value={detail["Network Quality Score"]} />
-              <InsightBadge label="Call Quality" value={detail["Call Quality Score"]} />
-              <InsightBadge label="Value Gap" value={detail["Value-to-Spend Ratio"]} />
-              <InsightBadge label="Spend Bias" value={detail["Charge Deviation"]} color="blue" />
-              <InsightBadge label="Complaint Sev." value={detail["Complaint Severity Index"]} />
-              <InsightBadge label="Refund Prop." value={detail["Refund Rate"]} color="blue" />
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-x-12 gap-y-2 border-t border-slate-50 pt-8">
-              <DataRow label="Tenure Seg." value={detail["Tenure Group"]} color="blue" />
-              <DataRow label="Age Segment" value={detail["Age Group"]} color="blue" />
-              <DataRow label="Total Ser." value={detail["Service Count"]} color="blue" />
-              <DataRow label="Heavy Usage" value={isVal(detail["Internet Heavy User Flag"]) ? (detail["Internet Heavy User Flag"] ? "Yes" : "No") : null} />
-              <DataRow label="Dormancy" value={isVal(detail["SIM Inactivity Flag"]) ? (detail["SIM Inactivity Flag"] ? "Yes" : "No") : null} />
-              <DataRow label="Premium Eq." value={isVal(detail["Premium Tier Flag"]) ? (detail["Premium Tier Flag"] ? "Yes" : "No") : null} />
-              <DataRow label="Rev Share" value={detail["Add-on Revenue Share"]} suffix="%" />
-              <DataRow label="Avg Spend" value={detail["Avg Monthly Spend"]} suffix=" /mo" />
-              <DataRow label="Advocacy Score" value={detail["Number of Referrals"]} />
-            </div>
-          </div>
-        )}
       </div>
 
       <div className={`grid grid-cols-1 ${numSecondaryCards >= 3 ? 'lg:grid-cols-3' : numSecondaryCards === 2 ? 'lg:grid-cols-2' : 'lg:grid-cols-1'} gap-10 mb-10`}>
