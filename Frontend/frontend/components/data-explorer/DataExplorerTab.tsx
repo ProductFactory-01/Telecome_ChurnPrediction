@@ -533,7 +533,7 @@ export default function DataExplorerTab() {
 
   return (
     <div className="dashboard-content">
-      <SectionTitle title="Data Explorer (EDA)" description="Interactive data analysis across all data dimensions" color="cyan" />
+      <SectionTitle title="Data Explorer" description="Interactive data analysis across all data dimensions" color="cyan" />
 
       <div className="sub-tabs mb-6">
         {SUB_TABS.map((t) => (
