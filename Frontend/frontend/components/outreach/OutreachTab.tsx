@@ -4,13 +4,40 @@ import { useSearchParams } from "next/navigation";
 import api from "../../lib/api";
 import AgentHeader from "../shared/AgentHeader";
 import SectionTitle from "../shared/SectionTitle";
-import KpiCard from "../shared/KpiCard";
 import ChartCard from "../shared/ChartCard";
+import Loading from "../shared/Loading";
 import { Bar, Line } from "react-chartjs-2";
 import "../../lib/chartSetup";
 import { COLORS, defaultOptions } from "../../lib/chartSetup";
 import { TAXONOMY, RISK_LEVELS } from "../offer-engine/OfferTaxonomy";
-import styles from "../offer-engine/OfferEngine.module.css";
+
+function StatCard({ label, value, sub, icon, color }: { label: string; value: string | number; sub: string; icon: string; color: "purple" | "blue" | "cyan" }) {
+  const colorMap = {
+    purple: "text-purple-600 bg-purple-50 border-purple-100 shadow-purple-100/50",
+    blue: "text-blue-600 bg-blue-50 border-blue-100 shadow-blue-100/50",
+    cyan: "text-cyan-600 bg-cyan-50 border-cyan-100 shadow-cyan-100/50"
+  };
+
+  return (
+    <div className="bg-white p-8 rounded-[32px] border border-slate-200/60 shadow-xl shadow-slate-200/20 group hover:-translate-y-1 transition-all duration-500 relative overflow-hidden">
+      <div className="flex items-start justify-between">
+        <div className="space-y-4">
+          <div className="flex flex-col">
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">{label}</span>
+            <span className="text-3xl font-black text-slate-900 tracking-tighter">{value}</span>
+          </div>
+          <p className="text-[11px] font-bold text-slate-400 tracking-tight flex items-center gap-1.5 grayscale group-hover:grayscale-0 transition-all">
+            <span className={`w-1.5 h-1.5 rounded-full ${color === 'purple' ? 'bg-purple-500' : color === 'blue' ? 'bg-blue-500' : 'bg-cyan-500'} animate-pulse`} />
+            {sub}
+          </p>
+        </div>
+        <div className={`text-2xl p-4 rounded-2xl border transition-all duration-500 group-hover:scale-110 group-hover:rotate-6 ${colorMap[color]}`}>
+          {icon}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function OutreachTab() {
   const searchParams = useSearchParams();
@@ -18,7 +45,6 @@ export default function OutreachTab() {
   const [channels, setChannels] = useState<any[]>([]);
   const [msgTemplate, setMsgTemplate] = useState("");
 
-  // Strategy Mapping State
   const [selectedMain, setSelectedMain] = useState(TAXONOMY[0].main_category);
   const [selectedSub, setSelectedSub] = useState(TAXONOMY[0].sub_drivers[0]);
   const [selectedRisk, setSelectedRisk] = useState("Level 1");
@@ -31,7 +57,6 @@ export default function OutreachTab() {
       setData(r.data);
       setChannels(r.data.channels);
       
-      // Auto-select based on search params
       const main = searchParams.get("main");
       const sub = searchParams.get("sub");
       const risk = searchParams.get("risk");
@@ -41,7 +66,6 @@ export default function OutreachTab() {
       if (risk) setSelectedRisk(risk);
       
       if (main && sub && risk) {
-        // We need a slight delay to ensure selections are processed
         setTimeout(() => {
           setIsFetchingStrategy(true);
           api.post("/outreach/active-campaign", {
@@ -89,7 +113,6 @@ export default function OutreachTab() {
       return;
     }
 
-    // Check for non-supported channels
     const allowedChannels = ['email', 'whatsapp', 'agent'];
     const unsupportedChannels = selectedKeys.filter(k => !allowedChannels.includes(k.toLowerCase()));
     if (unsupportedChannels.length > 0) {
@@ -99,15 +122,12 @@ export default function OutreachTab() {
 
     setIsTriggering(true);
 
-    // Make Webhook Call for actual execution
     try {
       const webhookUrl = process.env.NEXT_PUBLIC_WEBHOOK_URL || "https://api.agents.snsihub.ai/webhook";
-      
       const hasActiveChannel = selectedKeys.some(k => ['email', 'whatsapp', 'agent'].includes(k.toLowerCase()));
       
       if (hasActiveChannel) {
-        console.log("Triggering Webhook for channels:", selectedKeys.join(", "));
-        await fetch(`${webhookUrl}/triggerEmail`, { // Keeping the endpoint as-is for now (likely a multi-channel receiver)
+        await fetch(`${webhookUrl}/triggerEmail`, { 
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -120,7 +140,7 @@ export default function OutreachTab() {
             offer_type: activeStrategy.recommendation.offer_type,
             offer_summary: activeStrategy.recommendation.offer_summary,
             channels: selectedKeys,
-            platforms: selectedKeys, // Explicit platforms field requested
+            platforms: selectedKeys, 
             target_customers: activeStrategy.customers.map((c: any) => ({
               customer_id: c.customer_id || c["Customer ID"],
               name: c.name || `Customer ${c.customer_id}`,
@@ -134,7 +154,6 @@ export default function OutreachTab() {
         });
       }
 
-      // Record in system
       await api.post("/outreach/trigger", {
         campaign_id: activeStrategy._id,
         channels: selectedKeys,
@@ -156,242 +175,248 @@ export default function OutreachTab() {
     setChannels((prev) => prev.map((c) => c.key === key ? { ...c, selected: !c.selected } : c));
   };
 
-  if (!data) return <div className="dashboard-content text-muted">Loading…</div>;
+  if (!data) return <div className="flex items-center justify-center min-h-[500px]"><Loading message="Synchronising Outreach Intelligence..." /></div>;
 
   const k = data.kpis;
 
   return (
-    <div className="dashboard-content">
+    <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20 mt-6 lg:mt-10">
       <AgentHeader
         number="4"
         title="Outreach Automation Agent"
         subtitle="Multi-channel campaign orchestration"
         color="purple"
-        // statusLabel="Ready"
-        // statusType="active"
       />
 
-      <div className="panel-grid panel-grid--3 mb-6">
-        <KpiCard label="Campaigns Triggered" value={k.campaigns_triggered} color="purple" />
-        <KpiCard label="Messages Sent" value={k.messages_sent} color="blue" />
-        <KpiCard label="Total Contact Cost" value={`$${k.total_contact_cost}`} color="cyan" />
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <StatCard label="Campaigns Active" value={k.campaigns_triggered} sub="Execution Persistence" icon="🚀" color="purple" />
+        <StatCard label="Messages Transmitted" value={k.messages_sent.toLocaleString()} sub="Direct Connectivity" icon="✉️" color="blue" />
+        <StatCard label="Operational Cost" value={`$${k.total_contact_cost}`} sub="Outreach Expenditure" icon="💰" color="cyan" />
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "24px", marginBottom: "24px", alignItems: "start" }}>
-        {/* Taxonomy Selector */}
-        <div className={`${styles.controlPanel} ${styles.offerConfigPanel}`}>
-          <h4>Target Cohort Selection</h4>
-
-          <div className={styles.selectorGroup} style={{ marginBottom: "12px" }}>
-            <div className={styles.selectorLabel}>Main Category</div>
-            <select
-              className="dashboard-input"
-              value={selectedMain}
-              onChange={(e) => {
-                const newVal = e.target.value;
-                setSelectedMain(newVal);
-                // Reset sub-category to the first driver of the new main category
-                const firstSub = TAXONOMY.find(t => t.main_category === newVal)?.sub_drivers[0] || "";
-                setSelectedSub(firstSub);
-              }}
-              style={{ width: "100%" }}
-            >
-              {TAXONOMY.map(t => <option key={t.main_category} value={t.main_category}>{t.main_category}</option>)}
-            </select>
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 items-start">
+        <div className="bg-white rounded-[32px] border border-slate-200/60 p-10 shadow-xl shadow-slate-200/30 group">
+          <div className="flex items-center gap-3 mb-8">
+             <span className="p-2.5 bg-purple-50 rounded-xl text-xl">🎯</span>
+             <h4 className="text-[17px] font-black text-slate-800 uppercase tracking-tight">Target Cohort Selection</h4>
           </div>
 
-          <div className={styles.selectorGroup} style={{ marginBottom: "12px" }}>
-            <div className={styles.selectorLabel}>Sub Category</div>
-            <select
-              className="dashboard-input"
-              value={selectedSub}
-              onChange={(e) => setSelectedSub(e.target.value)}
-              style={{ width: "100%" }}
-            >
-              {(TAXONOMY.find((t) => t.main_category === selectedMain)?.sub_drivers || []).map(sub => (
-                <option key={sub} value={sub}>{sub}</option>
-              ))}
-            </select>
-          </div>
+          <div className="space-y-6">
+            <div className="space-y-2">
+              <label className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Macro Dimension</label>
+              <select
+                className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-[13px] font-bold text-slate-700 focus:ring-4 focus:ring-purple-50 transition-all outline-none appearance-none"
+                value={selectedMain}
+                onChange={(e) => {
+                  const newVal = e.target.value;
+                  setSelectedMain(newVal);
+                  const firstSub = TAXONOMY.find(t => t.main_category === newVal)?.sub_drivers[0] || "";
+                  setSelectedSub(firstSub);
+                }}
+              >
+                {TAXONOMY.map(t => <option key={t.main_category} value={t.main_category}>{t.main_category}</option>)}
+              </select>
+            </div>
 
-          <div className={styles.selectorGroup}>
-            <div className={styles.selectorLabel}>Risk Level</div>
-            <select
-              className="dashboard-input"
-              value={selectedRisk}
-              onChange={(e) => setSelectedRisk(e.target.value)}
-              style={{ width: "100%" }}
-            >
-              {RISK_LEVELS.map(r => <option key={r} value={r}>{r}</option>)}
-            </select>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <label className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Micro Driver</label>
+                <select
+                  className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-[13px] font-bold text-slate-700 focus:ring-4 focus:ring-purple-50 transition-all outline-none appearance-none"
+                  value={selectedSub}
+                  onChange={(e) => setSelectedSub(e.target.value)}
+                >
+                  {(TAXONOMY.find((t) => t.main_category === selectedMain)?.sub_drivers || []).map(sub => (
+                    <option key={sub} value={sub}>{sub}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Risk Intensity</label>
+                <select
+                  className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-[13px] font-bold text-slate-700 focus:ring-4 focus:ring-purple-50 transition-all outline-none appearance-none"
+                  value={selectedRisk}
+                  onChange={(e) => setSelectedRisk(e.target.value)}
+                >
+                  {RISK_LEVELS.map(r => <option key={r} value={r}>{r}</option>)}
+                </select>
+              </div>
+            </div>
           </div>
 
           <button
-            className="btn btn--primary"
+            className="w-full mt-8 py-4 bg-slate-900 text-white rounded-2xl text-[12px] font-black uppercase tracking-widest hover:bg-black hover:shadow-xl transition-all disabled:opacity-50"
             onClick={fetchStrategy}
             disabled={isFetchingStrategy}
-            style={{ marginTop: "16px", width: "100%" }}
           >
-            {isFetchingStrategy ? "Loading..." : "Load Strategy"}
+            {isFetchingStrategy ? "Synchronising..." : "Load Managed Strategy"}
           </button>
         </div>
 
-        {/* Active Strategy Panel */}
-        <div className={`${styles.controlPanel} ${styles.offerConfigPanel}`} style={{ display: "flex", flexDirection: "column" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
-            <h4 style={{ margin: 0 }}>Active Campaign Strategy</h4>
+        <div className="bg-white rounded-[32px] border border-slate-200/60 p-10 shadow-xl shadow-slate-200/30 flex flex-col min-h-[420px]">
+          <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center gap-3">
+               <span className="p-2.5 bg-indigo-50 rounded-xl text-xl">📋</span>
+               <h4 className="text-[17px] font-black text-slate-800 uppercase tracking-tight">Active Campaign Strategy
+</h4>
+            </div>
             {activeStrategy && (
-              <span className="badge badge--cyan">{activeStrategy.customer_count} Customers Targeted</span>
+              <span className="text-[10px] font-black text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full uppercase tracking-widest border border-indigo-100 italic">
+                {activeStrategy.customer_count} Target Customers
+              </span>
             )}
           </div>
 
           {isFetchingStrategy ? (
-            <div className="text-muted" style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <span style={{ marginLeft: "12px" }}>Analyzing cohort data...</span>
+            <div className="flex-1 flex flex-col items-center justify-center space-y-4">
+              <div className="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+              <span className="text-[12px] font-black text-slate-400 uppercase tracking-widest">Parsing Strategy Ledger...</span>
             </div>
           ) : activeStrategy ? (
-            <div style={{ display: "flex", flexDirection: "column", gap: "16px", flex: 1 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                <div>
-                  <div style={{ fontSize: "12px", color: "var(--color-purple)", fontWeight: "bold", textTransform: "uppercase", letterSpacing: "0.5px" }}>
-                    {activeStrategy.recommendation.offer_type.toLowerCase() === activeStrategy.recommendation.title.toLowerCase()
-                      ? "RECOMMENDED OFFER"
-                      : activeStrategy.recommendation.offer_type}
-                  </div>
-                  <div style={{ fontSize: "18px", fontWeight: "700" }}>{activeStrategy.recommendation.title}</div>
-                </div>
+            <div className="flex-1 flex flex-col space-y-6">
+              <div className="space-y-1">
+                <span className="text-[10px] font-black text-purple-500 uppercase tracking-[0.2em]">Validated Protocol</span>
+                <h5 className="text-[22px] font-black text-slate-800 tracking-tight">{activeStrategy.recommendation.title}</h5>
               </div>
 
-              <div style={{ background: "rgba(255,255,255,0.03)", padding: "12px", borderRadius: "8px", borderLeft: "4px solid var(--color-purple)" }}>
-                <p style={{ margin: 0, fontSize: "14px", lineHeight: "1.5" }}>{activeStrategy.recommendation.offer_summary}</p>
+              <div className="p-6 bg-gradient-to-br from-purple-50/50 to-white rounded-2xl border border-purple-100 shadow-inner">
+                <p className="text-[14px] text-slate-700 font-bold leading-relaxed italic pr-4">
+                  "{activeStrategy.recommendation.offer_summary}"
+                </p>
+              </div>
+
+              <div className="mt-auto pt-6 border-t border-slate-50 flex items-center gap-4">
+                {/* <div className="flex flex-col">
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Success Probability</span>
+                  <span className="text-[18px] font-black text-emerald-600">High Confidence</span>
+                </div> */}
               </div>
             </div>
           ) : (
-            <div className="text-muted" style={{ padding: "20px", textAlign: "center", background: "rgba(255,255,255,0.02)", borderRadius: "8px" }}>
-              No active strategy found for this exact cohort. Please generate and save an offer in the Offer Engine first.
+            <div className="flex-1 flex flex-col items-center justify-center text-center p-8 bg-slate-50/50 rounded-2xl border-2 border-dashed border-slate-100">
+               <span className="text-3xl mb-4 grayscale opacity-40">🔌</span>
+               <p className="text-[13px] text-slate-400 font-bold max-w-[240px]">No active protocols found. Persist an offer in the Generator first.</p>
             </div>
           )}
         </div>
       </div>
 
-      <SectionTitle title="Channel Execution Plan" color="purple" />
-      <div className="panel-grid panel-grid--5 mb-6">
-        {channels.map((c) => {
-          const isEnabled = ["email", "whatsapp", "agent"].includes(c.key.toLowerCase());
-          return (
-            <div
-              key={c.key}
-              className={`channel-card ${c.selected ? "channel-card--selected" : ""}`}
-              onClick={() => isEnabled && toggleChannel(c.key)}
-              style={{
-                opacity: isEnabled ? 1 : 0.6,
-                cursor: isEnabled ? "pointer" : "not-allowed",
-                filter: isEnabled ? "none" : "grayscale(0.8)",
-                position: "relative",
-                background: isEnabled ? undefined : "rgba(241, 245, 249, 0.5)",
-                border: isEnabled ? undefined : "1px dashed #cbd5e1",
-              }}
-            >
-              {!isEnabled && (
-                <div
-                  style={{
-                    position: "absolute",
-                    top: "8px",
-                    right: "8px",
-                    fontSize: "10px",
-                    color: "#64748b",
-                    fontWeight: "bold"
-                  }}
-                >
-                  🔒
+      <div className="space-y-6">
+        <SectionTitle title="Channel Execution Plan" color="purple" />
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
+          {channels.map((c) => {
+            const isEnabled = ["email", "whatsapp", "agent"].includes(c.key.toLowerCase());
+            const isSelected = c.selected;
+            return (
+              <div
+                key={c.key}
+                className={`relative p-6 rounded-[28px] border transition-all duration-300 group ${
+                   !isEnabled ? "opacity-40 grayscale cursor-not-allowed border-slate-100 bg-slate-50" : 
+                   isSelected ? "bg-purple-50/50 border-purple-200 shadow-lg shadow-purple-100 ring-2 ring-purple-400 ring-offset-2 scale-[1.02]" : 
+                   "bg-white border-slate-200/60 hover:border-purple-200 hover:shadow-xl hover:-translate-y-1 cursor-pointer"
+                }`}
+                onClick={() => isEnabled && toggleChannel(c.key)}
+              >
+                {!isEnabled && (
+                  <div className="absolute top-4 right-4 text-[10px] grayscale select-none text-slate-400 font-black">LOCKED</div>
+                )}
+                <div className={`text-3xl mb-4 transition-transform ${isSelected ? 'scale-110' : 'group-hover:scale-110 group-hover:rotate-6'}`}>{c.icon}</div>
+                <div className="space-y-1">
+                  <h5 className="text-[14px] font-black text-slate-800 tracking-tight">{c.title}</h5>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">${c.cost_per_contact.toFixed(2)} / Customer</p>
                 </div>
-              )}
-              <div className="channel-card__icon">{c.icon}</div>
-              <div className="channel-card__title">
-                {c.title} {!isEnabled && <span style={{ fontSize: "10px", display: "block", color: "#64748b" }}>(Locked)</span>}
               </div>
-              <div className="channel-card__cost">${c.cost_per_contact.toFixed(2)}/contact</div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
 
-      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "24px" }}>
+      <div className="flex justify-end pt-4">
         <button
-          className="btn btn--primary"
+          className="group relative px-10 py-5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-[24px] text-[13px] font-black uppercase tracking-[0.2em] shadow-2xl shadow-purple-200 hover:shadow-indigo-300 transition-all hover:-translate-y-1 active:scale-95 disabled:opacity-50 disabled:grayscale disabled:translate-y-0"
           onClick={handleTriggerCampaign}
           disabled={!activeStrategy || isTriggering}
         >
-          {isTriggering ? "Launching..." : `Execute Campaign for ${activeStrategy?.customer_count || 0} Customers`}
+          {isTriggering ? (
+             <div className="flex items-center gap-3">
+               <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+               Launching Sequence...
+             </div>
+          ) : (
+            <div className="flex items-center gap-3">
+              <span>Execute Campaign for {activeStrategy?.customer_count || 0} Customers</span>
+              <span className="transition-transform group-hover:translate-x-1 group-hover:rotate-12">🚀</span>
+            </div>
+          )}
         </button>
       </div>
 
-      <div className="panel-grid panel-grid--2">
-        <ChartCard title="Channel Performance" icon="">
-          <Bar data={{
-            labels: data.charts.channel_performance.labels,
-            datasets: [
-              { 
-                label: "Customer Count", 
-                data: data.charts.channel_performance.counts, 
-                backgroundColor: [
-                  "rgba(59, 130, 246, 0.7)",  // SMS (Blue)
-                  "rgba(16, 185, 129, 0.7)",  // Email (Green)
-                  "rgba(245, 158, 11, 0.7)",  // Whatsapp (Orange)
-                  "rgba(6, 182, 212, 0.7)",   // Live Agent (Cyan)
-                  "rgba(124, 58, 237, 0.7)"   // Telegram (Purple)
-                ], 
-                borderColor: [
-                  "#3b82f6", 
-                  "#10b981", 
-                  "#f59e0b", 
-                  "#06b6d4", 
-                  "#7c3aed"
-                ], 
-                borderWidth: 1, 
-                borderRadius: 4 
-              },
-            ],
-          }} options={{
-            ...defaultOptions,
-            plugins: {
-              ...defaultOptions.plugins,
-              legend: {
-                display: false
-              }
-            },
-            scales: {
-              ...defaultOptions.scales,
-              y: {
-                ...defaultOptions.scales?.y,
-                ticks: {
-                  stepSize: 1,
-                  callback: (value) => value
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <ChartCard title="Channel Performance" icon="📊" height={450}>
+          <div className="p-4 h-full">
+            <Bar data={{
+              labels: data.charts.channel_performance.labels,
+              datasets: [
+                { 
+                  label: "Transmission Volume", 
+                  data: data.charts.channel_performance.counts, 
+                  backgroundColor: [
+                    "rgba(99, 102, 241, 0.8)",   // Indigo
+                    "rgba(147, 51, 234, 0.8)",   // Purple
+                    "rgba(59, 130, 246, 0.8)",   // Blue
+                    "rgba(45, 212, 191, 0.8)",   // Teal
+                    "rgba(244, 63, 94, 0.8)"      // Rose (Red accent)
+                  ], 
+                  borderRadius: 12 
                 },
-                beginAtZero: true
+              ],
+            }} options={{
+              ...defaultOptions,
+              maintainAspectRatio: false,
+              plugins: { ...defaultOptions.plugins, legend: { display: false } },
+              scales: {
+                ...defaultOptions.scales,
+                y: { 
+                  ...defaultOptions.scales?.y, 
+                  beginAtZero: true,
+                  min: 0,
+                  ticks: { ...defaultOptions.scales?.y?.ticks, stepSize: 20 }
+                }
               }
-            }
-          }} />
+            }} />
+          </div>
         </ChartCard>
-        <ChartCard title="Daily Outreach Timeline" icon="">
-          <Line data={{
-            labels: data.charts.timeline.labels,
-            datasets: [{ label: "Customers Notified", data: data.charts.timeline.messages_sent, borderColor: COLORS.purple, backgroundColor: "rgba(124,58,237,0.1)", tension: 0.3, fill: true }],
-          }} options={{ 
-            ...defaultOptions, 
-            plugins: { ...defaultOptions.plugins, legend: { display: false } },
-            scales: {
-              ...defaultOptions.scales,
-              y: {
-                ...defaultOptions.scales?.y,
-                ticks: {
-                  stepSize: 1,
-                  callback: (value) => value
-                },
-                beginAtZero: true
+        
+        <ChartCard title="Daily Outreach Timeline" icon="📈" height={450}>
+          <div className="p-4 h-full">
+            <Line data={{
+              labels: data.charts.timeline.labels,
+              datasets: [{ 
+                label: "Notified Customers", 
+                data: data.charts.timeline.messages_sent, 
+                borderColor: "#4f46e5", 
+                backgroundColor: "rgba(79, 70, 229, 0.05)", 
+                tension: 0.4, 
+                fill: true,
+                pointBackgroundColor: "#4f46e5",
+                pointBorderColor: "#fff",
+                pointBorderWidth: 2,
+                pointRadius: 4
+              }],
+            }} options={{
+              ...defaultOptions,
+              maintainAspectRatio: false,
+              scales: {
+                ...defaultOptions.scales,
+                y: {
+                  ...defaultOptions.scales?.y,
+                  min: 0,
+                  ticks: { ...defaultOptions.scales?.y?.ticks, stepSize: 20 }
+                }
               }
-            }
-          }} />
+            }} />
+          </div>
         </ChartCard>
       </div>
     </div>

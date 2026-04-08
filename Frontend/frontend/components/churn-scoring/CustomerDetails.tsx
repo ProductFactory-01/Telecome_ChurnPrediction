@@ -12,6 +12,18 @@ export default function CustomerDetails({ customerId, onBack }: Props) {
   const [detail, setDetail] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [predicting, setPredicting] = useState(false);
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({
+    churn: true,
+    network: false,
+    sentiment: false,
+    spending: false,
+    geo: false,
+    services: false
+  });
+
+  const toggleSection = (id: string) => {
+    setExpanded(prev => ({ ...prev, [id]: !prev[id] }));
+  };
 
   const handlePredictReason = async () => {
     setPredicting(true);
@@ -25,7 +37,7 @@ export default function CustomerDetails({ customerId, onBack }: Props) {
       // Fallback update to let user know it failed without crashing
       setDetail((prev: any) => ({ ...prev, ai_reason: "AI System temporary offline. Could not generate predictive analysis." }));
     } finally {
-        setPredicting(false);
+      setPredicting(false);
     }
   };
 
@@ -88,6 +100,41 @@ export default function CustomerDetails({ customerId, onBack }: Props) {
 
 
 
+  const CollapsibleSection = ({ id, icon, title, children, hasData, badge }: { id: string; icon: string; title: string; children: React.ReactNode; hasData: boolean; badge?: string }) => {
+    if (!hasData) return null;
+    const isExpanded = expanded[id];
+
+    return (
+      <div className={`bg-white rounded-[32px] border transition-all duration-500 overflow-hidden ${isExpanded ? "border-slate-200 shadow-xl shadow-slate-200/50" : "border-slate-100 shadow-sm hover:shadow-md"}`}>
+        <button
+          onClick={() => toggleSection(id)}
+          className="w-full flex items-center justify-between p-8 text-left group outline-none"
+        >
+          <div className="flex items-center gap-4">
+            <span className={`p-3 rounded-[18px] text-2xl transition-all duration-500 ${isExpanded ? "bg-indigo-600 text-white shadow-lg shadow-indigo-100 scale-110" : "bg-slate-50 text-slate-400 group-hover:bg-slate-100"}`}>
+              {icon}
+            </span>
+            <div className="flex flex-col">
+              <h3 className={`text-[17px] font-black uppercase tracking-tight transition-colors ${isExpanded ? "text-slate-900" : "text-slate-500"}`}>
+                {title}
+              </h3>
+              {/* {badge && !isExpanded && <span className="text-[10px] font-black text-indigo-500 uppercase tracking-widest mt-1 opacity-60">Insight Available • {badge}</span>} */}
+            </div>
+          </div>
+          <div className={`w-10 h-10 rounded-full flex items-center justify-center border transition-all duration-500 ${isExpanded ? "bg-slate-900 border-slate-900 rotate-180" : "bg-white border-slate-100 group-hover:border-slate-300"}`}>
+            <span className={`text-xl leading-none font-thin ${isExpanded ? "text-white" : "text-slate-400"}`}>↓</span>
+          </div>
+        </button>
+
+        <div className={`transition-all duration-700 ease-in-out ${isExpanded ? "max-h-[1400px] opacity-100 translate-y-0" : "max-h-0 opacity-0 -translate-y-4 shadow-none pointer-events-none"}`}>
+          <div className="px-8 pb-10 pt-2 border-t border-slate-50">
+            {children}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   // Section Visibility Logic
   const hasNetwork = isVal(detail.SignalStrength) || isVal(detail.Throughput) || isVal(detail.Latency) || isVal(detail.PacketLoss) || isVal(detail.Jitter) || isVal(detail.DroppedCalls) || isVal(detail.BlockedCalls) || isVal(detail.SIMInactivePattern);
   const hasSentiment = isVal(detail.ComplaintType) || isVal(detail.ComplaintResolution) || isVal(detail.ComplaintFrequency) || isVal(detail.ComplaintMedium) || isVal(detail.PaymentDelay) || isVal(detail.PlanChangeTracking) || isVal(detail.DeviceCapability) || isVal(detail.Complaint);
@@ -109,10 +156,10 @@ export default function CustomerDetails({ customerId, onBack }: Props) {
           <span className="group-hover:-translate-x-1 transition-transform">←</span> BACK TO DIRECTORY
         </button>
 
-        <div className="flex items-center gap-3 bg-indigo-50 px-4 py-2 rounded-full border border-indigo-100 shadow-inner">
+        {/* <div className="flex items-center gap-3 bg-indigo-50 px-4 py-2 rounded-full border border-indigo-100 shadow-inner">
           <div className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></div>
           <span className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.2em]">Active Intelligence View</span>
-        </div>
+        </div> */}
       </div>
 
       {/* Hero Header Card */}
@@ -162,88 +209,82 @@ export default function CustomerDetails({ customerId, onBack }: Props) {
       </div>
 
       {/* Analytics Matrix Grid */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-10 mb-10">
+      <div className="space-y-8 mb-10">
 
-        {/* Churn Diagnostic Card spans full width */}
-        <div className="xl:col-span-3 bg-white rounded-[40px] border-l-[14px] border-indigo-600 shadow-xl shadow-slate-200/40 p-10 border border-slate-100 flex flex-col group transition-all duration-500">
-          <div className="flex items-center gap-4 mb-10">
-            <span className="p-3.5 bg-indigo-50 rounded-[18px] text-2xl shadow-sm group-hover:scale-110 transition-transform">🎯</span>
-            <h3 className="text-[18px] font-black text-slate-800 uppercase tracking-tight">Churn Diagnostic Hub</h3>
-          </div>
-          
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* LEFT: Major Metrics */}
-            <div className={`flex items-center justify-between p-10 bg-gradient-to-br rounded-[32px] border shadow-inner transition-all duration-700 min-h-[200px] ${detail["Churn Label"] === "Yes" ? "from-red-50/60 to-white border-red-100/50" : "from-emerald-50/60 to-white border-emerald-100/50"}`}>
-              <div className="flex flex-col">
-                <span className={`text-[12px] font-black uppercase tracking-[0.2em] mb-4 ${detail["Churn Label"] === "Yes" ? "text-red-500" : "text-emerald-500"}`}>Churn Probability</span>
-                <span className={`font-black text-6xl tracking-tighter uppercase ${detail["Churn Label"] === "Yes" ? "text-red-700" : "text-emerald-700"}`}>{detail["Churn Label"]}</span>
+        {/* Churn Diagnostic Hub */}
+        {/* Churn Diagnostic Hub */}
+        <CollapsibleSection id="churn" icon="🎯" title="Churn Diagnostic Hub (Primary Risk)" hasData={true} badge={detail["Churn Label"]}>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 pt-4">
+            
+            {/* Left Column: Core Churn Metrics */}
+            <div className={`flex items-center justify-between p-10 bg-white rounded-[32px] border transition-all duration-500 shadow-sm relative overflow-hidden group ${detail["Churn Label"] === "Yes" ? "border-red-100" : "border-emerald-100"}`}>
+              {/* Subtle accent background */}
+              <div className={`absolute inset-0 opacity-[0.03] pointer-events-none ${detail["Churn Label"] === "Yes" ? "bg-red-500" : "bg-emerald-500"}`} />
+              
+              <div className="flex flex-col relative z-10">
+                <span className={`text-[10px] font-black uppercase tracking-[0.2em] mb-4 ${detail["Churn Label"] === "Yes" ? "text-red-500" : "text-emerald-500"}`}>Churn Probability</span>
+                <span className={`text-7xl font-black tracking-tighter uppercase leading-none ${detail["Churn Label"] === "Yes" ? "text-red-600" : "text-emerald-600"}`}>
+                   {detail["Churn Label"]}
+                </span>
               </div>
-              <div className="flex flex-col items-end">
-                <span className={`text-[12px] font-black uppercase tracking-[0.2em] mb-4 ${detail["Churn Label"] === "Yes" ? "text-red-500" : "text-emerald-500"}`}>Risk Magnitude</span>
-                <span className={`font-black text-8xl leading-none tracking-tighter ${detail["Churn Label"] === "Yes" ? "text-red-800" : "text-emerald-800"}`}>{detail["Churn Score"]}%</span>
+
+              <div className="flex flex-col items-end relative z-10">
+                <span className={`text-[10px] font-black uppercase tracking-[0.2em] mb-4 ${detail["Churn Label"] === "Yes" ? "text-red-500" : "text-emerald-500"}`}>Risk Magnitude</span>
+                <div className="flex items-baseline gap-1">
+                  <span className={`text-8xl font-black tracking-tighter leading-none ${detail["Churn Label"] === "Yes" ? "text-red-700" : "text-emerald-700"}`}>{detail["Churn Score"]}</span>
+                  <span className={`text-3xl font-black ${detail["Churn Label"] === "Yes" ? "text-red-500" : "text-emerald-500"}`}>%</span>
+                </div>
               </div>
             </div>
 
-            {/* RIGHT: Agent Reasoning */}
-            <div className={`relative p-10 rounded-[32px] border transition-all duration-700 flex flex-col justify-center min-h-[200px] ${detail["Churn Label"] === "Yes" ? "bg-red-50/20 border-red-100/50" : "bg-emerald-50/20 border-emerald-100/50"}`}>
-               <div className="absolute -top-3 left-10 bg-white px-4 py-1 rounded-full border border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
-                 Diagnostic Reasoning Agent
-                 {detail.ai_reason && <span className="w-2 h-2 bg-indigo-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(99,102,241,0.8)]" title="AI Generated"></span>}
+            {/* Right Column: AI Reasoning Hub */}
+            <div className="bg-white rounded-[32px] border border-slate-200 p-10 shadow-sm flex flex-col relative group overflow-hidden">
+               <div className="flex items-center justify-between mb-8 relative z-10">
+                 <div className="flex items-center gap-3">
+                    <span className="p-2.5 bg-indigo-50 rounded-xl text-xl">🤖</span>
+                    <h4 className="text-[13px] font-black text-slate-800 uppercase tracking-widest">Diagnostic Reasoning Agent</h4>
+                 </div>
+                 {detail.ai_reason && (
+                    <span className={`text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest border italic ${detail["Churn Label"] === "Yes" ? "text-red-600 bg-red-50 border-red-100" : "text-emerald-600 bg-emerald-50 border-emerald-100"}`}>
+                      {detail["Churn Category"] || "Risk Alert"}
+                    </span>
+                 )}
+               </div>
+
+               <div className="flex-1 relative z-10">
+                 {detail.ai_reason ? (
+                    <div className="p-8 bg-slate-50/80 rounded-2xl border border-slate-100 shadow-inner">
+                      <p className="text-[16px] font-bold text-slate-700 leading-relaxed leading-loose">
+                        "{detail.ai_reason}"
+                      </p>
+                    </div>
+                 ) : (
+                    <div className="h-full flex flex-col items-center justify-center p-8 border-2 border-dashed border-slate-100 rounded-2xl bg-slate-50/30">
+                       {!predicting ? (
+                          <button
+                            onClick={handlePredictReason}
+                            className="bg-slate-900 text-white px-8 py-3 rounded-xl text-[11px] font-black uppercase tracking-widest hover:bg-black transition-all shadow-lg hover:shadow-indigo-200"
+                          >
+                            ✨ Generate Predictive Insight
+                          </button>
+                       ) : (
+                          <div className="flex items-center gap-3">
+                            <div className="w-5 h-5 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+                            <span className="text-[11px] font-black text-indigo-600 uppercase tracking-widest">Engaging LLM Core...</span>
+                          </div>
+                       )}
+                    </div>
+                 )}
                </div>
                
-               <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-100 pb-4 gap-4">
-                  <div className="flex items-center gap-3">
-                    <span className="text-[11px] text-slate-400 font-bold uppercase tracking-widest">Global Risk Alert:</span>
-                    <span className={`text-[13px] font-black px-3 py-0.5 rounded-lg border ${detail["Churn Label"] === "Yes" ? "text-red-600 bg-red-100/50 border-red-200" : "text-emerald-600 bg-emerald-100/50 border-emerald-200"}`}>
-                      {detail["Churn Category"] || "None"}
-                    </span>
-                  </div>
-                  
-                  {!detail.ai_reason && (
-                    <button
-                      onClick={handlePredictReason}
-                      disabled={predicting}
-                      className={`px-4 py-2 rounded-xl text-[11px] font-black uppercase tracking-[0.15em] transition-all flex items-center justify-center gap-2 ${
-                        predicting 
-                          ? "bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed" 
-                          : "bg-indigo-600 text-white border border-indigo-700 hover:bg-indigo-700 hover:shadow-lg shadow-indigo-200 hover:-translate-y-0.5 active:scale-95"
-                      }`}
-                    >
-                      {predicting ? (
-                        <>
-                          <div className="w-3 h-3 border-2 border-slate-400 border-t-transparent rounded-full animate-spin" />
-                          Analyzing...
-                        </>
-                      ) : (
-                        "✨ Predict AI Reason"
-                      )}
-                    </button>
-                  )}
-               </div>
-
-               {detail.ai_reason ? (
-                 <p className="text-[18px] font-bold leading-relaxed italic font-serif text-indigo-900">
-                   "{detail.ai_reason}"
-                 </p>
-               ) : (
-                 <div className="flex items-center justify-center py-6">
-                    <p className="text-[13px] text-slate-400 font-bold tracking-widest uppercase opacity-60">Insight Not Generated</p>
-                 </div>
-               )}
+               {/* Background decoration to match Outreach style */}
+               <div className="absolute -bottom-8 -right-8 w-32 h-32 bg-indigo-50/30 rounded-full blur-3xl pointer-events-none" />
             </div>
           </div>
-        </div>
-      </div>
+        </CollapsibleSection>
 
-      <div className={`grid grid-cols-1 ${numSecondaryCards >= 3 ? 'lg:grid-cols-3' : numSecondaryCards === 2 ? 'lg:grid-cols-2' : 'lg:grid-cols-1'} gap-10 mb-10`}>
-
-        {/* Technical Health Matrix */}
-        {hasNetwork && (
-          <div className="bg-white rounded-[40px] border border-slate-100 shadow-xl shadow-slate-200/20 p-10 hover:shadow-2xl transition-all group">
-            <div className="flex items-center gap-4 mb-8">
-              <span className="p-3 bg-orange-50 rounded-[16px] text-2xl group-hover:rotate-12 transition-transform">📶</span>
-              <h3 className="text-[16px] font-black text-slate-800 uppercase tracking-tight">Network Intelligence</h3>
-            </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <CollapsibleSection id="network" icon="📶" title="Network Intelligence" hasData={hasNetwork} badge={`${detail.Throughput} Mbps`}>
             <div className="space-y-1">
               <DataRow label="Signal Strength" value={detail.SignalStrength} suffix=" dBm" />
               <DataRow label="Throughput" value={detail.Throughput} suffix=" Mbps" color="green" />
@@ -255,16 +296,9 @@ export default function CustomerDetails({ customerId, onBack }: Props) {
               <DataRow label="Blocked Calls" value={detail.BlockedCalls} />
               <DataRow label="Dormant Pattern" value={detail.SIMInactivePattern} />
             </div>
-          </div>
-        )}
+          </CollapsibleSection>
 
-        {/* Support & Relationship Card */}
-        {hasSentiment && (
-          <div className="bg-white rounded-[40px] border border-slate-100 shadow-xl shadow-slate-200/20 p-10 hover:shadow-2xl transition-all group">
-            <div className="flex items-center gap-4 mb-8">
-              <span className="p-3 bg-blue-50 rounded-[16px] text-2xl group-hover:rotate-12 transition-transform">🗳️</span>
-              <h3 className="text-[16px] font-black text-slate-800 uppercase tracking-tight">Service Sentiment</h3>
-            </div>
+          <CollapsibleSection id="sentiment" icon="🗳️" title="Service Sentiment" hasData={hasSentiment} badge={detail.ComplaintType}>
             <div className="space-y-1">
               <DataRow label="Support Issue" value={detail.ComplaintType} color="blue" />
               <DataRow label="Status" value={detail.ComplaintResolution} />
@@ -281,16 +315,9 @@ export default function CustomerDetails({ customerId, onBack }: Props) {
                 </div>
               )}
             </div>
-          </div>
-        )}
+          </CollapsibleSection>
 
-        {/* Global Consumption Hub */}
-        {hasSpending && (
-          <div className="bg-white rounded-[40px] border border-slate-100 shadow-xl shadow-slate-200/20 p-10 hover:shadow-2xl transition-all group">
-            <div className="flex items-center gap-4 mb-8">
-              <span className="p-3 bg-emerald-50 rounded-[16px] text-2xl group-hover:rotate-12 transition-transform">💎</span>
-              <h3 className="text-[16px] font-black text-slate-800 uppercase tracking-tight">Spending Profile</h3>
-            </div>
+          <CollapsibleSection id="spending" icon="💎" title="Spending Profile" hasData={hasSpending} badge={`$${detail["Avg Monthly Spend"]}`}>
             <div className="space-y-1">
               <DataRow label="Average Check" value={detail["Avg Monthly Spend"]} suffix=" /mo" color="green" />
               <DataRow label="Bandwidth DL" value={detail["Avg Monthly GB Download"]} suffix=" GB" />
@@ -302,59 +329,52 @@ export default function CustomerDetails({ customerId, onBack }: Props) {
               <DataRow label="Refund Total" value={isVal(detail["Total Refunds"]) ? `$${detail["Total Refunds"]}` : null} color={toNumber(detail["Total Refunds"]) > 0 ? "red" : ""} />
               <DataRow label="Paperless bill" value={detail["Paperless Billing"]} />
             </div>
-          </div>
-        )}
-      </div>
+          </CollapsibleSection>
+        </div>
 
-      {/* Infrastructure Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-10 pb-10">
-
-        {/* Demographic & Location Matrix */}
-        {(hasGeo || hasDemogs) && (
-          <div className="bg-white rounded-[40px] border border-slate-100 shadow-sm p-8 flex flex-col gap-8">
-            {hasGeo && (
-              <div>
-                <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] mb-5 pb-2 border-b border-slate-50">Geospatial Data</h3>
-                <div className="space-y-1">
-                  <DataRow label="Zipcode" value={detail["Zip Code"]} />
-                  <DataRow label="Population Size" value={detail.population || detail.Population} />
-                  <DataRow label="Coordinates" value={`${toNumber(detail.Latitude).toFixed(2)} / ${toNumber(detail.Longitude).toFixed(2)}`} />
+        <div className="grid grid-cols-1 gap-8">
+          <CollapsibleSection id="geo" icon="📍" title="Geospatial & Demographics" hasData={hasGeo || hasDemogs} badge={detail.City}>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+              {hasGeo && (
+                <div>
+                  <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] mb-5 pb-2 border-b border-slate-50">Geospatial Data</h3>
+                  <div className="space-y-1">
+                    <DataRow label="Zipcode" value={detail["Zip Code"]} />
+                    <DataRow label="Population Size" value={detail.population || detail.Population} />
+                    <DataRow label="Coordinates" value={`${toNumber(detail.Latitude).toFixed(2)} / ${toNumber(detail.Longitude).toFixed(2)}`} />
+                  </div>
                 </div>
-              </div>
-            )}
-            {hasDemogs && (
-              <div>
-                <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] mb-5 pb-2 border-b border-slate-50">Demographics</h3>
-                <div className="space-y-1">
-                  <DataRow label="Under 30" value={detail["Under 30"]} />
-                  <DataRow label="Senior" value={detail["Senior Citizen"]} />
-                  <DataRow label="Married" value={detail.Married} />
-                  <DataRow label="Dependents" value={detail.Dependents} />
+              )}
+              {hasDemogs && (
+                <div>
+                  <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] mb-5 pb-2 border-b border-slate-50">Demographics</h3>
+                  <div className="space-y-1">
+                    <DataRow label="Under 30" value={detail["Under 30"]} />
+                    <DataRow label="Senior" value={detail["Senior Citizen"]} />
+                    <DataRow label="Married" value={detail.Married} />
+                    <DataRow label="Dependents" value={detail.Dependents} />
+                  </div>
                 </div>
-              </div>
-            )}
-          </div>
-        )}
+              )}
+            </div>
+          </CollapsibleSection>
 
-        {/* Full Provisioning Matrix */}
-        <div className={`${(hasGeo || hasDemogs) ? 'lg:col-span-3' : 'lg:col-span-4'} bg-white rounded-[40px] border border-slate-100 shadow-sm p-10`}>
-          <h3 className="text-[13px] font-black text-slate-900 uppercase tracking-widest mb-8 flex items-center gap-3">
-            <span className="w-2.5 h-2.5 bg-indigo-600 rounded-full animate-pulse shadow-[0_0_10px_rgba(79,70,229,0.5)]" /> Additional Services
-          </h3>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6 gap-5">
-            <ServiceBadge label="Phone" active={detail["Phone Service"]} />
-            <ServiceBadge label="Internet" active={detail["Internet Service"]} />
-            <ServiceBadge label="Multi-Line" active={detail["Multiple Lines"]} />
-            <ServiceBadge label="Unlimited" active={detail["Unlimited Data"]} />
-            <ServiceBadge label="Security" active={detail["Online Security"]} />
-            <ServiceBadge label="Backup" active={detail["Online Backup"]} />
-            <ServiceBadge label="Support" active={detail["Premium Tech Support"]} />
-            <ServiceBadge label="Protection" active={detail["Device Protection"]} />
-            <ServiceBadge label="Stream TV" active={detail["Streaming TV"]} />
-            <ServiceBadge label="Movie Hub" active={detail["Streaming Movies"]} />
-            <ServiceBadge label="Music Hub" active={detail["Streaming Music"]} />
-            <ServiceBadge label="Paperless" active={detail["Paperless Billing"]} />
-          </div>
+          <CollapsibleSection id="services" icon="⚙️" title="Additional Provisioned Services" hasData={true} badge={`${detail["Service Count"] || '12'} Nodes`}>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6 gap-5">
+              <ServiceBadge label="Phone" active={detail["Phone Service"]} />
+              <ServiceBadge label="Internet" active={detail["Internet Service"]} />
+              <ServiceBadge label="Multi-Line" active={detail["Multiple Lines"]} />
+              <ServiceBadge label="Unlimited" active={detail["Unlimited Data"]} />
+              <ServiceBadge label="Security" active={detail["Online Security"]} />
+              <ServiceBadge label="Backup" active={detail["Online Backup"]} />
+              <ServiceBadge label="Support" active={detail["Premium Tech Support"]} />
+              <ServiceBadge label="Protection" active={detail["Device Protection"]} />
+              <ServiceBadge label="Stream TV" active={detail["Streaming TV"]} />
+              <ServiceBadge label="Movie Hub" active={detail["Streaming Movies"]} />
+              <ServiceBadge label="Music Hub" active={detail["Streaming Music"]} />
+              <ServiceBadge label="Paperless" active={detail["Paperless Billing"]} />
+            </div>
+          </CollapsibleSection>
         </div>
       </div>
 

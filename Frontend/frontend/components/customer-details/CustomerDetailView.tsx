@@ -10,6 +10,19 @@ interface Props {
 export default function CustomerDetailView({ customerId, onClose }: Props) {
   const [detail, setDetail] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({
+    churn: true,
+    ai_profile: false,
+    network: false,
+    sentiment: false,
+    spending: false,
+    geo: false,
+    services: false
+  });
+
+  const toggleSection = (id: string) => {
+    setExpanded(prev => ({ ...prev, [id]: !prev[id] }));
+  };
 
   useEffect(() => {
     setLoading(true);
@@ -79,6 +92,41 @@ export default function CustomerDetailView({ customerId, onClose }: Props) {
     );
   };
 
+  const CollapsibleSection = ({ id, icon, title, children, hasData, badge }: { id: string; icon: string; title: string; children: React.ReactNode; hasData: boolean; badge?: string }) => {
+    if (!hasData) return null;
+    const isExpanded = expanded[id];
+
+    return (
+      <div className={`bg-white rounded-[32px] border transition-all duration-500 overflow-hidden ${isExpanded ? "border-slate-200 shadow-xl shadow-slate-200/50" : "border-slate-100 shadow-sm hover:shadow-md"}`}>
+        <button 
+          onClick={() => toggleSection(id)}
+          className="w-full flex items-center justify-between p-8 text-left group outline-none"
+        >
+          <div className="flex items-center gap-4">
+            <span className={`p-3 rounded-[18px] text-2xl transition-all duration-500 ${isExpanded ? "bg-indigo-600 text-white shadow-lg shadow-indigo-100 scale-110" : "bg-slate-50 text-slate-400 group-hover:bg-slate-100"}`}>
+              {icon}
+            </span>
+            <div className="flex flex-col">
+              <h3 className={`text-[17px] font-black uppercase tracking-tight transition-colors ${isExpanded ? "text-slate-900" : "text-slate-500"}`}>
+                {title}
+              </h3>
+              {badge && !isExpanded && <span className="text-[10px] font-black text-indigo-500 uppercase tracking-widest mt-1 opacity-60">Insight Available • {badge}</span>}
+            </div>
+          </div>
+          <div className={`w-10 h-10 rounded-full flex items-center justify-center border transition-all duration-500 ${isExpanded ? "bg-slate-900 border-slate-900 rotate-180" : "bg-white border-slate-100 group-hover:border-slate-300"}`}>
+             <span className={`text-xl leading-none font-thin ${isExpanded ? "text-white" : "text-slate-400"}`}>↓</span>
+          </div>
+        </button>
+        
+        <div className={`transition-all duration-700 ease-in-out ${isExpanded ? "max-h-[1000px] opacity-100 translate-y-0" : "max-h-0 opacity-0 -translate-y-4 shadow-none pointer-events-none"}`}>
+          <div className="px-8 pb-10 pt-2 border-t border-slate-50">
+            {children}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   // Section Visibility Logic
   const hasAIFeatures = isVal(detail["Loyalty Score"]) || isVal(detail["Contract Risk Score"]) || isVal(detail["Network Quality Score"]) || isVal(detail["Call Quality Score"]) || isVal(detail["Value-to-Spend Ratio"]) || isVal(detail["Charge Deviation"]) || isVal(detail["Complaint Severity Index"]) || isVal(detail["Refund Rate"]);
   const hasAIStats = isVal(detail["Tenure Group"]) || isVal(detail["Age Group"]) || isVal(detail["Service Count"]) || isVal(detail["Avg Monthly Spend"]) || isVal(detail["Add-on Revenue Share"]);
@@ -140,43 +188,36 @@ export default function CustomerDetailView({ customerId, onClose }: Props) {
         {/* Content Explorer Area */}
         <div className="p-10 space-y-10 overflow-y-auto max-h-[75vh] custom-scrollbar bg-[#f8fafc]">
 
-          <div className="grid grid-cols-1 xl:grid-cols-3 gap-10">
-
+          <div className="grid grid-cols-1 gap-10">
             {/* Churn Prediction Hub */}
-            <div className="bg-white rounded-[32px] border-l-[12px] border-red-500 shadow-xl shadow-gray-200/50 p-8 border border-gray-100 flex flex-col group relative">
-              <div className="flex items-center gap-4 mb-8">
-                <span className="p-3 bg-red-50 rounded-[14px] text-2xl shadow-sm">🎯</span>
-                <h3 className="text-[18px] font-black text-gray-800 uppercase tracking-tight">Churn Diagnostic Hub</h3>
-              </div>
-              <div className="space-y-6 flex-1">
-                <div className="flex items-center justify-between p-6 bg-gradient-to-br from-red-50/80 to-white rounded-3xl border border-red-100/60 shadow-inner">
-                  <div className="flex flex-col">
-                    <span className="text-[12px] text-red-400 font-black uppercase tracking-[0.1em] mb-1">State Prediction</span>
-                    <span className="text-red-600 font-black text-3xl tracking-tighter uppercase">{detail["Churn Label"]}</span>
-                  </div>
-                  <div className="flex flex-col items-end">
-                    <span className="text-[12px] text-red-400 font-black uppercase tracking-[0.1em] mb-1">Risk Score</span>
-                    <span className="text-red-700 font-black text-6xl leading-none">{detail["Churn Score"]}</span>
+            <CollapsibleSection id="churn" icon="🎯" title="Churn Diagnostic Hub (Primary Risk)" hasData={true} badge={detail["Churn Label"]}>
+              <div className="flex flex-col lg:flex-row gap-10">
+                <div className="flex-1 flex flex-col justify-center p-8 bg-gradient-to-br from-red-50/80 to-white rounded-3xl border border-red-100/60 shadow-inner">
+                  <div className="flex items-center justify-between">
+                    <div className="flex flex-col">
+                      <span className="text-[12px] text-red-400 font-black uppercase tracking-[0.1em] mb-1">State Prediction</span>
+                      <span className="text-red-600 font-black text-4xl tracking-tighter uppercase">{detail["Churn Label"]}</span>
+                    </div>
+                    <div className="flex flex-col items-end">
+                      <span className="text-[12px] text-red-400 font-black uppercase tracking-[0.1em] mb-1">Risk Score</span>
+                      <span className="text-red-700 font-black text-6xl leading-none">{detail["Churn Score"]}</span>
+                    </div>
                   </div>
                 </div>
-                <div className="space-y-2 pt-2">
+                <div className="flex-[2] space-y-4">
                   <DataRow label="Churn Category" value={detail["Churn Category"]} color="red" />
-                  <div className="mt-6 p-6 bg-gray-50/50 rounded-[24px] border border-dashed border-gray-200 group-hover:border-red-200 transition-colors">
+                  <div className="p-6 bg-gray-50/50 rounded-[24px] border border-dashed border-gray-200">
                     <span className="text-[11px] text-gray-400 font-black uppercase tracking-widest block mb-3">AI Context Reasoning:</span>
-                    <span className="text-[14px] text-gray-700 font-bold leading-relaxed italic block font-serif">"{detail["Churn Reason"] || "Baseline analysis suggests no immediate risk; monitoring retention signals."}"</span>
+                    <span className="text-[15px] text-gray-700 font-bold leading-relaxed italic block font-serif">"{detail["Churn Reason"] || "Baseline analysis suggests no immediate risk."}"</span>
                   </div>
                 </div>
               </div>
-            </div>
+            </CollapsibleSection>
 
-            {/* AI Feature Intelligence (Secret Sauce) */}
+            {/* AI Feature Intelligence */}
             {(hasAIFeatures || hasAIStats) && (
-              <div className="xl:col-span-2 bg-white rounded-[32px] border-l-[12px] border-indigo-600 shadow-xl shadow-gray-200/50 p-8 border border-gray-100 overflow-hidden">
-                <div className="flex items-center gap-4 mb-8">
-                  <span className="p-3 bg-indigo-50 rounded-[14px] text-2xl shadow-sm">🧠</span>
-                  <h3 className="text-[18px] font-black text-gray-800 uppercase tracking-tight">AI Generated Feature Profile (The Secret Sauce)</h3>
-                </div>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+              <CollapsibleSection id="ai_profile" icon="🧠" title="AI Generated Feature Profile" hasData={true} badge="Intelligence Matrix">
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4 mb-8">
                   <InsightBadge label="Loyalty Sc." value={detail["Loyalty Score"]} />
                   <InsightBadge label="Contract Risk" value={detail["Contract Risk Score"]} />
                   <InsightBadge label="Network Qu." value={detail["Network Quality Score"]} />
@@ -186,7 +227,7 @@ export default function CustomerDetailView({ customerId, onClose }: Props) {
                   <InsightBadge label="Compl. Sev." value={detail["Complaint Severity Index"]} />
                   <InsightBadge label="Refund Rate" value={detail["Refund Rate"]} color="blue" />
                 </div>
-                <div className="grid grid-cols-2 lg:grid-cols-3 gap-x-12 gap-y-2 border-t border-gray-50 pt-6">
+                <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-12 gap-y-2 border-t border-gray-50 pt-6">
                   <DataRow label="Tenure Seg." value={detail["Tenure Group"]} color="blue" />
                   <DataRow label="Age Segment" value={detail["Age Group"]} color="blue" />
                   <DataRow label="Total Ser." value={detail["Service Count"]} color="blue" />
@@ -197,89 +238,62 @@ export default function CustomerDetailView({ customerId, onClose }: Props) {
                   <DataRow label="Avg Spend" value={detail["Avg Monthly Spend"]} suffix=" /mo" />
                   <DataRow label="Advocacy Score" value={detail["Number of Referrals"]} />
                 </div>
-              </div>
+              </CollapsibleSection>
             )}
           </div>
 
           {/* Deep Analytics Grid Layer */}
-          <div className={`grid grid-cols-1 ${numSecondaryCards >= 3 ? 'lg:grid-cols-3' : numSecondaryCards === 2 ? 'lg:grid-cols-2' : 'lg:grid-cols-1'} gap-10`}>
-
-            {/* Technical Performance Hub */}
-            {hasNetwork && (
-              <div className="bg-white rounded-[32px] border border-gray-100 shadow-sm p-8 hover:shadow-md transition-shadow">
-                <div className="flex items-center gap-4 mb-8">
-                  <span className="p-3 bg-orange-50 rounded-[14px] text-2xl">📶</span>
-                  <h3 className="text-[16px] font-black text-gray-800 uppercase tracking-tight">Network Performance</h3>
-                </div>
-                <div className="space-y-1">
-                  <DataRow label="Signal Strength" value={detail.SignalStrength} suffix=" dBm" />
-                  <DataRow label="Throughput" value={detail.Throughput} suffix=" Mbps" color="green" />
-                  <DataRow label="Latency" value={detail.Latency} suffix=" ms" color={toNumber(detail.Latency) > 80 ? "red" : "green"} />
-                  <DataRow label="Jittering" value={detail.Jitter} suffix=" ms" />
-                  <DataRow label="Packet Drop" value={detail.PacketLoss} suffix=" %" color={toNumber(detail.PacketLoss) > 1 ? "red" : "green"} />
-                  <div className="h-4" />
-                  <DataRow label="Dropped Total" value={detail.DroppedCalls} color={toNumber(detail.DroppedCalls) > 3 ? "red" : ""} />
-                  <DataRow label="Blocking Total" value={detail.BlockedCalls} />
-                  <DataRow label="Dormant Pat." value={detail.SIMInactivePattern} />
-                </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <CollapsibleSection id="network" icon="📶" title="Network Performance" hasData={hasNetwork} badge={`${detail.Throughput} Mbps`}>
+              <div className="space-y-1">
+                <DataRow label="Signal Strength" value={detail.SignalStrength} suffix=" dBm" />
+                <DataRow label="Throughput" value={detail.Throughput} suffix=" Mbps" color="green" />
+                <DataRow label="Latency" value={detail.Latency} suffix=" ms" color={toNumber(detail.Latency) > 80 ? "red" : "green"} />
+                <DataRow label="Jittering" value={detail.Jitter} suffix=" ms" />
+                <DataRow label="Packet Drop" value={detail.PacketLoss} suffix=" %" color={toNumber(detail.PacketLoss) > 1 ? "red" : "green"} />
+                <div className="h-4" />
+                <DataRow label="Dropped Total" value={detail.DroppedCalls} color={toNumber(detail.DroppedCalls) > 3 ? "red" : ""} />
+                <DataRow label="Blocking Total" value={detail.BlockedCalls} />
+                <DataRow label="Dormant Pat." value={detail.SIMInactivePattern} />
               </div>
-            )}
+            </CollapsibleSection>
 
-            {/* Service & Sentiment Intelligence */}
-            {hasSentiment && (
-              <div className="bg-white rounded-[32px] border border-gray-100 shadow-sm p-8 hover:shadow-md transition-shadow">
-                <div className="flex items-center gap-4 mb-8">
-                  <span className="p-3 bg-blue-50 rounded-[14px] text-2xl">🗳️</span>
-                  <h3 className="text-[16px] font-black text-gray-800 uppercase tracking-tight">Service Sentiment</h3>
-                </div>
-                <div className="space-y-1">
-                  <DataRow label="Issue Type" value={detail.ComplaintType} color="blue" />
-                  <DataRow label="Resolution" value={detail.ComplaintResolution} />
-                  <DataRow label="Freq. index" value={detail.ComplaintFrequency} color={toNumber(detail.ComplaintFrequency) > 1 ? "red" : ""} />
-                  <DataRow label="Channel" value={detail.ComplaintMedium} />
-                  <div className="h-4" />
-                  <DataRow label="Payment Delay" value={detail.PaymentDelay} suffix=" Days" color={toNumber(detail.PaymentDelay) > 0 ? "red" : "green"} />
-                  <DataRow label="Plan Chg Count" value={detail.PlanChangeTracking} />
-                  <DataRow label="Handset Cap." value={detail.DeviceCapability} />
-                  <div className="h-4" />
-                  {isVal(detail.Complaint) && (
-                    <div className="mt-2 p-4 bg-gray-50 rounded-2xl border border-gray-100 italic text-[12px] text-gray-500">
-                      "{detail.Complaint}"
-                    </div>
-                  )}
-                </div>
+            <CollapsibleSection id="sentiment" icon="🗳️" title="Service Sentiment" hasData={hasSentiment} badge={detail.ComplaintType}>
+              <div className="space-y-1">
+                <DataRow label="Issue Type" value={detail.ComplaintType} color="blue" />
+                <DataRow label="Resolution" value={detail.ComplaintResolution} />
+                <DataRow label="Freq. index" value={detail.ComplaintFrequency} color={toNumber(detail.ComplaintFrequency) > 1 ? "red" : ""} />
+                <div className="h-4" />
+                <DataRow label="Payment Delay" value={detail.PaymentDelay} suffix=" Days" color={toNumber(detail.PaymentDelay) > 0 ? "red" : "green"} />
+                <DataRow label="Plan Chg Count" value={detail.PlanChangeTracking} />
+                <DataRow label="Handset Cap." value={detail.DeviceCapability} />
+                <div className="h-4" />
+                {isVal(detail.Complaint) && (
+                  <div className="mt-2 p-4 bg-gray-50 rounded-2xl border border-gray-100 italic text-[12px] text-gray-500">
+                    "{detail.Complaint}"
+                  </div>
+                )}
               </div>
-            )}
+            </CollapsibleSection>
 
-            {/* Financial Health Hub */}
-            {hasSpending && (
-              <div className="bg-white rounded-[32px] border border-gray-100 shadow-sm p-8 hover:shadow-md transition-shadow">
-                <div className="flex items-center gap-4 mb-8">
-                  <span className="p-3 bg-green-50 rounded-[14px] text-2xl">💎</span>
-                  <h3 className="text-[16px] font-black text-gray-800 uppercase tracking-tight">Financial Health</h3>
-                </div>
-                <div className="space-y-1">
-                  <DataRow label="Monthly Spend" value={detail["Avg Monthly Spend"]} suffix=" /mo" color="green" />
-                  <DataRow label="Bandwidth DL" value={detail["Avg Monthly GB Download"]} suffix=" GB" />
-                  <DataRow label="Extra Data" value={isVal(detail["Total Extra Data Charges"]) ? `$${detail["Total Extra Data Charges"]}` : null} />
-                  <DataRow label="Long Dist" value={isVal(detail["Total Long Distance Charges"]) ? `$${detail["Total Long Distance Charges"]}` : null} />
-                  <DataRow label="Advocacy (Ref)" value={detail["Referred a Friend"]} />
-                  <DataRow label="Total Ref." value={detail["Number of Referrals"]} color="blue" />
-                  <div className="h-4" />
-                  <DataRow label="LTD Revenue" value={`$${(detail["Total Charges"] || (toNumber(detail["Tenure in Months"]) * toNumber(detail["Monthly Charge"])))?.toLocaleString()}`} color="green" />
-                  <DataRow label="Extra Refund" value={isVal(detail["Total Refunds"]) ? `$${detail["Total Refunds"]}` : null} color={toNumber(detail["Total Refunds"]) > 0 ? "red" : ""} />
-                  <DataRow label="Paperless bill" value={detail["Paperless Billing"]} />
-                </div>
+            <CollapsibleSection id="spending" icon="💎" title="Financial Health" hasData={hasSpending} badge={`$${detail["Avg Monthly Spend"]}`}>
+              <div className="space-y-1">
+                <DataRow label="Monthly Spend" value={detail["Avg Monthly Spend"]} suffix=" /mo" color="green" />
+                <DataRow label="Bandwidth DL" value={detail["Avg Monthly GB Download"]} suffix=" GB" />
+                <DataRow label="Extra Data" value={isVal(detail["Total Extra Data Charges"]) ? `$${detail["Total Extra Data Charges"]}` : null} />
+                <DataRow label="Long Dist" value={isVal(detail["Total Long Distance Charges"]) ? `$${detail["Total Long Distance Charges"]}` : null} />
+                <div className="h-4" />
+                <DataRow label="LTD Revenue" value={`$${(detail["Total Charges"] || (toNumber(detail["Tenure in Months"]) * toNumber(detail["Monthly Charge"])))?.toLocaleString()}`} color="green" />
+                <DataRow label="Extra Refund" value={isVal(detail["Total Refunds"]) ? `$${detail["Total Refunds"]}` : null} color={toNumber(detail["Total Refunds"]) > 0 ? "red" : ""} />
+                <DataRow label="Paperless bill" value={detail["Paperless Billing"]} />
               </div>
-            )}
+            </CollapsibleSection>
           </div>
 
           {/* Infrastructure Matrix Section */}
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-10 pb-10">
-
-            {/* Demographic & Location Summary */}
-            {(hasGeo || hasDemogs) && (
-              <div className="bg-white rounded-[32px] border border-gray-100 shadow-sm p-8 flex flex-col gap-8">
+          <div className="grid grid-cols-1 gap-8 pb-10">
+            <CollapsibleSection id="geo" icon="📍" title="Geographic & Segment Intelligence" hasData={hasGeo || hasDemogs} badge={detail.City}>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
                 {hasGeo && (
                   <div>
                     <h3 className="text-[12px] font-black text-gray-400 uppercase tracking-widest mb-4 border-b border-gray-50 pb-2">Location Context</h3>
@@ -302,13 +316,9 @@ export default function CustomerDetailView({ customerId, onClose }: Props) {
                   </div>
                 )}
               </div>
-            )}
+            </CollapsibleSection>
 
-            {/* Service Offering Matrix */}
-            <div className={`${(hasGeo || hasDemogs) ? 'lg:col-span-3' : 'lg:col-span-4'} bg-white rounded-[32px] border border-gray-100 shadow-sm p-8`}>
-              <h3 className="text-[13px] font-black text-gray-900 uppercase tracking-widest mb-6 flex items-center gap-2">
-                <span className="w-2 h-2 bg-blue-600 rounded-full animate-pulse" /> Infrastructure & Service Offering Matrix
-              </h3>
+            <CollapsibleSection id="services" icon="⚙️" title="Infrastructure & Service Offering Matrix" hasData={true} badge={`${detail["Service Count"]} Active`}>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
                 <ServiceBadge label="Phone" active={detail["Phone Service"]} />
                 <ServiceBadge label="Internet" active={detail["Internet Service"]} />
@@ -323,7 +333,7 @@ export default function CustomerDetailView({ customerId, onClose }: Props) {
                 <ServiceBadge label="Music Hub" active={detail["Streaming Music"]} />
                 <ServiceBadge label="Paperless" active={detail["Paperless Billing"]} />
               </div>
-            </div>
+            </CollapsibleSection>
           </div>
 
         </div>
