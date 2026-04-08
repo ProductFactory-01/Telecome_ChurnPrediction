@@ -43,12 +43,8 @@ export default function Header() {
         <div className="flex items-center gap-6 self-start sm:self-auto">
           {/* User Profile */}
           <div className="hidden md:flex items-center gap-3 pr-6 border-r border-slate-800/60">
-            <div className="h-10 w-10 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center text-white font-bold text-sm shadow-lg shadow-indigo-500/10 border border-white/10 ring-1 ring-white/10 overflow-hidden">
-               <img 
-                 src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${userName}`} 
-                 alt="User Avatar"
-                 className="w-full h-full object-cover"
-               />
+            <div className="h-10 w-10 rounded-full bg-gradient-to-br from-indigo-500 to-violet-700 flex items-center justify-center text-white font-black text-[15px] shadow-2xl shadow-indigo-500/20 border border-white/20 ring-1 ring-white/10">
+              {userName.split(' ').map(n => n[0]).join('').toUpperCase()}
             </div>
             <div className="flex flex-col">
               <span className="text-[13px] font-bold text-white leading-tight">{userName}</span>
@@ -63,18 +59,6 @@ export default function Header() {
                 Sign Out <ArrowRight size={10} className="group-hover:translate-x-0.5 transition-transform" />
               </button>
             </div>
-          </div>
-
-          <div className="flex items-center gap-2.5 px-4 py-2 bg-emerald-500/15 border border-emerald-500/40 rounded-full shadow-[0_0_16px_rgba(16,185,129,0.15)] backdrop-blur-sm ring-1 ring-emerald-400/20">
-            {/* Pulsing Dot */}
-            <div className="relative flex h-2.5 w-2.5">
-              <span className="animate-pulse absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-40"></span>
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-400"></span>
-            </div>
-            
-            <span className="text-[11px] font-bold text-emerald-300 uppercase tracking-widest">
-              Live System
-            </span>
           </div>
         </div>
 
