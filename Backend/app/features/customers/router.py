@@ -1,8 +1,10 @@
 from fastapi import APIRouter, HTTPException
 import pandas as pd
 import numpy as np
+import json
 from sqlalchemy import text
 from app.database import get_db_engine
+from service.llm import get_groq_llm
 
 router = APIRouter()
 
@@ -110,5 +112,86 @@ async def get_customer_details(customer_id: str):
     except Exception as e:
         import traceback
         traceback.print_exc()
-        print(f"Error fetching detail: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/customers/{customer_id}/predict-reason")
+async def predict_customer_reason(customer_id: str):
+    engine = get_db_engine()
+    if not engine:
+        raise HTTPException(status_code=500, detail="Database connection failed")
+        
+    try:
+        # Load the customer data
+        query = text("""
+            SELECT m.*, s.*
+            FROM merged m
+            LEFT JOIN source s ON m."Customer ID" = s."Customer ID"
+            WHERE m."Customer ID" = :customer_id
+        """)
+        
+        with engine.connect() as conn:
+            result = conn.execute(query, {"customer_id": customer_id})
+            row = result.fetchone()
+            
+            if not row:
+                 raise HTTPException(status_code=404, detail="Customer not found")
+                 
+            # Convert row to dictionary for LLM context
+            data = {}
+            for key, value in row._mapping.items():
+                if key not in data or data[key] is None:
+                    # Make values serializable
+                    if isinstance(value, (np.integer, np.int64)): value = int(value)
+                    elif isinstance(value, (np.floating, np.float64)): value = float(value)
+                    elif pd.isna(value): value = None
+                    data[key] = value
+
+            # Remove existing reasons from LLM context to ensure independent prediction
+            data.pop("Reason", None)
+            data.pop("Churn Reason", None)
+            data.pop("ai_reason", None)
+
+        # Formulate Prompt
+        prompt = {
+            "customer_profile": data,
+            "task": "Analyze the customer's data and predict a brief, analytical reason for their churn risk score (1-2 sentences). Return JSON in format {\"reason\": \"...\"}."
+        }
+        
+        # Call LLM
+        llm = get_groq_llm().bind(response_format={"type": "json_object"})
+        messages = [
+            ("system", "You are a senior data analyst. Return ONLY valid JSON."),
+            ("human", json.dumps(prompt, default=str)),
+        ]
+        
+        try:
+            response = llm.invoke(messages)
+            parsed = json.loads(response.content)
+            ai_reason = parsed.get("reason", "Analysis generated successfully.")
+        except Exception as llm_err:
+            print(f"LLM Error: {llm_err}")
+            ai_reason = "Unable to generate AI reason at this time due to processing constraints."
+            
+        # Ensure column exists and save to source table
+        with engine.begin() as conn:
+            try:
+                conn.execute(text('ALTER TABLE public."source" ADD COLUMN IF NOT EXISTS "ai_reason" TEXT'))
+            except Exception as e:
+                # Catch silently if dialect doesn't support IF NOT EXISTS or other error
+                print(f"Column check passed or failed: {e}")
+                
+            update_query = text("""
+                UPDATE public."source" 
+                SET ai_reason = :reason 
+                WHERE "Customer ID" = :customer_id
+            """)
+            conn.execute(update_query, {"reason": ai_reason, "customer_id": customer_id})
+
+        return {"ai_reason": ai_reason}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
