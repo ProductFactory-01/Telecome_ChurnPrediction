@@ -29,8 +29,12 @@ export default function CustomerDetails({ customerId, onBack }: Props) {
     setPredicting(true);
     try {
       const resp = await api.post(`/customers/${customerId}/predict-reason`);
-      if (resp.data && resp.data.ai_reason) {
-        setDetail((prev: any) => ({ ...prev, ai_reason: resp.data.ai_reason }));
+      if (resp.data && (resp.data.ai_reason || resp.data.impact_analysis)) {
+        setDetail((prev: any) => ({ 
+          ...prev, 
+          ai_reason: resp.data.ai_reason,
+          impact_analysis: resp.data.impact_analysis 
+        }));
       }
     } catch (err) {
       console.error("Failed to predict reason:", err);
@@ -251,12 +255,42 @@ export default function CustomerDetails({ customerId, onBack }: Props) {
                  )}
                </div>
 
-               <div className="flex-1 relative z-10">
+               <div className="flex-1 relative z-10 divide-y divide-slate-50">
                  {detail.ai_reason ? (
-                    <div className="p-8 bg-slate-50/80 rounded-2xl border border-slate-100 shadow-inner">
-                      <p className="text-[16px] font-bold text-slate-700 leading-relaxed leading-loose">
-                        "{detail.ai_reason}"
-                      </p>
+                    <div className="space-y-6">
+                      <div className="p-6 bg-slate-50/80 rounded-2xl border border-slate-100 shadow-inner">
+                        <p className="text-[15px] font-bold text-slate-700 leading-relaxed">
+                          "{detail.ai_reason}"
+                        </p>
+                      </div>
+
+                      {/* Factor Impact Analysis */}
+                      {detail.impact_analysis && detail.impact_analysis.length > 0 && (
+                        <div className="pt-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
+                           <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Risk Driver Analysis</h5>
+                           <div className="space-y-3">
+                              {detail.impact_analysis.map((factor: any, i: number) => (
+                                <div key={i} className="group/factor">
+                                  <div className="flex justify-between items-end mb-1.5">
+                                    <span className="text-[11px] font-black text-slate-600 uppercase tracking-tight">{factor.factor}</span>
+                                    <span className={`text-[10px] font-black ${factor.impact > 0 ? "text-red-500" : "text-emerald-500"}`}>
+                                      {factor.impact > 0 ? "+" : ""}{factor.impact}%
+                                    </span>
+                                  </div>
+                                  <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden flex justify-center">
+                                     <div 
+                                       className={`h-full rounded-full transition-all duration-1000 delay-${i * 100} ${factor.impact > 0 ? "bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.4)]" : "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]"}`}
+                                       style={{ width: `${Math.abs(factor.impact)}%` }}
+                                     />
+                                  </div>
+                                  <p className="text-[10px] font-bold text-slate-400 mt-1 opacity-0 group-hover/factor:opacity-100 transition-opacity">
+                                    {factor.description}
+                                  </p>
+                                </div>
+                              ))}
+                           </div>
+                        </div>
+                      )}
                     </div>
                  ) : (
                     <div className="h-full flex flex-col items-center justify-center p-8 border-2 border-dashed border-slate-100 rounded-2xl bg-slate-50/30">
@@ -277,7 +311,6 @@ export default function CustomerDetails({ customerId, onBack }: Props) {
                  )}
                </div>
                
-               {/* Background decoration to match Outreach style */}
                <div className="absolute -bottom-8 -right-8 w-32 h-32 bg-indigo-50/30 rounded-full blur-3xl pointer-events-none" />
             </div>
           </div>

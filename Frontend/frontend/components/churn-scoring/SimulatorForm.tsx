@@ -110,7 +110,7 @@ export default function SimulatorForm({ onPredict, onReset, loading, result }: P
     : { bg: "#f0fdf4", border: "#bbf7d0", text: "#16a34a", badge: "#dcfce7", label: "#14532d" };
 
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "1fr 400px", gap: 24, alignItems: "stretch", minHeight: 660 }}
+    <div style={{ display: "grid", gridTemplateColumns: "1fr 400px", gap: 24, alignItems: "start" }}
       className="max-lg:grid-cols-1">
 
       {/* ── LEFT: Inputs ── */}
@@ -242,7 +242,7 @@ export default function SimulatorForm({ onPredict, onReset, loading, result }: P
 
         {/* Row 3: Live Network & Engagement Metrics */}
         <div className="card" style={{ padding: 24, display: "flex", flexDirection: "column" }}>
-          <SECTION icon="📶" title="Network Health & Engagement (Real-Time)">
+          <SECTION icon="📶" title="Network Health & Engagement">
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 32 }} className="max-md:grid-cols-1">
               
               {/* Sliders: Network & Sat */}
@@ -323,17 +323,17 @@ export default function SimulatorForm({ onPredict, onReset, loading, result }: P
 
       </div>
 
-      {/* ── RIGHT: Outcome Panel ── */}
-      <div style={{ display: "flex", flexDirection: "column" }}>
-        <div style={{ background: "#fff", borderRadius: 28, border: "1.5px solid #e2e8f0", boxShadow: "0 10px 45px rgba(0,0,0,0.07)", padding: "28px 30px", display: "flex", flexDirection: "column", flex: 1 }}>
+      {/* ── RIGHT: Outcome Panel (Fixed/Sticky) ── */}
+      <div style={{ position: "sticky", top: 100, alignSelf: "start" }}>
+        <div style={{ background: "#fff", borderRadius: 28, border: "1.5px solid #e2e8f0", boxShadow: "0 10px 45px rgba(0,0,0,0.07)", padding: "24px 24px", display: "flex", flexDirection: "column" }}>
 
           {/* Panel Header */}
-          <div style={{ textAlign: "center", paddingBottom: 22, marginBottom: 22, borderBottom: "1px solid #f1f5f9" }}>
-            <div style={{ fontSize: 10, fontWeight: 800, color: "#3b82f6", letterSpacing: "0.22em", textTransform: "uppercase", marginBottom: 8 }}>AI Prediction Engine</div>
-            <div style={{ fontSize: 24, fontWeight: 900, color: "#0f172a", letterSpacing: "-0.04em" }}>Outcome Intelligence</div>
+          <div style={{ textAlign: "center", paddingBottom: 16, marginBottom: 16, borderBottom: "1px solid #f1f5f9" }}>
+            <div style={{ fontSize: 9, fontWeight: 800, color: "#3b82f6", letterSpacing: "0.22em", textTransform: "uppercase", marginBottom: 6 }}>AI Prediction Engine</div>
+            <div style={{ fontSize: 20, fontWeight: 900, color: "#0f172a", letterSpacing: "-0.04em" }}>Outcome Intelligence</div>
           </div>
 
-          {/* Content Area: same height both states */}
+          {/* Content Area */}
           <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
             {!result ? (
               /* ── Empty State ── */
@@ -349,8 +349,24 @@ export default function SimulatorForm({ onPredict, onReset, loading, result }: P
                 <div style={{ maxWidth: 280 }}>
                   <div style={{ fontSize: 18, fontWeight: 900, color: "#1e293b", marginBottom: 12, letterSpacing: "-0.02em" }}>Simulator Ready</div>
                   <div style={{ fontSize: 13.5, color: "#64748b", lineHeight: 1.7, fontWeight: 500 }}>
-                    Adjust the subscriber parameters and click <strong style={{ color: "#2563eb" }}>Generate Prediction</strong> to begin real-time risk analysis.
+                    Adjust parameters and generate a prediction to begin risk analysis.
                   </div>
+                </div>
+                
+                {/* Action Buttons moved here for empty state */}
+                <div style={{ marginTop: 8, width: "100%", display: "flex", flexDirection: "column", gap: 12 }}>
+                  <button
+                    onClick={() => onPredict(form)}
+                    disabled={loading}
+                    className="hover-lift"
+                    style={{ 
+                      width: "100%", padding: "18px 0", borderRadius: 20, border: "none", 
+                      background: loading ? "#93c5fd" : "linear-gradient(90deg, #3b82f6, #2563eb)", 
+                      color: "#fff", fontWeight: 800, fontSize: 14, letterSpacing: "0.1em", textTransform: "uppercase", 
+                      cursor: loading ? "not-allowed" : "pointer", boxShadow: "0 8px 30px rgba(37,99,235,0.35)", transition: "all 0.2s" 
+                    }}>
+                    {loading ? "⚙️ Calculating..." : "🔥 Generate Prediction"}
+                  </button>
                 </div>
               </div>
             ) : (
@@ -358,10 +374,10 @@ export default function SimulatorForm({ onPredict, onReset, loading, result }: P
               <div style={{ display: "flex", flexDirection: "column", gap: 16, flex: 1 }}>
 
                 {/* Score Card */}
-                <div style={{ background: riskTheme.bg, border: `2px solid ${riskTheme.border}`, borderRadius: 26, padding: "26px 28px", display: "flex", alignItems: "center", justifyContent: "space-between", boxShadow: "0 4px 15px rgba(0,0,0,0.02)" }}>
+                <div style={{ background: riskTheme.bg, border: `2px solid ${riskTheme.border}`, borderRadius: 22, padding: "20px 22px", display: "flex", alignItems: "center", justifyContent: "space-between", boxShadow: "0 4px 15px rgba(0,0,0,0.02)" }}>
                   <div>
-                    <div style={{ fontSize: 10, fontWeight: 800, color: riskTheme.label, textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: 6 }}>Churn Probability</div>
-                    <div style={{ fontSize: 56, fontWeight: 900, color: riskTheme.text, lineHeight: 1, letterSpacing: "-0.05em" }}>{pct}<span style={{ fontSize: 24, opacity: 0.5, marginLeft: 2 }}>%</span></div>
+                    <div style={{ fontSize: 9, fontWeight: 800, color: riskTheme.label, textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: 4 }}>Churn Probability</div>
+                    <div style={{ fontSize: 44, fontWeight: 900, color: riskTheme.text, lineHeight: 1, letterSpacing: "-0.05em" }}>{pct}<span style={{ fontSize: 20, opacity: 0.5, marginLeft: 2 }}>%</span></div>
                   </div>
                   <div style={{ textAlign: "right" }}>
                     <div style={{ background: riskTheme.badge, border: `1.5px solid ${riskTheme.border}`, borderRadius: 999, padding: "7px 18px", fontSize: 11, fontWeight: 800, color: riskTheme.label, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 10 }}>{risk} Risk</div>
@@ -375,33 +391,12 @@ export default function SimulatorForm({ onPredict, onReset, loading, result }: P
                     { label: "Main Category", value: result.churn_reason?.main_category, color: "#0f172a" },
                     { label: "Sub Category", value: result.churn_reason?.sub_category, color: "#2563eb" },
                   ].map(({ label, value, color }) => (
-                    <div key={label} style={{ background: "#f8fafc", border: "1.5px solid #e2e8f0", borderRadius: 18, padding: "16px 18px", textAlign: "center" }}>
-                      <div style={{ fontSize: 10, fontWeight: 800, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: 8 }}>{label}</div>
-                      <div style={{ fontSize: 14, fontWeight: 900, color, lineHeight: 1.3 }}>{value ?? "—"}</div>
+                    <div key={label} style={{ background: "#f8fafc", border: "1.5px solid #e2e8f0", borderRadius: 16, padding: "12px 14px", textAlign: "center" }}>
+                      <div style={{ fontSize: 9, fontWeight: 800, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: 6 }}>{label}</div>
+                      <div style={{ fontSize: 12, fontWeight: 900, color, lineHeight: 1.2 }}>{value ?? "—"}</div>
                     </div>
                   ))}
                 </div>
-
-                {/* Score Breakdown (Criteria) */}
-                {result.score_breakdown && result.score_breakdown.adjustments && (
-                  <div style={{ background: "#f8fafc", border: "1.5px solid #e2e8f0", borderRadius: 18, padding: "16px 18px" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-                      <div style={{ fontSize: 10, fontWeight: 800, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.12em" }}>Predictive Breakdown</div>
-                    </div>
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 8 }}>
-                      {Object.entries(result.score_breakdown.adjustments)
-                        .filter(([k, v]: [string, any]) => v !== 0 && typeof v === "number" && k.toLowerCase() !== "final_score" && k.toLowerCase() !== "base_score")
-                        .sort((a: any, b: any) => Math.abs(b[1]) - Math.abs(a[1]))
-                        .slice(0, 7)
-                        .map(([key, value]: [string, any]) => (
-                          <div key={key} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 13, fontWeight: 700, padding: "8px 12px", background: "#fff", borderRadius: 8, border: "1px solid #e2e8f0" }}>
-                            <span style={{ color: "#475569", textTransform: "capitalize", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", marginRight: 8 }} title={key.replace(/_/g, " ")}>{key.replace(/_/g, " ")}</span>
-                            <span style={{ color: value > 0 ? "#ef4444" : "#10b981", fontWeight: 900 }}>{value > 0 ? `+${value}` : value}</span>
-                          </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
 
                 {/* AI Reasoning */}
                 <div style={{ 
@@ -419,38 +414,29 @@ export default function SimulatorForm({ onPredict, onReset, loading, result }: P
                   </div>
                 </div>
 
+                {/* Action Buttons moved up here for result state */}
+                <div style={{ marginTop: 0, display: "flex", flexDirection: "column", gap: 10 }}>
+                  <button
+                    onClick={() => onPredict(form)}
+                    disabled={loading}
+                    className="hover-lift"
+                    style={{ 
+                      width: "100%", padding: "16px 0", borderRadius: 18, border: "none", 
+                      background: loading ? "#93c5fd" : "linear-gradient(90deg, #3b82f6, #2563eb)", 
+                      color: "#fff", fontWeight: 800, fontSize: 13, letterSpacing: "0.1em", textTransform: "uppercase", 
+                      cursor: loading ? "not-allowed" : "pointer", boxShadow: "0 8px 30px rgba(37,99,235,0.35)", transition: "all 0.2s" 
+                    }}>
+                    {loading ? "⚙️ Calculating..." : "🔥 Refresh Prediction"}
+                  </button>
+                  <button
+                    onClick={onReset}
+                    style={{ width: "100%", padding: "12px 0", borderRadius: 18, border: "1.5px dashed #e2e8f0", background: "transparent", color: "#94a3b8", fontWeight: 700, fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", cursor: "pointer" }}>
+                    Reset Simulator
+                  </button>
+                </div>
+
               </div>
             )}
-          </div>
-
-          {/* Action Buttons — always at bottom */}
-          <div style={{ marginTop: 24, paddingTop: 24, borderTop: "1px solid #f1f5f9", display: "flex", flexDirection: "column", gap: 12 }}>
-            <button
-              onClick={() => onPredict(form)}
-              disabled={loading}
-              className="hover-lift"
-              style={{ 
-                width: "100%", 
-                padding: "18px 0", 
-                borderRadius: 20, 
-                border: "none", 
-                background: loading ? "#93c5fd" : "linear-gradient(90deg, #3b82f6, #2563eb)", 
-                color: "#fff", 
-                fontWeight: 800, 
-                fontSize: 14, 
-                letterSpacing: "0.1em", 
-                textTransform: "uppercase", 
-                cursor: loading ? "not-allowed" : "pointer", 
-                boxShadow: "0 8px 30px rgba(37,99,235,0.35)", 
-                transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)" 
-              }}>
-              {loading ? "⚙️ Calculating Probabilities..." : "🔥 Generate AI Prediction"}
-            </button>
-            <button
-              onClick={onReset}
-              style={{ width: "100%", padding: "14px 0", borderRadius: 20, border: "1.5px dashed #e2e8f0", background: "transparent", color: "#94a3b8", fontWeight: 700, fontSize: 12, letterSpacing: "0.08em", textTransform: "uppercase", cursor: "pointer", transition: "all 0.15s" }}>
-              Reset Simulator
-            </button>
           </div>
         </div>
       </div>
