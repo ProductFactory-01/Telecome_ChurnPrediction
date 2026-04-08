@@ -266,7 +266,7 @@ export default function CustomerDetailView({ customerId, onClose }: Props) {
                   <DataRow label="Advocacy (Ref)" value={detail["Referred a Friend"]} />
                   <DataRow label="Total Ref." value={detail["Number of Referrals"]} color="blue" />
                   <div className="h-4" />
-                  <DataRow label="LTD Revenue" value={`$${ltdRevenue?.toLocaleString()}`} color="green" />
+                  <DataRow label="LTD Revenue" value={`$${(detail["Total Charges"] || (toNumber(detail["Tenure in Months"]) * toNumber(detail["Monthly Charge"])))?.toLocaleString()}`} color="green" />
                   <DataRow label="Extra Refund" value={isVal(detail["Total Refunds"]) ? `$${detail["Total Refunds"]}` : null} color={toNumber(detail["Total Refunds"]) > 0 ? "red" : ""} />
                   <DataRow label="Paperless bill" value={detail["Paperless Billing"]} />
                 </div>

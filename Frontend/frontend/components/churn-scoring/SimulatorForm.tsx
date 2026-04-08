@@ -182,7 +182,7 @@ export default function SimulatorForm({ onPredict, onReset, loading, result }: P
               <div style={{ display: "flex", flexDirection: "column", gap: 24, justifyContent: "center" }}>
                 {[
                   { label: "Tenure (Months)", field: "TenureMonths" as keyof FormData, min: 0, max: 72, unit: "mo", color: "#2563eb" },
-                  { label: "Monthly Charge ($)", field: "MonthlyCharges" as keyof FormData, min: 18, max: 120, unit: "$", color: "#2563eb" },
+                  { label: "Monthly Charge ($)", field: "MonthlyCharges" as keyof FormData, min: 1, max: 120, unit: "$", color: "#2563eb" },
                   { label: "Avg Data Usage (GB)", field: "AvgMonthlyGBDownload" as keyof FormData, min: 0, max: 150, unit: "GB", color: "#10b981" },
                 ].map(({ label, field, min, max, unit, color }) => (
                   <div key={field}>
