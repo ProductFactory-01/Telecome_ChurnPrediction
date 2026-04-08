@@ -8,10 +8,22 @@ load_dotenv()
 # Version: 2.0.1 - Force Reload
 app = FastAPI(title="Churn Prediction Backend", version="2.0.1")
 
+# Parse CSV origins from env, ignoring blanks.
+allowed_origins_env = os.getenv("ALLOWED_ORIGINS", "")
+allowed_origins = [origin.strip() for origin in allowed_origins_env.split(",") if origin.strip()]
+if not allowed_origins:
+    allowed_origins = [
+        "https://snsihub.tech",
+        "https://www.snsihub.tech",
+        "http://localhost:3000",
+        "http://localhost:8000"
+        "https://api.snsihub.tech/api/v1",
+    ]
+
 # CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
