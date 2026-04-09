@@ -1,5 +1,17 @@
 import styles from "./OfferEngine.module.css";
 
+export type OfferType = "Discount" | "Custom Bundle" | "Loyalty Points" | "Gamification" | "Plan Upgrade";
+
+export interface RecommendationConfig {
+  discount_percentage?: number;
+  duration_months?: number;
+  loyalty_points?: number;
+  bundle_details?: string;
+  plan_upgrade_target?: string;
+  gamification_reward?: string;
+  bill_credit_amount?: number;
+}
+
 export interface Recommendation {
   plan_id: string;
   title?: string;
@@ -8,12 +20,14 @@ export interface Recommendation {
   projected_target_level: string;
   offer_summary: string;
   why_it_fits: string;
+  config?: RecommendationConfig;
 }
 
 interface OfferRecommendationsProps {
   recommendations: Recommendation[];
   selectedId: string;
   onSelect: (id: string) => void;
+  onUpdateRecommendation: (id: string, update: Partial<Recommendation>) => void;
   isLoading: boolean;
 }
 
@@ -21,6 +35,7 @@ export default function OfferRecommendations({
   recommendations,
   selectedId,
   onSelect,
+  onUpdateRecommendation,
   isLoading,
 }: OfferRecommendationsProps) {
   return (
@@ -65,6 +80,27 @@ export default function OfferRecommendations({
                 {rec.offer_summary}
               </div>
               <div className={styles.recommendationNote}>{rec.why_it_fits}</div>
+
+              {selectedId === rec.plan_id && (
+                <div
+                  className={styles.recommendationEditor}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className={styles.editorTitle}>Edit Plan</div>
+                  <label className={styles.editorField}>
+                    <span>Offer Statement</span>
+                    <textarea
+                      rows={3}
+                      value={rec.offer_summary}
+                      onChange={(e) =>
+                        onUpdateRecommendation(rec.plan_id, {
+                          offer_summary: e.target.value,
+                        })
+                      }
+                    />
+                  </label>
+                </div>
+              )}
             </div>
           ))
         )}

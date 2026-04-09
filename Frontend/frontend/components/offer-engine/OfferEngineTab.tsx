@@ -5,10 +5,47 @@ import AgentHeader from "../shared/AgentHeader";
 import OfferKPIs from "./OfferKPIs";
 import OfferCharts from "./OfferCharts";
 import OfferTaxonomy, { TAXONOMY, RISK_LEVELS } from "./OfferTaxonomy";
-import OfferRecommendations, { Recommendation } from "./OfferRecommendations";
+import OfferRecommendations, { Recommendation, RecommendationConfig } from "./OfferRecommendations";
 import OfferCohortTable from "./OfferCohortTable";
 import styles from "./OfferEngine.module.css";
 import Loading from "../shared/Loading";
+
+const extractNumber = (text: string, regex: RegExp, fallback = 0): number => {
+  const match = text.match(regex);
+  if (!match?.[1]) return fallback;
+  const normalized = match[1].replace(/,/g, "");
+  const parsed = Number(normalized);
+  return Number.isFinite(parsed) ? parsed : fallback;
+};
+
+const hydrateRecommendationConfig = (recommendation: Recommendation): Recommendation => {
+  const summary = recommendation.offer_summary || "";
+  const type = (recommendation.offer_type || recommendation.title || "").toLowerCase();
+  const baseConfig: RecommendationConfig = {
+    duration_months: extractNumber(summary, /(\d+)\s*month/i, 3),
+  };
+
+  if (type === "discount") {
+    baseConfig.discount_percentage = extractNumber(summary, /(\d+)\s*%/, 15);
+    baseConfig.bill_credit_amount = extractNumber(summary, /(?:\$|usd\s*)(\d+)/i, 0);
+  } else if (type === "loyalty points") {
+    baseConfig.loyalty_points = extractNumber(summary, /(\d+[\d,]*)\s*(?:points|pts)/i, 5000);
+  } else if (type === "custom bundle") {
+    baseConfig.bundle_details = recommendation.offer_summary;
+  } else if (type === "plan upgrade") {
+    baseConfig.plan_upgrade_target = "Premium Plan";
+  } else if (type === "gamification") {
+    baseConfig.gamification_reward = "Bonus rewards";
+  }
+
+  return {
+    ...recommendation,
+    config: {
+      ...baseConfig,
+      ...(recommendation.config || {}),
+    },
+  };
+};
 
 export default function OfferEngineTab() {
   // --- State ---
@@ -159,9 +196,10 @@ export default function OfferEngineTab() {
       });
 
       const recs = resp.data.recommendations || [];
-      setRecommendations(recs.sort((a: any, b: any) => 
+      const sorted = recs.sort((a: any, b: any) =>
         (Number(b.projected_reduction_pct) || 0) - (Number(a.projected_reduction_pct) || 0)
-      ));
+      );
+      setRecommendations(sorted.map((rec: Recommendation) => hydrateRecommendationConfig(rec)));
       setStatusMsg(`Success! Generated ${recs.length} plan recommendations. Select a strategy to finalize the campaign.`);
     } catch (e: any) {
       setFetchError(e.response?.data?.detail || "Recommendation fetch failed.");
@@ -228,7 +266,21 @@ export default function OfferEngineTab() {
   const handleRecSelect = (id: string) => {
     setSelectedRecId(id);
     const rec = recommendations.find(r => r.plan_id === id);
-    setStatusMsg(`Selected "${rec?.offer_type || rec?.title}". You can now generate and save the offer cohort document.`);
+    setStatusMsg(`Selected "${rec?.offer_type || rec?.title}". Edit the offer statement and save to persist this selected plan.`);
+  };
+
+  const handleRecommendationUpdate = (id: string, update: Partial<Recommendation>) => {
+    setRecommendations((prev) => prev.map((rec) => {
+      if (rec.plan_id !== id) return rec;
+      return {
+        ...rec,
+        ...update,
+        config: {
+          ...(rec.config || {}),
+          ...(update.config || {}),
+        },
+      };
+    }));
   };
 
   return (
@@ -260,6 +312,7 @@ export default function OfferEngineTab() {
           recommendations={recommendations}
           selectedId={selectedRecId}
           onSelect={handleRecSelect}
+          onUpdateRecommendation={handleRecommendationUpdate}
           isLoading={isLoading}
         />
       </div>
